@@ -1,0 +1,1613 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mix Auto</title>
+<style>
+  :root { --bg:#0c0c11; --panel:#14141c; --card:#1a1a24; --line:#272735; --txt:#ececf3; --dim:#8b8ba1; --acc:#7c5cff; --acc2:#22d3a6; --warn:#ffb547; --err:#ff5c7a; --libH:min(300px, 32vh); }
+  * { box-sizing:border-box; }
+  html, body { height:100%; margin:0; }
+  body { background:var(--bg); color:var(--txt); font:13px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; display:grid; grid-template-rows:auto 1fr; overflow:hidden; user-select:none; }
+  button, select, input { font:inherit; color:var(--txt); }
+  button { background:#22222e; border:1px solid var(--line); border-radius:7px; padding:5px 10px; cursor:pointer; white-space:nowrap; }
+  button:hover:not(:disabled) { border-color:var(--acc); }
+  button:disabled { opacity:.35; cursor:default; }
+  button.on { background:var(--acc); border-color:var(--acc); }
+  button.big { background:var(--acc); border-color:var(--acc); font-weight:600; }
+  select, input[type=number], input[type=text], input[type=search] { background:#0f0f15; border:1px solid var(--line); border-radius:7px; padding:5px 7px; }
+  input[type=range] { accent-color:var(--acc); width:100%; }
+
+  /* ---------- En-tête ---------- */
+  header { display:flex; align-items:center; gap:10px; padding:8px 12px; background:var(--panel); border-bottom:1px solid var(--line); flex-wrap:wrap; }
+  header h1 { font-size:17px; margin:0 4px 0 0; letter-spacing:-.3px; }
+  header h1 span { color:var(--acc); }
+  .sep { width:1px; height:26px; background:var(--line); }
+  .grow { flex:1; }
+  #clock { font:600 15px ui-monospace, Menlo, monospace; min-width:140px; text-align:center; background:#0f0f15; border:1px solid var(--line); border-radius:7px; padding:4px 8px; }
+  #play { width:46px; font-size:15px; }
+  .tempo { display:flex; align-items:center; gap:4px; background:#0f0f15; border:1px solid var(--line); border-radius:9px; padding:3px 4px 3px 9px; }
+  .tempo small { color:var(--dim); font-size:10px; letter-spacing:1px; }
+  #tempo { width:78px; border:0; background:transparent; font:700 17px ui-monospace, Menlo, monospace; text-align:right; padding:2px; }
+  .tempo button { padding:3px 8px; }
+  #sync { background:var(--acc2); border-color:var(--acc2); color:#05301f; font-weight:700; }
+  label.inl { display:flex; align-items:center; gap:6px; color:var(--dim); }
+
+  /* ---------- Zones ---------- */
+  .app { display:grid; grid-template-rows:auto var(--libH) 6px 1fr; min-height:0; }
+
+  /* ---------- Platines (façon Rekordbox / VirtualDJ) ---------- */
+  #decks { background:#07070a; border-bottom:1px solid var(--line); }
+  #deckC { display:block; width:100%; height:120px; cursor:pointer; }
+  .deckrow { display:grid; grid-template-columns:1fr auto 1fr; gap:8px; padding:6px 8px; }
+  .deck { display:grid; grid-template-rows:auto auto 1fr; gap:3px; min-width:0; background:var(--card); border:1px solid var(--line); border-radius:10px; padding:6px 10px; border-top:3px solid var(--dc); }
+  .deck .dh { display:flex; align-items:center; gap:8px; min-width:0; }
+  .deck .dl { font:800 20px ui-monospace, Menlo, monospace; color:var(--dc); }
+  .deck .dt { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:600; }
+  .deck .dn { display:flex; gap:14px; align-items:baseline; color:var(--dim); font:600 11px ui-monospace, Menlo, monospace; }
+  .deck .dn b { color:var(--txt); font-size:17px; }
+  .deck .air { color:var(--acc2); } .deck .nxt { color:var(--warn); }
+  .deck canvas { width:100%; height:28px; display:block; align-self:end; border-radius:4px; }
+  .mixer { display:flex; gap:10px; align-items:center; background:var(--card); border:1px solid var(--line); border-radius:10px; padding:6px 10px; }
+  .chan { display:flex; gap:6px; align-items:center; } .chan.rev { flex-direction:row-reverse; }
+  .knobs { display:grid; grid-template-columns:repeat(3, 36px); gap:2px 4px; }
+  .knob { text-align:center; cursor:ns-resize; font-size:9px; color:var(--dim); letter-spacing:.4px; }
+  .knob i { display:block; width:26px; height:26px; margin:0 auto 1px; border-radius:50%; background:radial-gradient(circle at 40% 35%, #4a4a5e, #18181f); border:1px solid #4a4a62; position:relative; transform:rotate(calc(var(--a, 0) * 1deg)); }
+  .knob i::after { content:''; position:absolute; left:50%; top:2px; width:2px; height:9px; margin-left:-1px; background:#fff; border-radius:1px; }
+  .knob.mod i { box-shadow:0 0 0 2px var(--dc); }
+  .mixer input.fader { writing-mode:vertical-lr; direction:rtl; width:22px; height:84px; accent-color:var(--dc); }
+  .mixmid { display:flex; flex-direction:column; align-items:center; gap:5px; }
+  #xf { width:140px; accent-color:#fff; }
+  .xfl { display:flex; justify-content:space-between; width:140px; font:700 10px ui-monospace, monospace; color:var(--dim); }
+  #rec { font-weight:700; } #rec.on { background:#e5243b; border-color:#e5243b; animation:blink 1s steps(2) infinite; }
+  @keyframes blink { 50% { opacity:.6; } }
+  #split { background:var(--line); cursor:row-resize; }
+  #split:hover { background:var(--acc); }
+  .lower { display:grid; grid-template-columns:1fr 310px; min-height:0; }
+
+  /* ---------- Bibliothèque ---------- */
+  #libPane { display:grid; grid-template-rows:auto 1fr; min-height:0; background:var(--panel); }
+  .libbar { display:flex; gap:6px; align-items:center; padding:8px 10px; border-bottom:1px solid var(--line); flex-wrap:wrap; }
+  .tabs { display:flex; gap:2px; background:#0f0f15; border-radius:9px; padding:3px; }
+  .tabs button { border:0; background:transparent; padding:5px 11px; border-radius:7px; color:var(--dim); }
+  .tabs button.on { background:#2a2a3a; color:var(--txt); }
+  #search { width:200px; }
+  .libbody { display:grid; grid-template-columns:auto 1fr; min-height:0; }
+  #libSide { overflow:auto; border-right:1px solid var(--line); padding:10px; width:250px; }
+  #libSide:empty { display:none; }
+  #wheel { display:block; margin:0 auto; width:auto; height:min(230px, calc(var(--libH) - 80px)); }   /* la roue tient dans la bibliothèque */
+  .tablewrap { overflow:auto; min-height:0; position:relative; }
+  #dropHint { position:absolute; inset:10px; border:2px dashed var(--line); border-radius:12px; display:flex; flex-direction:column; align-items:center; justify-content:center; color:var(--dim); gap:6px; text-align:center; }
+  body.dragover #dropHint { border-color:var(--acc); }
+  body.dragover .tablewrap { outline:2px solid var(--acc); outline-offset:-2px; }
+  table { width:100%; border-collapse:collapse; }
+  th { position:sticky; top:0; background:#181822; text-align:left; font-weight:500; color:var(--dim); font-size:11px; text-transform:uppercase; letter-spacing:.6px; padding:6px 8px; cursor:pointer; z-index:1; white-space:nowrap; }
+  th.s::after { content:' ▾'; } th.s.up::after { content:' ▴'; }
+  td { padding:5px 8px; border-bottom:1px solid #1d1d28; white-space:nowrap; }
+  tr.trk { cursor:grab; }
+  tr.trk:hover td { background:#ffffff07; }
+  tr.trk.used td:first-child { box-shadow:inset 3px 0 var(--acc2); }
+  td.title { max-width:340px; overflow:hidden; text-overflow:ellipsis; }
+  td.title b { font-weight:600; } td.title span { color:var(--dim); }
+  .num { font-variant-numeric:tabular-nums; text-align:right; }
+  .key { display:inline-block; min-width:34px; text-align:center; border-radius:5px; padding:1px 5px; font-weight:700; font-size:12px; color:#0c0c11; }
+  .key.match { outline:2px solid #fff; outline-offset:1px; }
+  .energy { display:inline-flex; gap:2px; vertical-align:middle; }
+  .energy i { width:4px; height:11px; background:#30303f; border-radius:1px; }
+  .energy i.f { background:var(--acc2); }
+  button.pre { padding:1px 6px; font-size:10px; margin-right:4px; }
+  td.act { text-align:right; } td.act button { padding:2px 8px; margin-left:3px; }
+  .warnTxt { color:var(--warn); font-size:11px; margin-left:4px; }
+  .folder { display:block; width:100%; text-align:left; margin-bottom:4px; overflow:hidden; text-overflow:ellipsis; }
+  .folder small { float:right; color:var(--dim); }
+  .folder.on small { color:#fff; }
+  .frow { display:flex; gap:4px; } .frow .folder { flex:1; min-width:0; } .frow .delf { margin-bottom:4px; padding:0 8px; }
+  .side-title { font-size:11px; text-transform:uppercase; letter-spacing:1px; color:var(--dim); margin:0 0 8px; }
+  #wheel text { pointer-events:none; font:700 11px -apple-system, sans-serif; }
+  #wheel path { cursor:pointer; stroke:#14141c; stroke-width:2; }
+  .note { color:var(--dim); font-size:12px; margin:6px 0; }
+
+  /* ---------- Timeline ---------- */
+  .center { display:grid; grid-template-rows:30px 1fr auto auto; min-width:0; min-height:0; }
+  #hscroll { overflow-x:scroll; overflow-y:hidden; height:12px; background:var(--panel); border-top:1px solid var(--line); }
+  #hscroll div { height:1px; }
+  #hscroll::-webkit-scrollbar { height:12px; }   /* toujours visible (macOS cache les barres par défaut) */
+  #hscroll::-webkit-scrollbar-thumb { background:#4a4a62; border-radius:6px; border:2px solid var(--panel); }
+  #hscroll::-webkit-scrollbar-thumb:hover { background:#7c5cff; }
+  #rulerC { display:block; width:100%; height:30px; background:var(--panel); border-bottom:1px solid var(--line); cursor:pointer; }
+  #scroller { overflow-y:auto; overflow-x:hidden; min-height:0; position:relative; }
+  #scroller.drop { outline:2px solid var(--acc); outline-offset:-2px; }
+  #rowsC { display:block; width:100%; }
+  #empty { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:var(--dim); text-align:center; pointer-events:none; font-size:15px; line-height:1.7; }
+  .bottom { display:flex; gap:6px; align-items:center; padding:6px 10px; background:var(--panel); border-top:1px solid var(--line); flex-wrap:wrap; }
+  .bottom .hint { color:var(--dim); font-size:12px; }
+  .params button { padding:3px 8px; font-size:12px; }
+
+  /* ---------- Panneau de droite ---------- */
+  aside { background:var(--panel); border-left:1px solid var(--line); display:grid; grid-template-rows:auto 1fr; min-height:0; }
+  aside .tabs { margin:8px; }
+  aside .tabs button { flex:1; }
+  #insp { overflow:auto; padding:4px 12px 14px; }
+  h2 { font-size:11px; text-transform:uppercase; letter-spacing:1px; color:var(--dim); margin:14px 0 8px; }
+  .insp-title { font-size:15px; font-weight:600; word-break:break-word; }
+  .sub { color:var(--dim); margin:2px 0 6px; }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+  .grid3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; }
+  .grid2 button, .grid3 button { white-space:normal; padding:6px 4px; font-size:12px; line-height:1.25; }
+  .fxcard { text-align:left !important; padding:8px !important; }
+  .fxcard b { display:block; font-size:13px; } .fxcard span { color:var(--dim); font-size:11px; }
+  .row { display:flex; gap:6px; align-items:center; margin-bottom:6px; flex-wrap:wrap; }
+  .slider { display:grid; grid-template-columns:68px 1fr 50px; gap:6px; align-items:center; margin-bottom:5px; }
+  .slider span:last-child { text-align:right; color:var(--dim); font-variant-numeric:tabular-nums; }
+  .ok { color:var(--acc2); } .warn { color:var(--warn); }
+  .pair { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:9px; display:grid; grid-template-columns:1fr auto 1fr; gap:8px; align-items:center; }
+  .pair div { overflow:hidden; } .pair b { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px; margin-top:3px; }
+
+  #modal { position:fixed; inset:0; background:#000a; display:flex; align-items:center; justify-content:center; z-index:9; }
+  #modal .box { width:min(440px, 92vw); padding:18px; background:var(--card); border:1px solid var(--line); border-radius:12px; }
+  .bar { height:6px; background:var(--line); border-radius:3px; overflow:hidden; margin:10px 0; }
+  .bar div { height:100%; width:0; background:linear-gradient(90deg,var(--acc),var(--acc2)); }
+  [hidden] { display:none !important; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Mix <span>Auto</span></h1>
+  <span id="webBadge" hidden style="font-size:11px;color:var(--warn);border:1px solid var(--warn);border-radius:6px;padding:2px 6px" title="Tout tourne dans ce navigateur : tes morceaux ne sont envoyés nulle part et restent ici pour la prochaine fois. Différence avec le logiciel Mac / PC : le tempo est calé en changeant la vitesse (la tonalité bouge un peu) et la transposition ½ ton n'existe pas.">Version web d'essai</span>
+  <input type="text" id="projName" value="Mon mix" title="Nom du projet" style="width:140px">
+  <select id="projOpen" title="Ouvrir un projet"><option value="">Ouvrir…</option></select>
+  <button id="newProj">Nouveau</button>
+  <div class="sep"></div>
+  <button id="toStart" title="Retour au début">⏮</button>
+  <button id="play" title="Lecture / pause (espace)">▶</button>
+  <div id="clock">0:00.0 · 1.1</div>
+  <div class="tempo" title="Tempo du morceau sélectionné, appliqué aussi aux suivants (sans sélection : tout le mix). Entre deux tempos, il glisse pendant la transition">
+    <small>BPM</small>
+    <input type="number" id="tempo" step="0.1" min="60" max="200" placeholder="—">
+    <button id="tDown" title="−0,5 BPM">−</button><button id="tUp" title="+0,5 BPM">+</button>
+    <button id="tap" title="Tape en rythme pour donner le tempo">TAP</button>
+    <button id="sync" title="Le morceau sélectionné et les suivants prennent son tempo d'origine">SYNC</button>
+  </div>
+  <div class="sep"></div>
+  <label class="inl">Aimant <select id="snap"><option value="32">Phrase (8 mesures)</option><option value="4">Mesure</option><option value="1">Temps</option><option value="0">Libre</option></select></label>
+  <button id="click" title="Métronome pour vérifier le calage">Clic</button>
+  <button id="zoomOut" title="Dézoomer (⌘ + molette)">−</button><button id="zoomIn" title="Zoomer">+</button><button id="zoomFit" title="Voir tout le mix (touche F)">↔</button>
+  <button id="undo" title="Annuler (⌘Z)">↶</button>
+  <button id="decksBtn" class="on" title="Afficher / masquer les platines">🎛 Platines</button>
+  <div class="grow"></div>
+  <button id="fillHour" title="Ajoute les morceaux de la liste affichée (tempo à ±6 %) jusqu'à 1 h de mix, les range et pose les transitions">⚡ Mix 1 h</button>
+  <button id="autoMix" title="Range les morceaux du mix dans le meilleur ordre et pose des transitions">Ordre auto</button>
+  <button id="export" class="big">Exporter en MP3</button>
+</header>
+
+<div class="app">
+  <section id="decks">
+    <canvas id="deckC" title="Clic : aller à cet endroit"></canvas>
+    <div class="deckrow">
+      <div class="deck" id="deck0" style="--dc:#3aa0ff"><div class="dh"><span class="dl">A</span><span class="dt">—</span><span class="key"></span></div><div class="dn"><span><b class="dbpm">—</b> BPM</span><span class="dtime"></span><span class="dst"></span></div><canvas></canvas></div>
+      <div class="mixer" id="mixer"></div>
+      <div class="deck" id="deck1" style="--dc:#ff9a2e"><div class="dh"><span class="dl">B</span><span class="dt">—</span><span class="key"></span></div><div class="dn"><span><b class="dbpm">—</b> BPM</span><span class="dtime"></span><span class="dst"></span></div><canvas></canvas></div>
+    </div>
+  </section>
+  <section id="libPane">
+    <div class="libbar">
+      <div class="tabs" id="libTabs">
+        <button data-tab="all" class="on">Tous les morceaux</button>
+        <button data-tab="key">Par tonalité</button>
+        <button data-tab="folder">Par dossier</button>
+        <button data-tab="suggest">Suggestions</button>
+      </div>
+      <input type="search" id="search" placeholder="Rechercher un titre, un artiste…">
+      <div class="grow"></div>
+      <span class="note" id="libCount"></span>
+      <button id="impFiles">+ Morceaux</button>
+      <button id="impDir">+ Dossier</button>
+      <button id="delAll" title="Supprime de la bibliothèque tous les morceaux de la liste affichée">🗑 Tout supprimer</button>
+    </div>
+    <div class="libbody">
+      <div id="libSide"></div>
+      <div class="tablewrap">
+        <table><thead><tr>
+          <th data-sort="name">Titre</th><th data-sort="bpm" class="num">BPM</th><th data-sort="camelot">Ton.</th>
+          <th data-sort="energy">Énergie</th><th data-sort="duration" class="num">Durée</th><th data-sort="folder">Dossier</th><th></th>
+        </tr></thead><tbody id="libT"></tbody></table>
+        <div id="dropHint" hidden><b style="color:var(--txt);font-size:15px">Glisse tes morceaux ou un dossier ici</b>MP3, WAV, AIFF, FLAC, M4A · tout reste sur ton Mac</div>
+      </div>
+    </div>
+    <input type="file" id="inFiles" multiple accept="audio/*,.aif,.aiff,.flac" hidden>
+    <input type="file" id="inDir" webkitdirectory hidden>
+  </section>
+  <div id="split" title="Glisser pour agrandir"></div>
+
+  <div class="lower">
+    <div class="center">
+      <canvas id="rulerC"></canvas>
+      <div id="scroller">
+        <canvas id="rowsC"></canvas>
+        <div id="empty">Glisse un morceau de la bibliothèque jusqu'ici<br>(ou double-clic dessus) pour commencer ton mix.</div>
+      </div>
+      <div id="hscroll" title="Faire défiler le mix"><div></div></div>
+      <div class="bottom">
+        <span class="hint" style="color:#ff3b3b">Ligne rouge :</span>
+        <span class="params" id="params"></span>
+        <div class="grow"></div>
+        <span class="hint" id="hint"></span>
+      </div>
+    </div>
+    <aside>
+      <div class="tabs" id="inspTabs">
+        <button data-tab="trans" class="on">Transition</button>
+        <button data-tab="track">Morceau</button>
+        <button data-tab="fx">Effets</button>
+      </div>
+      <div id="insp"></div>
+    </aside>
+  </div>
+</div>
+
+<div id="modal" hidden><div class="box"><b id="mTitle"></b><div class="bar"><div id="mBar"></div></div><div id="mText" class="note"></div><div class="row" id="mBtns"></div></div></div>
+
+<script src="web.js"></script>
+<script>
+// ============ Modèle ============
+// Tout est en TEMPS (beats) : début sur la timeline, position dans le morceau, automations.
+// Changer le tempo du mix ne casse donc rien : le serveur fournit chaque morceau étiré au tempo (même tonalité).
+const PARAMS = {
+  vol:    { label:'Volume',  min:-60, max:6, def:0, fmt:v => v <= -59.5 ? '−∞' : `${v.toFixed(1)} dB` },
+  low:    { label:'Basses',  min:-40, max:6, def:0, fmt:v => `${v.toFixed(1)} dB` },
+  mid:    { label:'Médiums', min:-40, max:6, def:0, fmt:v => `${v.toFixed(1)} dB` },
+  high:   { label:'Aigus',   min:-40, max:6, def:0, fmt:v => `${v.toFixed(1)} dB` },
+  filter: { label:'Filtre',  min:-1,  max:1, def:0, fmt:v => Math.abs(v) < .01 ? 'ouvert' : v < 0 ? `grave ${Math.round(-v * 100)}` : `aigu ${Math.round(v * 100)}` },
+  reverb: { label:'Réverbe', min:0,   max:1, def:0, fmt:v => `${Math.round(v * 100)} %` },
+  delay:  { label:'Écho',    min:0,   max:1, def:0, fmt:v => `${Math.round(v * 100)} %` },
+};
+const PKEYS = Object.keys(PARAMS);
+const blankAuto = () => Object.fromEntries(PKEYS.map(k => [k, []]));
+const blankBase = () => Object.fromEntries(PKEYS.map(k => [k, PARAMS[k].def]));
+
+let S = newProject();
+function newProject() {
+  return { name:'Mon mix', tempo:null, grid:4, tracks:{}, clips:[], fx:{ delayDiv:0.75, delayFb:0.45, reverbSec:4, master:0 } };
+}
+let LIB = [];                       // morceaux analysés (serveur)
+const BUF = {};                     // id morceau -> { key, buffer, peaks } ou { key, loading }
+const PHRASE = 32;   // 8 mesures de 4 temps : les morceaux entrent et sortent sur ces repères
+const MIXIN = 64;    // le suivant entre 16 mesures avant la fin du précédent
+const U = { pxb:8, scrollX:-2, userScroll:0, sel:null, param:'vol', snap:PHRASE, pos:0, playing:false, click:false, undo:[],
+            libTab:'all', keys:new Set(), compat:true, folder:null, sort:'name', up:true, inspTab:'trans' };
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const beatSec = () => 60 / (S.tempo || 120);
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const fmtTime = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+const clipEnd = c => c.start + c.len;
+const sorted = () => [...S.clips].sort((a, b) => a.start - b.start || a.id - b.id);
+const selClip = () => S.clips.find(c => c.id === U.sel);
+const nextOf = c => sorted().find(o => o !== c && o.start >= c.start && (o.start > c.start || o.id > c.id));
+const prevOf = c => sorted().filter(o => o !== c && (o.start < c.start || (o.start === c.start && o.id < c.id))).at(-1);
+
+// Roue Camelot : une couleur par chiffre, façon Mixed In Key
+const keyColor = cam => `hsl(${(parseInt(cam) - 1) * 30 + 150}, 75%, ${cam.endsWith('A') ? 62 : 72}%)`;
+function camelotDist(a, b) {
+  const na = parseInt(a), nb = parseInt(b), d = Math.min(Math.abs(na - nb), 12 - Math.abs(na - nb));
+  return d + (a.slice(-1) !== b.slice(-1));
+}
+const compatible = (a, b) => camelotDist(a, b) <= 1;
+// Camelot après transposition : +1 demi-ton = +7 sur la roue
+const camOf = t => `${((parseInt(t.camelot) - 1 + 7 * (t.semi || 0)) % 12 + 12) % 12 + 1}${t.camelot.slice(-1)}`;
+const keyName = t => t.semi ? `${t.key} ${t.semi > 0 ? '+' : ''}${t.semi}` : t.key;
+
+// ============ Tempo par morceau ============
+// Chaque morceau a son tempo (c.tempo). Entre deux morceaux de tempos différents, le tempo glisse pendant le chevauchement :
+// les deux fichiers sont rendus sur la même rampe (serveur), donc kick sur kick d'un bout à l'autre de la transition.
+const ct = c => c.tempo ?? S.tempo;
+const curTempo = () => selClip() ? ct(selClip()) : S.tempo;
+function tempoKnots() {   // [[temps du mix, tempo]] : constant avant/après, linéaire d'un point à l'autre
+  const s = sorted(), k = [];
+  s.forEach((c, i) => {
+    if (!i) return void k.push([c.start, ct(c)]);
+    const T = ct(c), [last, P] = k.at(-1); if (Math.abs(T - P) < 1e-6) return;
+    const a = Math.max(c.start, last), e = Math.max(a, Math.min(clipEnd(s[i - 1]), clipEnd(c)));
+    k.push([a, P], [e, T]);
+  });
+  return k;
+}
+function tempoOfBeat(k, b) {   // même calcul que ramp_tempos dans server.py
+  if (!k.length) return S.tempo || 120;
+  if (b <= k[0][0]) return k[0][1];
+  for (let i = 1; i < k.length; i++) if (b < k[i][0]) { const [a, A] = k[i - 1], [z, Z] = k[i]; return A + (Z - A) * (b - a) / (z - a); }
+  return k.at(-1)[1];
+}
+function TM() {   // carte temps du mix <-> secondes, recalculée quand un morceau bouge ou change de tempo
+  const sig = S.tempo + '|' + S.clips.map(c => `${c.start},${c.len},${ct(c)}`).join(';');
+  if (TM.sig === sig) return TM.m;
+  const k = tempoKnots(), T0 = tempoOfBeat(k, -1e9), T1 = tempoOfBeat(k, 1e9);
+  let cum = null;
+  if (k.some(x => x[1] !== T0)) {   // un temps = 60 / tempo au milieu du temps
+    const n = Math.max(1, Math.ceil(k.at(-1)[0]) + 1); cum = new Float64Array(n + 1);
+    for (let i = 0; i < n; i++) cum[i + 1] = cum[i] + 60 / tempoOfBeat(k, i + 0.5);
+  }
+  TM.sig = sig; return TM.m = { k, cum, T0, T1 };
+}
+function secAt(b) {   // temps du mix -> secondes du mix
+  const { cum, T0, T1 } = TM();
+  if (!cum || b <= 0) return b * 60 / T0;
+  const n = cum.length - 1;
+  if (b >= n) return cum[n] + (b - n) * 60 / T1;
+  const i = Math.floor(b); return cum[i] + (b - i) * (cum[i + 1] - cum[i]);
+}
+function beatAt(s) {   // secondes du mix -> temps du mix
+  const { cum, T0, T1 } = TM();
+  if (!cum || s <= 0) return s * T0 / 60;
+  const n = cum.length - 1;
+  if (s >= cum[n]) return n + (s - cum[n]) * T1 / 60;
+  let lo = 0, hi = n; while (hi - lo > 1) { const m = (lo + hi) >> 1; if (cum[m] <= s) lo = m; else hi = m; }
+  return lo + (s - cum[lo]) / (cum[lo + 1] - cum[lo]);
+}
+function clipTempo(c) {   // tempo du morceau dans ses propres temps : { T } constant, ou { T, pts, ramp:'temps:tempo,…' }
+  const k = TM().k, d = c.start - c.in, e = clipEnd(c);
+  const pts = [[c.start, tempoOfBeat(k, c.start)], ...k.filter(([b]) => b > c.start && b < e), [e, tempoOfBeat(k, e)]];
+  if (pts.every(p => Math.abs(p[1] - pts[0][1]) < 1e-6)) return { T:pts[0][1] };
+  const r = pts.map(([b, T]) => [+(b - d).toFixed(3), +T.toFixed(4)]);
+  return { T:ct(c), pts:r, ramp:r.map(p => p.join(':')).join(',') };
+}
+const audioQ = (c, ft = clipTempo(c), t = S.tracks[c.trackId]) =>
+  `id=${t.id}&tempo=${ft.T}&bpm=${t.bpm}&semi=${t.semi || 0}${ft.ramp ? `&fb=${t.first_beat}&ramp=${ft.ramp}` : ''}`;
+function makeMap(t, ft) {   // temps du morceau -> secondes dans son fichier calé (sans le décalage manuel)
+  if (!ft.ramp) return tb => (t.first_beat * t.bpm + tb * 60) / ft.T;
+  const sb = 60 / t.bpm, fb = t.first_beat, j0 = -Math.ceil(fb / sb), n = Math.ceil((t.duration - fb) / sb) + 2 - j0;
+  const T = j => tempoOfBeat(ft.pts, j + 0.5), O = new Float64Array(n + 1);
+  O[0] = (fb + j0 * sb) * t.bpm / T(j0);
+  for (let i = 0; i < n; i++) O[i + 1] = O[i] + 60 / T(j0 + i);
+  return tb => { const i = clamp(Math.floor(tb) - j0, 0, n - 1); return O[i] + (tb - j0 - i) * 60 / T(j0 + i); };
+}
+function fileT(c, tb) { const t = S.tracks[c.trackId]; return (BUF[c.id]?.map || makeMap(t, clipTempo(c)))(tb) + t.nudge / 1000; }
+function trackBeats(t, T = S.tempo) {   // [premier, dernier] temps disponibles dans le morceau
+  const off = t.first_beat * t.bpm / T + t.nudge / 1000;
+  return [-off * T / 60, (t.duration * t.bpm / T - off) * T / 60];
+}
+function autoValue(c, p, tb) {
+  const pts = c.auto[p];
+  if (!pts.length) return c.base[p];
+  if (tb <= pts[0].b) return pts[0].v;
+  for (let i = 1; i < pts.length; i++) if (tb <= pts[i].b) {
+    const a = pts[i - 1], b = pts[i];
+    return b.b === a.b ? b.v : a.v + (b.v - a.v) * (tb - a.b) / (b.b - a.b);
+  }
+  return pts[pts.length - 1].v;
+}
+const tlToTb = (c, x) => c.in + (x - c.start);
+
+function pushUndo() {
+  U.undo.push(JSON.stringify({ clips:S.clips, tracks:S.tracks, tempo:S.tempo }));
+  if (U.undo.length > 150) U.undo.shift();
+}
+function undo() {
+  const s = U.undo.pop(); if (!s) return;
+  const o = JSON.parse(s);
+  S.clips = o.clips; S.tracks = o.tracks; S.tempo = o.tempo;
+  changed();
+}
+
+// ============ Audio ============
+const ctx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate:44100 });
+
+function rng(seed) { return () => (seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296; }
+// ============ Table de mixage (deux voies A / B, comme une vraie table) ============
+// Pistes 1, 3… de la timeline = voie A, pistes 2, 4… = voie B. Les boutons agissent en direct, par-dessus les lignes rouges ;
+// avec REC pendant la lecture, chaque geste s'écrit en ligne rouge sur le morceau qui joue sur cette voie.
+const KNOB = { high:['HI', 'high'], mid:['MID', 'mid'], low:['LOW', 'low'], filter:['FILTRE', 'filter'], echo:['ÉCHO', 'delay'], reverb:['RÉV', 'reverb'] };
+const neutral = () => ({ high:0, mid:0, low:0, filter:0, echo:0, reverb:0, fader:1 });
+const MIX = { d:[neutral(), neutral()], xf:0 };
+const xfGain = (d, xf) => Math.cos(Math.max(0, d ? -xf : xf) * Math.PI / 2);   // crossfader : les deux à fond au centre
+const deckGain = (d, M = MIX) => M.d[d].fader ** 2 * xfGain(d, M.xf);
+const gainDb = g => g < 0.001 ? -60 : Math.max(-60, 20 * Math.log10(g));
+const deckOf = (c, LN = lanes()) => LN.of(c) % 2;
+const deckClip = (d, b, LN = lanes()) => S.clips.find(c => deckOf(c, LN) === d && b >= c.start && b < clipEnd(c));
+function deckParams(n, d, M = MIX, at = null) {
+  const v = M.d[d], set = (p, x) => at == null ? p.value = x : p.setTargetAtTime(x, at, 0.012);
+  set(n.lo.gain, v.low); set(n.mi.gain, v.mid); set(n.hi.gain, v.high);
+  set(n.lp.frequency, toParam.lp(v.filter)); set(n.hp.frequency, toParam.hp(v.filter));
+  set(n.g.gain, deckGain(d, M)); set(n.r.gain, v.reverb); set(n.e.gain, v.echo);
+}
+function buildBus(ac, liveMix = true) {
+  const master = ac.createGain(); master.gain.value = 10 ** (S.fx.master / 20);
+  const lim = ac.createDynamicsCompressor();
+  lim.threshold.value = -4; lim.knee.value = 0; lim.ratio.value = 20; lim.attack.value = 0.002; lim.release.value = 0.2;
+  master.connect(lim).connect(ac.destination);
+  // Réverbe : réponse impulsionnelle générée (graine fixe -> identique à l'écoute et à l'export)
+  const conv = ac.createConvolver(), n = Math.round(S.fx.reverbSec * ac.sampleRate), key = `${n}_${ac.sampleRate}`;
+  if (buildBus.irKey !== key) {   // calculée une fois par durée : la relance de la lecture reste instantanée
+    const ir = new AudioBuffer({ numberOfChannels:2, length:n, sampleRate:ac.sampleRate }), r = rng(7);
+    for (let ch = 0; ch < 2; ch++) { const d = ir.getChannelData(ch); for (let i = 0; i < n; i++) { const k = 1 - i / n; d[i] = (r() * 2 - 1) * k * k * k; } }
+    buildBus.ir = ir; buildBus.irKey = key;
+  }
+  conv.buffer = buildBus.ir;
+  const rIn = ac.createBiquadFilter(); rIn.type = 'highpass'; rIn.frequency.value = 250;
+  const rOut = ac.createGain(); rOut.gain.value = 0.7;
+  rIn.connect(conv).connect(rOut).connect(master);
+  // Écho calé sur le tempo, retours filtrés
+  const dIn = ac.createGain(), dl = ac.createDelay(4), fb = ac.createGain(), hp = ac.createBiquadFilter(), lp = ac.createBiquadFilter();
+  dl.delayTime.value = S.fx.delayDiv * beatSec(); fb.gain.value = S.fx.delayFb;
+  hp.type = 'highpass'; hp.frequency.value = 300; lp.type = 'lowpass'; lp.frequency.value = 5000;
+  dIn.connect(dl).connect(hp).connect(lp).connect(fb).connect(dl);
+  lp.connect(master);
+  // voies A / B : EQ 3 bandes, filtre, fader + crossfader, envois écho / réverbe (l'export part de la table à zéro)
+  const M = liveMix ? MIX : { d:[neutral(), neutral()], xf:0 };
+  const decks = [0, 1].map(d => {
+    const n = { lo:ac.createBiquadFilter(), mi:ac.createBiquadFilter(), hi:ac.createBiquadFilter(), hp:ac.createBiquadFilter(), lp:ac.createBiquadFilter(), g:ac.createGain(), r:ac.createGain(), e:ac.createGain() };
+    n.lo.type = 'lowshelf'; n.lo.frequency.value = 150; n.mi.type = 'peaking'; n.mi.frequency.value = 1000; n.mi.Q.value = 0.8;
+    n.hi.type = 'highshelf'; n.hi.frequency.value = 4000; n.hp.type = 'highpass'; n.hp.Q.value = 0.9; n.lp.type = 'lowpass'; n.lp.Q.value = 0.9;
+    n.lo.connect(n.mi).connect(n.hi).connect(n.hp).connect(n.lp).connect(n.g).connect(master);
+    n.g.connect(n.r).connect(rIn); n.g.connect(n.e).connect(dIn);
+    deckParams(n, d, M);
+    return n;
+  });
+  return { master, reverb:rIn, delay:dIn, decks };
+}
+const applyLive = () => live?.bus.decks.forEach((n, d) => deckParams(n, d, MIX, ctx.currentTime));
+
+const RATE = 100;  // points d'automation par seconde envoyés au moteur audio
+const toParam = {
+  vol: v => v <= -59.5 ? 0 : 10 ** (v / 20),
+  lp:  v => v < 0 ? 20000 * 10 ** (v * 2.4) : 20000,
+  hp:  v => v > 0 ? 20 * 10 ** (v * 3) : 20,
+};
+// Construit la chaîne d'un morceau dans un contexte audio (lecture ou export), à partir de `from` secondes du mix
+function scheduleClip(ac, bus, c, from, base) {
+  const b = BUF[c.id];
+  if (!b?.buffer) return [];
+  const cs = secAt(c.start), ce = secAt(clipEnd(c));
+  if (ce <= from) return [];
+  let t0 = Math.max(cs, from);
+  let off = fileT(c, tlToTb(c, beatAt(t0)));
+  if (off < 0) t0 -= off, off = 0;
+  const dur = Math.min(ce - t0, b.buffer.duration - off);
+  if (dur <= 0.005) return [];
+  const when = base + (t0 - from);
+  const src = ac.createBufferSource(); src.buffer = b.buffer;
+  const g = ac.createGain(), lo = ac.createBiquadFilter(), mi = ac.createBiquadFilter(), hi = ac.createBiquadFilter();
+  const hp = ac.createBiquadFilter(), lp = ac.createBiquadFilter(), sr = ac.createGain(), sd = ac.createGain();
+  lo.type = 'lowshelf'; lo.frequency.value = 150;
+  mi.type = 'peaking'; mi.frequency.value = 1000; mi.Q.value = 0.8;
+  hi.type = 'highshelf'; hi.frequency.value = 4000;
+  hp.type = 'highpass'; hp.Q.value = 0.9; lp.type = 'lowpass'; lp.Q.value = 0.9;
+  const edge = ac.createGain();   // anti-clic aux bords du morceau
+  src.connect(lo).connect(mi).connect(hi).connect(hp).connect(lp).connect(edge).connect(g).connect(bus.decks[deckOf(c)].lo);
+  g.connect(sr).connect(bus.reverb); g.connect(sd).connect(bus.delay);
+  if (t0 - cs < 0.008) { edge.gain.setValueAtTime(0, when); edge.gain.linearRampToValueAtTime(1, when + 0.008); }
+  if (ce - (t0 + dur) < 0.008) { edge.gain.setValueAtTime(1, when + dur - 0.008); edge.gain.linearRampToValueAtTime(0, when + dur); }
+  // courbes seulement là où l'automation bouge (entre deux points de valeurs différentes) : la relance reste instantanée
+  const curve = (param, key, f) => {
+    const pts = c.auto[key], sec = b => secAt(c.start + b - c.in);
+    param.value = f(autoValue(c, key, tlToTb(c, beatAt(t0))));
+    let last = 0;   // fin du dernier événement posé : deux courbes qui se touchent à 1 µs près font planter la lecture
+    for (let i = 1; i < pts.length; i++) {
+      const A = pts[i - 1], B = pts[i]; if (A.v === B.v) continue;
+      const a = Math.max(t0, sec(A.b)), z = Math.min(t0 + dur, sec(B.b));
+      if (z - a < 1e-3) {   // saut instantané
+        if (a > t0 && a < t0 + dur) { last = Math.max(when + a - t0, last) + 1e-4; param.setValueAtTime(f(B.v), last); }
+        continue;
+      }
+      const st = Math.max(when + a - t0, last + 1e-4), d = when + z - t0 - st;
+      if (d < 1e-3) continue;
+      const m = Math.max(2, Math.ceil((z - a) * RATE) + 1), arr = new Float32Array(m);
+      for (let k = 0; k < m; k++) arr[k] = f(autoValue(c, key, tlToTb(c, beatAt(a + k * (z - a) / (m - 1)))));
+      param.setValueCurveAtTime(arr, st, d); last = st + d;
+    }
+  };
+  const id = v => v;
+  curve(g.gain, 'vol', toParam.vol); curve(lo.gain, 'low', id); curve(mi.gain, 'mid', id); curve(hi.gain, 'high', id);
+  curve(lp.frequency, 'filter', toParam.lp); curve(hp.frequency, 'filter', toParam.hp); curve(sr.gain, 'reverb', id); curve(sd.gain, 'delay', id);
+  src.start(when, off, dur);
+  return [src];
+}
+
+let live = null;
+// Une seule lecture à la fois, même avec plusieurs onglets ouverts (chaque double-clic sur « Mix Auto » en ouvre un)
+const chan = new BroadcastChannel('mixauto');
+chan.onmessage = () => { if (U.playing) stop(); hushPreview(); };
+function play(from = U.pos, seamless = false) {
+  const old = seamless && live;
+  if (old) live = null; else stop(false);
+  if (!S.tempo || !S.clips.length) return;
+  hushPreview(); chan.postMessage('play');
+  ctx.resume();
+  const bus = buildBus(ctx), base = ctx.currentTime + 0.06, nodes = [];
+  if (old) {   // relance sans trou : l'ancien rendu s'efface pendant que le nouveau démarre au même endroit
+    from = old.from + base - old.base;
+    const g = old.bus.master.gain; g.setValueAtTime(g.value, base); g.linearRampToValueAtTime(0, base + 0.03);
+    old.nodes.forEach(n => { try { n.stop(base + 0.04); } catch {} });
+    setTimeout(() => old.bus.master.disconnect(), 300);
+    const v = bus.master.gain.value; bus.master.gain.setValueAtTime(0, base); bus.master.gain.linearRampToValueAtTime(v, base + 0.03);
+  }
+  live = { nodes, base, from, bus };   // posé avant : si un morceau plante, ceux déjà lancés restent arrêtables
+  for (const c of S.clips) try { nodes.push(...scheduleClip(ctx, bus, c, from, base)); } catch (e) { console.error('Lecture', c.id, e); }
+  if (U.click) {   // métronome : un clic par temps, plus aigu sur le premier temps de la mesure
+    const first = Math.ceil(beatAt(from) - 1e-6);
+    for (let k = first; k < first + 2000; k++) {
+      const o = ctx.createOscillator(), g = ctx.createGain(), at = base + secAt(k) - from;
+      o.frequency.value = k % 4 ? 1000 : 1600; g.gain.setValueAtTime(0.25, at); g.gain.exponentialRampToValueAtTime(0.001, at + 0.04);
+      o.connect(g).connect(ctx.destination); o.start(at); o.stop(at + 0.05); nodes.push(o);
+    }
+  }
+  U.playing = true; $('play').textContent = '❚❚';
+  const id = tick.n = (tick.n || 0) + 1; requestAnimationFrame(() => tick(id));
+}
+function stop(keepPos = true) {
+  clearTimeout(restartT);   // une relance en attente ne doit pas repartir après Stop
+  if (live) {
+    if (keepPos) U.pos = livePos();
+    live.nodes.forEach(n => { try { n.stop(); } catch {} });
+    const m = live.bus.master; setTimeout(() => m.disconnect(), 50);
+    live = null;
+  }
+  U.playing = false; $('play').textContent = '▶';
+  recEnd(); draw();
+}
+const livePos = () => live ? Math.max(live.from, live.from + ctx.currentTime - live.base) : U.pos;
+let restartT;
+function restartIfPlaying() { if (U.playing) { clearTimeout(restartT); restartT = setTimeout(() => play(livePos(), true), 120); } }
+function tick(id) {   // une seule boucle à la fois : deux boucles s'annulaient leurs dessins (ligne de lecture figée)
+  if (!U.playing || id !== tick.n) return;
+  U.pos = livePos();
+  const x = (beatAt(U.pos) - U.scrollX) * U.pxb, W = $('rowsC').clientWidth;
+  if ((x > W * 0.85 || x < 0) && performance.now() - U.userScroll > 4000) U.scrollX = beatAt(U.pos) - W * 0.15 / U.pxb;   // on laisse regarder ailleurs 4 s après un défilement à la main
+  const end = secAt(Math.max(0, ...S.clips.map(clipEnd))) + 8;
+  if (U.pos > end) return stop();
+  draw(); requestAnimationFrame(() => tick(id));
+}
+
+// ============ Chargement des morceaux ============
+async function loadClip(c) {   // un fichier par morceau du mix, rendu à son tempo (et sa rampe s'il y en a une)
+  const t = S.tracks[c.trackId]; if (!t) return;
+  const ft = clipTempo(c), key = audioQ(c, ft);
+  if (BUF[c.id]?.key === key) return;
+  BUF[c.id] = { ...BUF[c.id], key, loading:true };   // l'ancien rendu reste joué en attendant
+  draw();
+  try {
+    const r = await fetch(`/api/audio?${key}`);
+    if (!r.ok) throw new Error((await r.json()).error);
+    const buffer = await ctx.decodeAudioData(await r.arrayBuffer());
+    if (BUF[c.id].key !== key) return;
+    BUF[c.id] = { key, buffer, peaks:peaks(buffer), bands:bands(buffer), map:makeMap(t, ft) };
+  } catch (e) { if (BUF[c.id].key === key) BUF[c.id] = { key, error:e.message }; }
+  draw(); restartIfPlaying();   // ex. après SYNC : le morceau recalé rejoint la lecture
+}
+const loadAll = () => Promise.all(S.clips.map(loadClip));
+
+const PEAK = 256;
+function peaks(buf) {
+  const L = buf.getChannelData(0), R = buf.numberOfChannels > 1 ? buf.getChannelData(1) : L;
+  const n = Math.ceil(L.length / PEAK), p = new Float32Array(n);
+  for (let i = 0; i < n; i++) { let m = 0; for (let j = i * PEAK, e = Math.min(L.length, j + PEAK); j < e; j++) { const v = Math.abs(L[j] + R[j]); if (v > m) m = v; } p[i] = m / 2; }
+  return p;
+}
+function bands(buf) {   // forme d'onde 3 couleurs comme Rekordbox : graves (< 200 Hz), médiums, aigus (> 2,5 kHz)
+  const L = buf.getChannelData(0), R = buf.numberOfChannels > 1 ? buf.getChannelData(1) : L, sr = buf.sampleRate;
+  const n = Math.ceil(L.length / PEAK), lo = new Float32Array(n), mi = new Float32Array(n), hi = new Float32Array(n);
+  const a1 = 1 - Math.exp(-2 * Math.PI * 200 / sr), a2 = 1 - Math.exp(-2 * Math.PI * 2500 / sr);
+  let f1 = 0, f2 = 0;
+  for (let i = 0; i < n; i++) {
+    let l = 0, m = 0, h = 0;
+    for (let j = i * PEAK, e = Math.min(L.length, j + PEAK); j < e; j++) {
+      const x = (L[j] + R[j]) / 2; f1 += a1 * (x - f1); f2 += a2 * (x - f2);
+      const A = Math.abs(f1), B = Math.abs(f2 - f1), C = Math.abs(x - f2);
+      if (A > l) l = A; if (B > m) m = B; if (C > h) h = C;
+    }
+    lo[i] = l; mi[i] = m; hi[i] = h;
+  }
+  return { lo, mi, hi };
+}
+
+// ============ Tempo / SYNC ============
+const fold = b => S.tempo ? [b / 2, b, b * 2].reduce((x, y) => Math.abs(y - S.tempo) < Math.abs(x - S.tempo) ? y : x) : b;
+// Avec un morceau sélectionné : lui et tous ceux qui suivent changent de tempo (le suivant reste à son tempo) ; sinon tout le mix.
+function setTempo(v) {
+  v = Math.round(v * 100) / 100;
+  const c = selClip(), cur = curTempo();
+  if (!(v >= 60 && v <= 200) || v === cur) { showTempo(); return; }
+  if (S.tempo) pushUndo();
+  const wasPlaying = U.playing; stop();
+  const pb = beatAt(U.pos), s = sorted(), from = c ? s.indexOf(c) : 0, d = v - (cur || v);
+  S.clips.forEach(o => o.tempo = ct(o));
+  s.slice(from).forEach(o => o.tempo = Math.round((o.tempo + d) * 100) / 100);
+  if (!from) S.tempo = s.length ? s[0].tempo : v;
+  U.pos = Math.max(0, secAt(pb));
+  Object.values(S.tracks).forEach(t => t.bpm = fold(t.detected));
+  const loads = loadAll();
+  changed();
+  loads.then(kickAll).then(() => wasPlaying && !U.playing && play());   // la lecture reprend dès que tout est recalé
+}
+const showTempo = () => { $('tempo').value = curTempo() ?? ''; };
+$('tempo').onchange = e => setTempo(+e.target.value);
+$('tDown').onclick = () => curTempo() && setTempo(curTempo() - 0.5);
+$('tUp').onclick = () => curTempo() && setTempo(curTempo() + 0.5);
+let taps = [], tapT;
+$('tap').onclick = () => {
+  const now = performance.now();
+  taps = taps.filter(t => now - t < 3000); taps.push(now);
+  if (taps.length >= 2) {
+    const bpm = 60000 * (taps.length - 1) / (taps.at(-1) - taps[0]);
+    $('tempo').value = bpm.toFixed(1);
+    clearTimeout(tapT); tapT = setTimeout(() => setTempo(+bpm.toFixed(1)), 1500);   // appliqué quand on arrête de taper
+  }
+};
+$('sync').onclick = () => {
+  const c = selClip(); const t = c && S.tracks[c.trackId];
+  if (!t) return alert('Tous les morceaux du mix sont déjà calés sur le même tempo.\nSélectionne un morceau dans la timeline puis SYNC : ce morceau et les suivants prendront son tempo d\'origine (le tempo glisse pendant la transition).');
+  setTempo(t.detected);
+};
+
+// ============ Bibliothèque ============
+async function refreshLib() {
+  LIB = await (await fetch('/api/library')).json();
+  // Énergie 1-10 : rang du volume et des attaques sur toute la bibliothèque
+  const rank = k => { const s = [...LIB].sort((a, b) => a[k] - b[k]); return t => s.indexOf(t) / Math.max(1, s.length - 1); };
+  const r1 = rank('rms_db'), r2 = rank('punch');
+  LIB.forEach(t => {
+    t.energy = Math.max(1, Math.round((r1(t) + r2(t)) / 2 * 9 + 1));
+    const m = t.name.match(/^(.*?) - (.*)$/); t.artist = m ? m[1] : ''; t.title = m ? m[2] : t.name;
+  });
+  renderLib();
+}
+function refTrack() {   // référence pour la compatibilité : morceau sélectionné, sinon le dernier du mix
+  const c = selClip() || sorted().at(-1), t = c && S.tracks[c.trackId];
+  return t && { ...t, camelot:camOf(t) };
+}
+const near = (t, ref) => Math.abs(fold(t.bpm) / (S.tempo || ref.bpm) - 1) < 0.06;
+function libRows() {
+  const q = $('search').value.trim().toLowerCase();
+  let list = LIB.filter(t => !q || t.name.toLowerCase().includes(q));
+  if (U.libTab === 'key' && U.keys.size) list = list.filter(t => [...U.keys].some(k => U.compat ? compatible(k, t.camelot) : k === t.camelot));
+  if (U.libTab === 'folder' && U.folder) list = list.filter(t => t.folder === U.folder);
+  if (U.libTab === 'suggest') {
+    const ref = refTrack(); if (!ref) return [];
+    const refE = LIB.find(x => x.id === ref.id)?.energy ?? 5;
+    const score = t => camelotDist(ref.camelot, t.camelot) * 2 + Math.abs(fold(t.bpm) / (S.tempo || ref.bpm) - 1) * 40 + Math.abs(t.energy - refE) * 0.3;
+    return list.filter(t => t.id !== ref.id && compatible(ref.camelot, t.camelot) && near(t, ref)).sort((a, b) => score(a) - score(b));
+  }
+  const k = U.sort, dir = U.up ? 1 : -1;
+  const val = t => k === 'bpm' ? fold(t.bpm) : k === 'camelot' ? parseInt(t.camelot) * 2 + t.camelot.endsWith('B') : k === 'name' ? t.name.toLowerCase() : t[k];
+  return list.sort((a, b) => (val(a) > val(b) ? 1 : val(a) < val(b) ? -1 : 0) * dir);
+}
+function renderLib() {
+  const used = new Set(S.clips.map(c => c.trackId)), ref = refTrack(), rows = libRows();
+  $('dropHint').hidden = LIB.length > 0;
+  $('libCount').textContent = LIB.length ? `${rows.length} / ${LIB.length} morceaux` : '';
+  document.querySelectorAll('th[data-sort]').forEach(th => { th.classList.toggle('s', th.dataset.sort === U.sort && U.libTab !== 'suggest'); th.classList.toggle('up', !U.up); });
+  $('libT').innerHTML = rows.map(t => {
+    const far = S.tempo && Math.abs(fold(t.bpm) / S.tempo - 1) > 0.06;
+    const match = ref && ref.id !== t.id && compatible(ref.camelot, t.camelot);
+    return `<tr class="trk ${used.has(t.id) ? 'used' : ''}" draggable="true" data-id="${t.id}">
+      <td class="title" title="${esc(t.name)}"><button class="pre ${preview.id === t.id ? 'on' : ''}" data-pre="${t.id}" title="Pré-écoute">${preview.id === t.id ? '❚❚' : '▶'}</button> <b>${esc(t.title)}</b> <span>${esc(t.artist)}</span></td>
+      <td class="num">${fold(t.bpm).toFixed(2)}${far ? '<span class="warnTxt" title="Tempo éloigné du mix : il sera fortement étiré">⚠</span>' : ''}</td>
+      <td><span class="key ${match ? 'match' : ''}" style="background:${keyColor(t.camelot)}" title="${t.key}${match ? ' · compatible avec ' + esc(ref.name) : ''}">${t.camelot}</span></td>
+      <td><span class="energy" title="Énergie ${t.energy}/10">${Array.from({ length:10 }, (_, i) => `<i class="${i < t.energy ? 'f' : ''}"></i>`).join('')}</span></td>
+      <td class="num">${fmtTime(t.duration)}</td>
+      <td style="color:var(--dim)">${esc(t.folder || '')}</td>
+      <td class="act"><button data-add="${t.id}" title="Ajouter à la fin du mix">+ Mix</button><button data-del="${t.id}" title="Retirer de la bibliothèque">×</button></td></tr>`;
+  }).join('') || (LIB.length ? `<tr><td colspan="7" class="note" style="padding:14px">${U.libTab === 'suggest' ? (ref ? 'Aucun morceau compatible (tonalité voisine et tempo à ±6 %).' : 'Ajoute un morceau au mix (ou sélectionne-en un) pour voir ce qui s\'enchaîne bien.') : 'Aucun morceau ne correspond.'}</td></tr>` : '');
+  renderSide();
+}
+function renderSide() {
+  const side = $('libSide'), ref = refTrack();
+  if (U.libTab === 'key') {
+    const count = {}; LIB.forEach(t => count[t.camelot] = (count[t.camelot] || 0) + 1);
+    side.innerHTML = `<div class="side-title">Roue des tonalités</div>${wheelSVG(count, ref)}
+      <label class="row note" style="margin-top:8px"><input type="checkbox" id="compat" ${U.compat ? 'checked' : ''}> Inclure les tonalités compatibles</label>
+      <div class="row"><button id="keyClear">Tout afficher</button>${ref ? `<button id="keyRef">Compatibles avec ${esc(ref.camelot)}</button>` : ''}</div>
+      <div class="note">Clique une ou plusieurs cases. Compatible = même chiffre (A↔B) ou chiffre voisin.</div>`;
+  } else if (U.libTab === 'folder') {
+    const folders = {}; LIB.forEach(t => folders[t.folder] = (folders[t.folder] || 0) + 1);
+    side.innerHTML = `<div class="side-title">Dossiers</div>
+      <button class="folder ${!U.folder ? 'on' : ''}" data-folder="">Tous <small>${LIB.length}</small></button>` +
+      Object.entries(folders).sort().map(([f, n]) => `<div class="frow"><button class="folder ${U.folder === f ? 'on' : ''}" data-folder="${esc(f)}">📁 ${esc(f)} <small>${n}</small></button><button class="delf" data-delfolder="${esc(f)}" title="Supprimer ce dossier et ses morceaux">×</button></div>`).join('') +
+      `<div class="note">Le dossier d'où vient chaque morceau. Pour en ajouter un : « + Dossier » ou glisse-le dans la bibliothèque.</div>`;
+  } else if (U.libTab === 'suggest') {
+    side.innerHTML = `<div class="side-title">Suggestions</div><div class="note">${ref ? `Ce qui s'enchaîne bien après<br><b style="color:var(--txt)">${esc(ref.name)}</b><br><span class="key" style="background:${keyColor(ref.camelot)}">${ref.camelot}</span> ${ref.detected.toFixed(2)} BPM<br><br>Tonalité compatible, tempo à ±6 %, énergie proche. Les meilleurs en premier.` : 'Ajoute ou sélectionne un morceau du mix.'}</div>`;
+  } else side.innerHTML = '';
+}
+function wheelSVG(count, ref) {
+  const cx = 115, cy = 115, seg = (r0, r1, i) => {
+    const a0 = (i * 30 - 105) * Math.PI / 180, a1 = ((i + 1) * 30 - 105) * Math.PI / 180;
+    const p = (r, a) => `${cx + r * Math.cos(a)},${cy + r * Math.sin(a)}`;
+    return `M${p(r0, a0)} L${p(r1, a0)} A${r1},${r1} 0 0 1 ${p(r1, a1)} L${p(r0, a1)} A${r0},${r0} 0 0 0 ${p(r0, a0)}Z`;
+  };
+  let out = `<svg id="wheel" viewBox="0 0 230 230" width="230" height="230">`;
+  for (let i = 0; i < 12; i++) for (const [ring, r0, r1] of [['B', 76, 112], ['A', 38, 76]]) {
+    const cam = `${i + 1}${ring}`, on = U.keys.has(cam), n = count[cam] || 0;
+    const mid = (i * 30 - 90) * Math.PI / 180, rm = (r0 + r1) / 2, tx = cx + rm * Math.cos(mid), ty = cy + rm * Math.sin(mid);
+    out += `<path d="${seg(r0, r1, i)}" data-key="${cam}" fill="${keyColor(cam)}" opacity="${on ? 1 : U.keys.size ? .25 : n ? .85 : .3}" ${ref?.camelot === cam ? 'stroke="#fff" stroke-width="3"' : ''}><title>${cam} · ${n} morceau(x)</title></path>
+      <text x="${tx}" y="${ty + (n ? -1 : 4)}" text-anchor="middle" fill="#0c0c11">${cam}</text>
+      ${n ? `<text x="${tx}" y="${ty + 10}" text-anchor="middle" fill="#0c0c11" style="font-size:9px;font-weight:500">${n}</text>` : ''}`;
+  }
+  return out + `<circle cx="${cx}" cy="${cy}" r="36" fill="#14141c"/><text x="${cx}" y="${cy + 4}" text-anchor="middle" fill="#8b8ba1">${U.keys.size ? [...U.keys].join(' ') : 'Toutes'}</text></svg>`;
+}
+$('libTabs').onclick = e => { const t = e.target.closest('button')?.dataset.tab; if (!t) return; U.libTab = t; document.querySelectorAll('#libTabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === t)); renderLib(); };
+$('search').oninput = renderLib;
+document.querySelector('thead').onclick = e => { const k = e.target.dataset.sort; if (!k) return; U.up = U.sort === k ? !U.up : true; U.sort = k; renderLib(); };
+$('libSide').addEventListener('click', e => {
+  const key = e.target.closest('path')?.dataset.key;
+  if (key) { U.keys.has(key) ? U.keys.delete(key) : U.keys.add(key); renderLib(); }
+  if (e.target.id === 'keyClear') { U.keys.clear(); renderLib(); }
+  if (e.target.id === 'keyRef') { U.keys = new Set([refTrack().camelot]); U.compat = true; renderLib(); }
+  const df = e.target.closest('[data-delfolder]')?.dataset.delfolder;
+  if (df != null) return deleteTracks(LIB.filter(t => t.folder === df).map(t => t.id), `le dossier « ${df} » et ses morceaux`);
+  const f = e.target.closest('[data-folder]'); if (f) { U.folder = f.dataset.folder || null; renderLib(); }
+});
+// Suppression de la bibliothèque (un morceau, un dossier ou toute la liste affichée) ; s'ils sont dans le mix, ils en sortent aussi
+async function deleteTracks(ids, what) {
+  const inMix = S.clips.filter(c => ids.includes(c.trackId)).length;
+  if (!ids.length || !confirm(`Supprimer ${what} de la bibliothèque ?${inMix ? `\n${inMix} morceau(x) du mix seront aussi retirés de la timeline.` : ''}\nLes fichiers d'origine sur ton ordinateur ne sont pas touchés.`)) return;
+  S.clips = S.clips.filter(c => !ids.includes(c.trackId)); ids.forEach(id => delete S.tracks[id]);
+  if (inMix) { U.sel = null; U.undo = []; }   // ⌘Z ne peut pas faire revenir un morceau supprimé
+  for (const id of ids) await fetch(`/api/delete?id=${id}`, { method:'POST' });
+  U.folder = null; await refreshLib(); changed();
+}
+$('delAll').onclick = () => { const r = libRows(); deleteTracks(r.map(t => t.id), r.length === LIB.length ? `les ${r.length} morceaux` : `les ${r.length} morceaux affichés`); };
+$('libSide').addEventListener('change', e => { if (e.target.id === 'compat') { U.compat = e.target.checked; renderLib(); } });
+const preview = { audio:new Audio(), id:null };
+preview.audio.onended = () => { preview.id = null; renderLib(); };
+function hushPreview() { if (preview.id) { preview.audio.pause(); preview.id = null; renderLib(); } }
+$('libT').addEventListener('click', async e => {
+  const add = e.target.dataset.add, del = e.target.dataset.del, pre = e.target.dataset.pre;
+  if (pre) {   // pré-écoute : démarre au tiers du morceau (là où ça joue vraiment)
+    if (preview.id === pre) { preview.audio.pause(); preview.id = null; }
+    else { if (U.playing) stop(); chan.postMessage('play');   // la pré-écoute coupe le mix (ici et dans les autres onglets)
+      preview.audio.src = window.webFileURL ? await window.webFileURL(pre) : `/api/file?id=${pre}`; preview.audio.currentTime = 0; preview.id = pre;
+      preview.audio.onloadedmetadata = () => { preview.audio.currentTime = preview.audio.duration / 3; };
+      preview.audio.play(); }
+    return renderLib();
+  }
+  if (add) addToMix(LIB.find(t => t.id === add));
+  if (del) {
+    deleteTracks([del], `« ${LIB.find(x => x.id === del).name} »`);
+  }
+});
+$('libT').addEventListener('dblclick', e => { const tr = e.target.closest('tr.trk'); if (tr && !e.target.closest('button')) addToMix(LIB.find(t => t.id === tr.dataset.id)); });
+$('libT').addEventListener('dragstart', e => { const tr = e.target.closest('tr.trk'); if (tr) { e.dataTransfer.setData('text/mix-track', tr.dataset.id); e.dataTransfer.effectAllowed = 'copy'; } });
+
+// Import (fichiers ou dossiers, glissés ou avec les boutons)
+async function importFiles(items) {
+  const known = new Set(LIB.map(t => t.name));
+  const files = items.filter(({ f }) => /\.(mp3|wav|aiff?|flac|m4a|ogg|opus)$/i.test(f.name) && !known.has(f.name.replace(/\.[^.]+$/, '')));
+  if (!files.length) return items.length && alert('Ces morceaux sont déjà dans la bibliothèque (ou ne sont pas des fichiers audio).');
+  modal(`Import de ${files.length} morceau(x)`, 'Analyse du tempo, du premier temps et de la tonalité…');
+  for (let i = 0; i < files.length; i++) {
+    const { f, folder } = files[i];
+    modalProgress(i / files.length, `${i + 1}/${files.length} · ${f.name}`);
+    const r = await fetch(`/api/import?name=${encodeURIComponent(f.name)}&folder=${encodeURIComponent(folder || '')}&near=${S.tempo || ''}`, { method:'POST', body:f });
+    if (!r.ok) alert(`${f.name} : ${(await r.json().catch(() => ({}))).error || 'erreur'}`);
+  }
+  await refreshLib();
+  await fixOutliers();
+  closeModal();
+}
+// Erreurs classiques de détection (x3/4, x5/4 sur les rythmes syncopés) : un morceau loin du tempo
+// dominant de la bibliothèque (ou du mix) est ré-analysé près de ce tempo, et gardé seulement si ça colle.
+async function fixOutliers() {
+  const bpms = LIB.map(t => t.bpm).sort((a, b) => a - b);
+  const ref = S.tempo || bpms[Math.floor(bpms.length / 2)];
+  const off = LIB.filter(t => Math.abs([t.bpm / 2, t.bpm, t.bpm * 2].reduce((x, y) => Math.abs(y - ref) < Math.abs(x - ref) ? y : x) / ref - 1) > 0.06);
+  for (const [i, t] of off.entries()) {
+    modalProgress(i / off.length, `Vérification du tempo : ${t.name}`);
+    await fetch(`/api/reanalyze?id=${t.id}&near=${ref}`, { method:'POST' });
+  }
+  if (off.length) await refreshLib();
+}
+$('impFiles').onclick = () => $('inFiles').click();
+$('impDir').onclick = () => $('inDir').click();
+$('inFiles').onchange = e => { importFiles([...e.target.files].map(f => ({ f }))); e.target.value = ''; };
+$('inDir').onchange = e => { importFiles([...e.target.files].map(f => ({ f, folder:f.webkitRelativePath.split('/').slice(-2, -1)[0] }))); e.target.value = ''; };
+const isTrackDrag = e => [...e.dataTransfer.types].includes('text/mix-track');
+document.body.addEventListener('dragover', e => { e.preventDefault(); if (!isTrackDrag(e)) document.body.classList.add('dragover'); });
+document.body.addEventListener('dragleave', e => { if (!e.relatedTarget) document.body.classList.remove('dragover'); });
+document.body.addEventListener('drop', async e => {
+  e.preventDefault(); document.body.classList.remove('dragover');
+  if (isTrackDrag(e)) return;
+  const out = [];
+  const walk = en => new Promise(res => {
+    if (en.isFile) en.file(f => { out.push({ f, folder:en.fullPath.split('/').slice(-2, -1)[0] }); res(); });
+    else { const r = en.createReader(), all = [];
+      const read = () => r.readEntries(async ents => { if (!ents.length) { await Promise.all(all.map(walk)); res(); } else { all.push(...ents); read(); } }); read(); }
+  });
+  await Promise.all([...e.dataTransfer.items].map(i => i.webkitGetAsEntry?.()).filter(Boolean).map(walk));
+  importFiles(out.length ? out : [...e.dataTransfer.files].map(f => ({ f })));
+});
+
+let nextId = 1;
+function addToMix(info, { at = null } = {}) {
+  pushUndo();
+  if (!S.tempo) { S.tempo = Math.round(info.bpm * 100) / 100; $('tempo').value = S.tempo; }
+  if (!S.tracks[info.id]) S.tracks[info.id] = { id:info.id, name:info.name, bpm:fold(info.bpm), detected:info.bpm, first_beat:info.first_beat,
+    duration:info.duration, key:info.key, camelot:info.camelot, rms_db:info.rms_db, punch:info.punch, nudge:0, phrase:info.phrase || 0 };
+  const t = S.tracks[info.id];
+  const prev = [...S.clips].sort((a, b) => clipEnd(a) - clipEnd(b)).at(-1);   // celui qui finit en dernier
+  const T = prev ? ct(prev) : S.tempo, [, last] = trackBeats(t, T);   // il prend le tempo du précédent
+  const ph = t.phrase || 0;   // le morceau commence sur un début de phrase (ses changements tombent sur ceux du précédent)
+  const len = Math.max(PHRASE, Math.floor((last - ph) / PHRASE) * PHRASE);
+  const auto = prev ? Math.max(0, Math.round((clipEnd(prev) - MIXIN) / PHRASE) * PHRASE) : 0;
+  const c = { id:nextId++, trackId:t.id, in:ph, len, start:Number.isFinite(at) ? at : auto, tempo:T, auto:blankAuto(), base:blankBase() };
+  S.clips.push(c);
+  U.sel = c.id; U.inspTab = 'trans';
+  if (at === null) U.scrollX = Math.max(-2, c.start - 16);
+  changed();
+  kickAlign(c).then(changed, () => {});
+}
+
+// ============ Kick sur les temps ============
+const KICK_PEAK = 25;   // ms : le pic des attaques graves (40-90 Hz) tombe ~25 ms après le début audible du kick
+// Recalage automatique d'un morceau : 1) s'il glisse (kick relevé tous les 32 temps sur tout le morceau, droite robuste
+// qui ignore les breaks), son BPM est corrigé et il est rendu de nouveau ; 2) son kick le plus fort est posé sur la grille
+// (quel que soit l'ancien décalage) ; 3) affiné kick sur kick avec le morceau d'avant, là où on les entend ensemble.
+// follow : les morceaux suivants bougent du même écart (ils restent calés sur lui). kickAll les recale un par un, dans l'ordre.
+async function kickAlign(c, follow = true) {
+  const t = S.tracks[c?.trackId], before = t?.nudge;
+  for (let i = 0; await kickAlign1(c, i < 2); i++) await loadClip(c);   // au plus 2 corrections de BPM
+  const d = t ? t.nudge - before : 0;
+  if (follow && d) new Set(following(c).map(([o]) => S.tracks[o.trackId])).forEach(to => { if (to !== t) to.nudge += d; });
+}
+const xcorr = (a, b) => {   // décalage (en cases) de b par rapport à a, à ±¼ de temps (jamais le contretemps)
+  const n = a.length, q = n >> 2; let L = 0, best = -1;
+  for (let l = -q; l <= q; l++) { let x = 0; for (let i = 0; i < n; i++) x += a[i] * b[(i + l + n) % n]; if (x > best) { best = x; L = l; } }
+  return L;
+};
+const theilSen = (x, y) => {   // pente médiane de toutes les paires de points : les points aberrants (breaks sans kick) ne comptent pas
+  const s = []; for (let i = 0; i < x.length; i++) for (let j = i + 1; j < x.length; j++) s.push((y[j] - y[i]) / (x[j] - x[i]));
+  s.sort((u, v) => u - v); return s[s.length >> 1];
+};
+async function kickAlign1(c, fixBpm) {   // true si le BPM du morceau a été corrigé (il faut le rendre de nouveau)
+  if (!c || !S.tempo || S.clips.some(o => o !== c && o.trackId === c.trackId)) return;   // morceau utilisé deux fois : pas touché
+  const t = S.tracks[c.trackId], man = t.man || 0, bs = 60000 / ct(c);   // man : décalage choisi à la main (boutons de l'onglet Morceau), gardé
+  const s0 = Math.ceil(c.start), s1 = Math.floor(clipEnd(c));
+  if (s1 - s0 < 16) { c.kickMs = null; return; }
+  if (fixBpm && s1 - s0 >= 128) {
+    const P = await kickProf(c, s0, s1, 32);
+    if (P && P.length >= 4) {
+      const n = P[0].length, ref = P[0].map((_, i) => P.reduce((x, p) => x + p[i], 0));
+      const slope = theilSen(P.map((_, i) => 16 + 32 * i), P.map(p => xcorr(ref, p) * bs / n));   // ms par temps
+      if (Math.abs(slope * (s1 - s0)) >= 8) { t.bpm = Math.round(t.bpm * bs / (bs + slope) * 1000) / 1000; return true; }
+    }
+  }
+  const s = sorted(), a = s[s.indexOf(c) - 1], ae = a ? Math.min(clipEnd(a), s0 + 256) : 0, withPrev = a && a.start <= s0 && ae - s0 >= 16;
+  const [p0, pa, pb] = (await Promise.all([kickProf(c, s0, Math.min(s1, s0 + 256)),
+    withPrev ? kickProf(a, s0, ae) : null, withPrev ? kickProf(c, s0, ae) : null])).map(p => p?.[0]);
+  if (!p0) { c.kickMs = null; return; }
+  const n = p0.length, cell = bs / n, wrap = v => ((v / bs + 1.5) % 1 - 0.5) * bs;
+  const pg = pb || p0, pk = pg.indexOf(Math.max(...pg));   // le kick : l'attaque grave la plus forte du temps (là où on l'entend avec le précédent)
+  let ms = wrap(pk * cell - (KICK_PEAK - man));
+  if (pa && pb) {
+    const sh = Math.round(ms / cell), pb2 = pb.map((_, i) => pb[((i + sh) % n + n) % n]);   // c déjà posé sur la grille
+    ms += xcorr(pa, pb2) * cell + man - (S.tracks[a.trackId].man || 0);
+  }
+  t.nudge += ms; c.kickMs = Math.round(ms);
+}
+async function kickProf(c, m0, m1, seg = 0) {   // attaques du kick sur [m0, m1] du mix, repliées sur ses temps (par groupes de seg temps)
+  const beats = [];
+  for (let m = m0; m <= m1; m++) { const f = fileT(c, tlToTb(c, m)); if (f >= 0) beats.push(f.toFixed(4)); }   // avant le début du fichier : ignoré
+  if (beats.length < 9) return null;
+  return (await (await fetch(`/api/kick?${audioQ(c)}&seg=${seg}&beats=${beats.join(',')}`)).json()).profs;
+}
+async function kickAll() {   // un seul recalage à la fois (deux en même temps appliqueraient deux fois les corrections)
+  if (kickAll.busy) return void (kickAll.again = true);
+  kickAll.busy = true;
+  try { do { kickAll.again = false; for (const c of sorted()) await kickAlign(c, false).catch(() => {}); } while (kickAll.again); }
+  finally { kickAll.busy = false; }
+  changed();
+}
+
+// ============ Transitions ============
+function setPts(c, p, list) {   // list = [[temps du mix, valeur]] ; remplace les points existants sur cette plage
+  const tbs = list.map(([x, v]) => ({ b:tlToTb(c, x), v:clamp(v, PARAMS[p].min, PARAMS[p].max) }));
+  const lo = Math.min(...tbs.map(q => q.b)) - 1e-6, hi = Math.max(...tbs.map(q => q.b)) + 1e-6;
+  c.auto[p] = [...c.auto[p].filter(q => q.b < lo || q.b > hi), ...tbs].sort((a, b) => a.b - b.b);
+}
+function bassy(c) {   // temps du mix -> le morceau a ses basses (kick + basse, < 150 Hz, analyse) à ce temps ?
+  const L = LIB.find(x => x.id === c.trackId)?.bass; if (!L) return null;
+  const med = [...L].sort((x, y) => x - y)[L.length >> 1];
+  return m => (L[Math.floor(tlToTb(c, m))] ?? -99) > med - 8;
+}
+function swapBeat(a, b, o0, o1) {   // [temps, net] : quand les basses de l'entrant arrivent, sinon quand celles du sortant s'arrêtent, sinon au milieu
+  const ia = bassy(a), ib = bassy(b), mid = Math.round((o0 + o1) / 8) * 4;
+  if (!ia || !ib) return [mid, false];
+  const bar = (f, m, want) => [0, 1, 2, 3].every(k => f(m + k) === want);
+  let m = o0; while (m < o1 && !bar(ib, m, true)) m += 4;
+  if (m > o0) return [m, true];   // intro sans basses : l'échange tombe pile sur l'arrivée de ses basses
+  m = o0; while (m < o1 && !bar(ia, m, false)) m += 4;
+  if (m < o1) return [m, true];   // le sortant n'a plus de basses : l'entrant prend le relais à ce moment
+  return [mid, false];
+}
+function bassSwap(a, b, o0, o1) {   // un seul morceau dans les basses à la fois ; renvoie le temps de l'échange
+  const [m, sharp] = swapBeat(a, b, o0, o1), w0 = sharp ? 0.25 : 2, w1 = sharp ? 0 : 2;   // net : sur la barre de mesure ; sinon en douceur sur une mesure
+  setPts(a, 'low', [[o0, 0], [m - w0, 0], [m + w1, -26]]);
+  setPts(b, 'low', [[o0, -26], [m - w0, -26], [m + w1, 0]]);
+  return m;
+}
+function applyFx(a, kind, b = nextOf(a)) {
+  const e = clipEnd(a);
+  const ov = b && b.start < e ? [b.start, e] : null;     // zone où les deux morceaux jouent ensemble
+  if (ov && (kind === 'fade' || kind === 'filter'))   // on repart de zéro sur la zone commune (anciens fondus)
+    for (const c of [a, b]) for (const p of ['vol', 'high', 'low', 'filter']) { const t0 = tlToTb(c, ov[0]) - 1e-6, t1 = tlToTb(c, ov[1]) + 1e-6; c.auto[p] = c.auto[p].filter(q => q.b < t0 || q.b > t1); }
+  if (kind === 'fade') {
+    const [o0, o1] = ov || [e - 16, e], mid = Math.round((o0 + o1) / 8) * 4;
+    if (b && ov) {
+      const m = bassSwap(a, b, o0, o1), f0 = Math.max(o0, Math.min(m, o1 - 16));   // le sortant s'efface sur au moins 16 temps
+      setPts(a, 'vol', [[o0, 0], [f0, 0], [o1, -24]]); setPts(a, 'high', [[o0, 0], [f0, 0], [o1, -26]]);
+      setPts(b, 'vol', [[o0, -30], [Math.max(o0 + 4, Math.min(m, mid)), 0]]);
+    } else { setPts(a, 'vol', [[o0, 0], [o1, -60]]); setPts(a, 'high', [[mid, 0], [o1, -26]]); }
+  }
+  if (kind === 'filter') {
+    const [o0, o1] = ov || [e - 16, e];
+    setPts(a, 'filter', [[o0, 0], [o1, 0.75]]);
+    if (b && ov) {
+      setPts(b, 'filter', [[o0, -0.8], [o1, 0]]);
+      bassSwap(a, b, o0, o1);
+    }
+  }
+  if (kind === 'echo') {      // le dernier temps part dans l'écho, puis coupe : l'écho continue après la fin
+    setPts(a, 'delay', [[e - 1.02, 0], [e - 1, 0.9]]);
+    setPts(a, 'vol', [[e - 1, 0]]);
+  }
+  if (kind === 'reverb') {    // la dernière mesure monte dans la réverbe, filtre qui s'ouvre vers l'aigu
+    setPts(a, 'reverb', [[e - 4, 0], [e, 1]]);
+    setPts(a, 'filter', [[e - 4, 0], [e, 0.35]]);
+  }
+  if (kind === 'cut' && b) a.len = Math.max(1, b.start - a.start);
+}
+
+// ============ Dessin ============
+let ROW = 92; const TITLE = 18;   // ROW s'adapte : les pistes remplissent la hauteur disponible
+function lanes() {   // pistes A/B comme DJ.Studio : chaque morceau va sur la première piste libre (dans l'ordre d'ajout)
+  const L = [], m = new Map();
+  for (const c of S.clips) {
+    let i = 0;
+    while ((L[i] || []).some(o => o.start < clipEnd(c) && c.start < clipEnd(o))) i++;
+    (L[i] = L[i] || []).push(c); m.set(c, i);
+  }
+  return { n:Math.max(2, L.length), of:c => m.get(c) };
+}
+const hue = id => parseInt(id.slice(0, 6), 16) % 360;
+function setupCanvas(cv, h) {
+  const r = devicePixelRatio || 1, w = cv.clientWidth;
+  if (cv.width !== w * r || cv.height !== h * r) { cv.width = w * r; cv.height = h * r; cv.style.height = h + 'px'; }
+  const g = cv.getContext('2d'); g.setTransform(r, 0, 0, r, 0, 0); return [g, w];
+}
+function gridStep() { let s = 1; while (s * U.pxb < 7) s *= 2; return s; }
+function draw() { draw.raf ||= requestAnimationFrame(() => { draw.raf = 0; drawNow(); }); }   // un dessin par image, jamais annulé
+function drawNow() {
+  const R = S.clips, LN = lanes();
+  $('empty').hidden = S.clips.length > 0;
+  const [r, W] = setupCanvas($('rulerC'), 30);
+  r.clearRect(0, 0, W, 30); r.font = '11px -apple-system, sans-serif';
+  let labelEvery = 4; while (labelEvery * U.pxb < 60) labelEvery *= 2;
+  const b0 = Math.floor(U.scrollX / 4) * 4, b1 = U.scrollX + W / U.pxb;
+  for (let b = b0; b <= b1; b += 4) {
+    const x = (b - U.scrollX) * U.pxb;
+    r.fillStyle = b % labelEvery ? '#33334a' : '#8b8ba1';
+    r.fillRect(x, b % labelEvery ? 22 : 12, 1, 30);
+    if (b % labelEvery === 0) { r.fillStyle = '#c9c9da'; r.fillText(`${b / 4 + 1}`, x + 3, 12); r.fillStyle = '#6c6c84'; r.fillText(fmtTime(secAt(b)), x + 3, 26); }
+    if (b % PHRASE === 0 && labelEvery <= PHRASE) { r.fillStyle = '#7c5cff'; r.fillRect(x, 0, 2, 6); }
+    if (U.pxb >= 10) for (let k = 1; k < 4; k++) {   // temps 2, 3, 4 de la mesure quand on zoome
+      r.fillStyle = '#4a4a62'; r.fillRect(x + k * U.pxb, 25, 1, 5);
+      if (U.pxb >= 22) { r.fillStyle = '#55556d'; r.fillText(k + 1, x + k * U.pxb + 2, 26); }
+    }
+  }
+  ROW = clamp(Math.floor(($('scroller').clientHeight - 10) / LN.n), 56, 120);
+  const H = Math.max(LN.n * ROW + 10, $('scroller').clientHeight);
+  const [g] = setupCanvas($('rowsC'), H);
+  g.clearRect(0, 0, W, H);
+  for (let i = 1; i < LN.n; i += 2) { g.fillStyle = '#ffffff05'; g.fillRect(0, i * ROW, W, ROW); }
+  const step = gridStep();
+  for (let b = Math.floor(U.scrollX / step) * step; b <= b1; b += step) {
+    const x = Math.round((b - U.scrollX) * U.pxb) + 0.5;
+    g.fillStyle = b % 32 === 0 ? '#3a3a52' : b % 4 === 0 ? '#25253a' : '#1b1b28';
+    g.fillRect(x, 0, 1, H);
+  }
+  // phrases de 8 mesures : bande plus claire une phrase sur deux
+  for (let b = Math.floor(U.scrollX / PHRASE) * PHRASE; b <= b1; b += PHRASE) {
+    const x = (b - U.scrollX) * U.pxb;
+    if ((b / PHRASE) % 2) { g.fillStyle = '#ffffff04'; g.fillRect(x, 0, PHRASE * U.pxb, H); }
+    g.fillStyle = '#4b4b6b'; g.fillRect(Math.round(x), 0, 1, H);
+  }
+  R.forEach(c => drawClip(g, c, LN.of(c), W));
+  // repères d'entrée (vert) et de fin (rouge) de chaque morceau, sur toute la hauteur et sur la règle
+  for (const c of R) for (const [b, col] of [[c.start, '#22d3a6'], [clipEnd(c), '#ff5c7a']]) {
+    const x = Math.round((b - U.scrollX) * U.pxb) + 0.5;
+    if (x < -2 || x > W + 2) continue;
+    g.strokeStyle = col + '88'; g.setLineDash([3, 4]); g.beginPath(); g.moveTo(x, 0); g.lineTo(x, H); g.stroke(); g.setLineDash([]);
+    r.fillStyle = col; r.beginPath();
+    col === '#22d3a6' ? (r.moveTo(x, 30), r.lineTo(x + 7, 30), r.lineTo(x, 22)) : (r.moveTo(x, 30), r.lineTo(x - 7, 30), r.lineTo(x, 22));
+    r.fill();
+  }
+  for (const c of R) {   // zones de transition (là où deux morceaux se chevauchent) sur la règle
+    const n = nextOf(c);
+    if (n && n.start < clipEnd(c)) { r.fillStyle = '#7c5cff66'; r.fillRect((n.start - U.scrollX) * U.pxb, 0, (clipEnd(c) - n.start) * U.pxb, 5); }
+  }
+  const px = (beatAt(U.pos) - U.scrollX) * U.pxb;
+  for (const [cx, hh] of [[r, 30], [g, H]]) { cx.fillStyle = '#22d3a6'; cx.fillRect(px, 0, 1.5, hh); }
+  // barre de défilement : tout le mix + une fenêtre de marge
+  const hs = $('hscroll'), total = (Math.max(64, ...R.map(clipEnd)) + 10) * U.pxb + W;
+  hs.firstChild.style.width = total + 'px';
+  hs.expect = Math.round((U.scrollX + 2) * U.pxb);
+  if (Math.abs(hs.scrollLeft - hs.expect) > 1) hs.scrollLeft = hs.expect;
+  drawDecks(LN);
+  const pb = beatAt(U.pos);
+  $('clock').textContent = `${fmtTime(U.pos)}.${Math.floor(U.pos * 10 % 10)} · ${Math.floor(pb / 4) + 1}.${Math.floor(pb % 4) + 1}`;
+}
+function drawClip(g, c, i, W) {
+  const t = S.tracks[c.trackId], b = BUF[c.id];
+  const x0 = (c.start - U.scrollX) * U.pxb, x1 = (clipEnd(c) - U.scrollX) * U.pxb;
+  if (x1 < 0 || x0 > W) return;
+  const y = i * ROW + 5, h = ROW - 10, h2 = hue(t.id), sel = c.id === U.sel;
+  g.fillStyle = `hsla(${h2},60%,50%,.13)`; g.fillRect(x0, y, x1 - x0, h);
+  g.fillStyle = `hsla(${h2},60%,50%,.38)`; g.fillRect(x0, y, x1 - x0, TITLE);
+  const by = y + TITLE, bh = h - TITLE, mid = by + bh / 2;
+  if (b?.peaks) {
+    g.fillStyle = `hsla(${h2},70%,65%,.75)`;
+    const sr = b.buffer.sampleRate;
+    for (let x = Math.max(0, Math.floor(x0)); x < Math.min(W, x1); x++) {
+      const tl = U.scrollX + x / U.pxb;
+      const a0 = fileT(c, tlToTb(c, tl)) * sr / PEAK, a1 = fileT(c, tlToTb(c, tl + 1 / U.pxb)) * sr / PEAK;
+      let m = 0; for (let k = Math.max(0, Math.floor(a0)); k < Math.min(b.peaks.length, Math.ceil(a1)); k++) if (b.peaks[k] > m) m = b.peaks[k];
+      const hh = Math.min(1, m) * bh * 0.46; g.fillRect(x, mid - hh, 1, hh * 2 || 0.5);
+    }
+  } else { g.fillStyle = '#8b8ba1'; g.font = '12px sans-serif'; g.fillText(b?.error ? `Erreur : ${b.error}` : 'Calage au tempo du mix…', Math.max(x0, 0) + 8, mid + 4); }
+  // titre : tonalité, nom, BPM d'origine et étirement
+  g.save(); g.beginPath(); g.rect(x0, y, x1 - x0, TITLE); g.clip();
+  let tx = Math.max(x0, 0) + 5;
+  const cam = camOf(t);
+  g.fillStyle = keyColor(cam); g.fillRect(tx, y + 3, 26, 12);
+  g.fillStyle = '#0c0c11'; g.font = '700 10px -apple-system, sans-serif'; g.fillText(cam, tx + 3, y + 13); tx += 32;
+  g.fillStyle = '#fff'; g.font = '600 11px -apple-system, sans-serif'; g.fillText(t.name, tx, y + 13);
+  tx += g.measureText(t.name).width + 8;
+  const T = ct(c), pct = (T / t.bpm - 1) * 100;
+  g.font = '11px -apple-system, sans-serif'; g.fillStyle = Math.abs(pct) > 6 ? '#ffb547' : '#ffffffaa';
+  g.fillText(`${t.bpm.toFixed(2)} BPM${Math.abs(pct) < 0.05 ? '' : ` → ${T} (${pct > 0 ? '+' : ''}${pct.toFixed(1)} %)`}`, tx, y + 13);
+  g.restore();
+  const P = PARAMS[U.param];
+  if (P) {   // automation affichée
+    const vy = v => by + bh - 3 - (v - P.min) / (P.max - P.min) * (bh - 6);
+    g.strokeStyle = '#ff3b3b'; g.lineWidth = c.auto[U.param].length ? 2 : 1.2; g.setLineDash(c.auto[U.param].length ? [] : [4, 4]);   // ligne rouge comme Ableton
+    g.beginPath();
+    const xs = Math.max(0, Math.floor(x0));
+    for (let x = xs; x <= Math.min(W, x1); x += 2) {
+      const v = autoValue(c, U.param, tlToTb(c, U.scrollX + x / U.pxb));
+      x === xs ? g.moveTo(x, vy(v)) : g.lineTo(x, vy(v));
+    }
+    g.stroke(); g.setLineDash([]);
+    g.fillStyle = '#ff3b3b'; g.strokeStyle = '#fff'; g.lineWidth = 1.2;
+    for (const p of c.auto[U.param]) {
+      const px = (c.start + p.b - c.in - U.scrollX) * U.pxb;
+      if (px >= x0 - 1 && px <= x1 + 1) { g.beginPath(); g.arc(px, vy(p.v), 4, 0, 7); g.fill(); g.stroke(); }
+    }
+  } else {   // rappel discret des effets posés
+    const tags = ['reverb', 'delay', 'filter'].filter(k => c.auto[k].length).map(k => PARAMS[k].label);
+    if (tags.length) { g.fillStyle = '#ffb547'; g.font = '10px -apple-system, sans-serif'; g.fillText(tags.join(' · '), Math.max(x0, 0) + 6, y + h - 5); }
+  }
+  g.strokeStyle = sel ? '#fff' : `hsla(${h2},60%,60%,.6)`; g.lineWidth = sel ? 2 : 1;
+  g.strokeRect(x0 + .5, y + .5, x1 - x0 - 1, h - 1);
+}
+
+// ============ Souris ============
+const rowsC = $('rowsC');
+function hit(e) {
+  const r = rowsC.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+  const LN = lanes(), i = Math.floor(y / ROW), beat = U.scrollX + x / U.pxb;
+  const here = S.clips.filter(o => LN.of(o) === i && beat >= o.start - 4 / U.pxb && beat <= clipEnd(o) + 4 / U.pxb);
+  const c = here.find(o => o.id === U.sel) || here.at(-1);
+  if (!c) return { x, y, beat };
+  const x0 = (c.start - U.scrollX) * U.pxb, x1 = (clipEnd(c) - U.scrollX) * U.pxb, cy = i * ROW + 5;
+  if (x < x0 - 4 || x > x1 + 4 || y < cy || y > cy + ROW - 10) return { x, y, beat };
+  const zone = x - x0 < 7 ? 'left' : x1 - x < 7 ? 'right' : y - cy < TITLE ? 'title' : 'body';
+  return { x, y, beat, c, i, zone, by:cy + TITLE, bh:ROW - 10 - TITLE };
+}
+const snapB = (b, e, s = U.snap) => e.shiftKey || !s ? b : Math.round(b / s) * s;
+function pointAt(h) {
+  const p = U.param, P = PARAMS[p]; if (!P) return -1;
+  const vy = v => h.by + h.bh - 3 - (v - P.min) / (P.max - P.min) * (h.bh - 6);
+  return h.c.auto[p].findIndex(p => Math.hypot((h.c.start + p.b - h.c.in - U.scrollX) * U.pxb - h.x, vy(p.v) - h.y) < 7);
+}
+function onLine(h) {   // la souris est sur la ligne rouge (à 6 px près) : clic = nouveau point, comme dans Ableton
+  const P = PARAMS[U.param]; if (!P || !h.c) return false;
+  const v = autoValue(h.c, U.param, tlToTb(h.c, h.beat));
+  return Math.abs(h.by + h.bh - 3 - (v - P.min) / (P.max - P.min) * (h.bh - 6) - h.y) < 6;
+}
+const yToV = (h, y) => { const P = PARAMS[U.param]; return clamp(P.min + (h.by + h.bh - 3 - y) / (h.bh - 6) * (P.max - P.min), P.min, P.max); };
+
+rowsC.addEventListener('mousedown', e => {
+  const h = hit(e);
+  if (!h.c) { U.sel = null; renderInsp(); renderLib(); draw(); return; }
+  if (U.sel !== h.c.id) { U.sel = h.c.id; renderInsp(); renderLib(); }
+  const c = h.c, o = { start:c.start, in:c.in, len:c.len };
+  if (e.button === 2) return;   // clic droit : géré par contextmenu (supprimer un point)
+  if (pointAt(h) >= 0) h.zone = 'body';   // un point posé au bord du morceau reste attrapable
+  let move;
+  // bords : on rogne temps par temps (Maj ou aimant « libre » : au choix) ; le début du fichier est arrondi au temps entier
+  // suivant, sinon tout le morceau glisse d'une fraction de temps et ses kicks tombent entre les traits
+  const edge = (b, m) => snapB(b, m, U.snap ? 1 : 0);
+  if (h.zone === 'left') move = m => { const s = clamp(edge(o.start + m.beat - h.beat, m), o.start - (o.in - Math.ceil(trackBeats(S.tracks[c.trackId], ct(c))[0] - 1e-6)), o.start + o.len - 1); c.in = o.in + s - o.start; c.len = o.len - (s - o.start); c.start = s; };
+  else if (h.zone === 'right') move = m => { c.len = clamp(edge(o.start + o.len + m.beat - h.beat, m) - c.start, 1, trackBeats(S.tracks[c.trackId], ct(c))[1] - c.in); };
+  else if (h.zone === 'title' || !PARAMS[U.param] || (pointAt(h) < 0 && !onLine(h))) {   // hors de la ligne rouge : on déplace le morceau ; les suivants bougent avec lui (Alt : lui seul)
+    const next = following(c);
+    move = m => { c.start = Math.max(0, snapB(o.start + m.beat - h.beat, m)); shiftAll(next, m.altKey ? 0 : c.start - o.start); };
+  }
+  else {
+    const idx = pointAt(h), ab = U.snap ? 0.25 : 0;
+    pushUndo();
+    let pt = c.auto[U.param][idx];
+    if (!pt) { pt = { b:snapB(tlToTb(c, h.beat), e, ab), v:yToV(h, h.y) }; c.auto[U.param].push(pt); c.auto[U.param].sort((a, b) => a.b - b.b); }
+    draw();
+    const show = () => $('hint').textContent = `${PARAMS[U.param].label} : ${PARAMS[U.param].fmt(pt.v)}`;
+    show();
+    return drag(m => { pt.b = snapB(tlToTb(c, m.beat), m, ab); pt.v = yToV(h, m.y); c.auto[U.param].sort((a, b) => a.b - b.b); show(); }, paramsUI);
+  }
+  pushUndo();
+  drag(move, () => kickAlign(c).then(changed, () => {}));   // après un déplacement ou un rognage : kick recalé sur les temps
+});
+// morceaux qui commencent après c, avec leur position de départ ; shiftAll les décale tous du même nombre de temps
+const following = c => S.clips.filter(o => o !== c && o.start > c.start).map(o => [o, o.start]);
+const shiftAll = (list, d) => list.forEach(([o, s]) => o.start = s + d);
+function drag(move, onUp) {
+  const mm = m => { move({ ...hit(m), shiftKey:m.shiftKey, altKey:m.altKey }); draw(); };
+  const up = () => {
+    removeEventListener('mousemove', mm); removeEventListener('mouseup', up);
+    onUp?.(); changed();
+  };
+  addEventListener('mousemove', mm); addEventListener('mouseup', up);
+}
+const delPoint = e => {   // double-clic ou clic droit sur un point : on l'enlève (y compris le premier et le dernier)
+  const h = hit(e); if (!h.c) return;
+  const i = pointAt(h); if (i < 0) return;
+  e.preventDefault(); pushUndo(); h.c.auto[U.param].splice(i, 1); changed();
+};
+rowsC.addEventListener('dblclick', delPoint);
+rowsC.addEventListener('contextmenu', delPoint);
+rowsC.addEventListener('mousemove', e => {
+  if (e.buttons) return;
+  const h = hit(e);
+  rowsC.style.cursor = !h.c ? 'default' : pointAt(h) >= 0 ? 'move' : h.zone === 'left' || h.zone === 'right' ? 'ew-resize' : h.zone === 'title' || !PARAMS[U.param] || !onLine(h) ? 'grab' : 'crosshair';
+});
+// Glisser un morceau de la bibliothèque sur la timeline
+$('scroller').addEventListener('dragover', e => { if (isTrackDrag(e)) { e.preventDefault(); $('scroller').classList.add('drop'); } });
+$('scroller').addEventListener('dragleave', () => $('scroller').classList.remove('drop'));
+$('scroller').addEventListener('drop', e => {
+  $('scroller').classList.remove('drop');
+  if (!isTrackDrag(e)) return;
+  e.preventDefault(); e.stopPropagation();
+  const info = LIB.find(t => t.id === e.dataTransfer.getData('text/mix-track'));
+  addToMix(info, S.clips.length ? { at:Math.max(0, snapB(hit(e).beat, e)) } : {});
+});
+$('rulerC').addEventListener('mousedown', e => {
+  const seek = m => { const r = $('rulerC').getBoundingClientRect(); U.pos = Math.max(0, secAt(U.scrollX + (m.clientX - r.left) / U.pxb)); if (U.playing) play(U.pos); draw(); };
+  seek(e);
+  const up = () => { removeEventListener('mousemove', seek); removeEventListener('mouseup', up); };
+  addEventListener('mousemove', seek); addEventListener('mouseup', up);
+});
+function zoom(f, cx = $('rowsC').clientWidth / 2) {
+  const b = U.scrollX + cx / U.pxb;
+  U.pxb = clamp(U.pxb * f, 0.25, 120); U.scrollX = b - cx / U.pxb; draw();
+}
+for (const el of [rowsC, $('rulerC'), $('hscroll')]) el.addEventListener('wheel', e => {
+  const sc = $('scroller'), noVert = sc.scrollHeight <= sc.clientHeight + 1;   // pistes toutes visibles : la molette fait défiler le mix
+  if (e.ctrlKey || e.metaKey) { e.preventDefault(); zoom(Math.exp(-e.deltaY * 0.01), e.offsetX); }
+  else if (Math.abs(e.deltaX) > Math.abs(e.deltaY) || e.shiftKey || noVert) { e.preventDefault(); U.scrollX = Math.max(-2, U.scrollX + (e.deltaX || e.deltaY) / U.pxb); U.userScroll = performance.now(); draw(); }
+}, { passive:false });
+$('hscroll').onscroll = e => {
+  const hs = e.target; if (Math.abs(hs.scrollLeft - hs.expect) <= 1) return;   // défilement posé par le dessin
+  U.scrollX = hs.scrollLeft / U.pxb - 2; U.userScroll = performance.now(); draw();
+};
+$('zoomIn').onclick = () => zoom(1.5); $('zoomOut').onclick = () => zoom(1 / 1.5);
+function zoomFit() { U.pxb = clamp($('rowsC').clientWidth / (Math.max(64, ...S.clips.map(clipEnd)) + 8), 0.3, 40); U.scrollX = -2; draw(); }
+$('zoomFit').onclick = zoomFit;
+addEventListener('resize', draw);
+$('split').onmousedown = e => {
+  const y0 = e.clientY, h0 = $('libPane').getBoundingClientRect().height;
+  const mm = m => { document.documentElement.style.setProperty('--libH', `${clamp(h0 + m.clientY - y0, 120, innerHeight - 260)}px`); draw(); };
+  const up = () => { removeEventListener('mousemove', mm); removeEventListener('mouseup', up); };
+  addEventListener('mousemove', mm); addEventListener('mouseup', up);
+};
+
+// ============ Platines : formes d'onde qui défilent, infos des morceaux, table de mixage ============
+const DECKCOL = ['#3aa0ff', '#ff9a2e'], DECKH = 120;
+function drawDecks(LN) {
+  if ($('decks').hidden) return;
+  const [g, W] = setupCanvas($('deckC'), DECKH), pb = beatAt(U.pos), ppb = W / 32, rh = DECKH / 2;   // 8 mesures visibles, lecture au centre
+  g.fillStyle = '#07070a'; g.fillRect(0, 0, W, DECKH);
+  for (let d = 0; d < 2; d++) {
+    const y0 = d * rh, mid = y0 + rh / 2, s = rh * 0.46;
+    for (const c of S.clips) {
+      if (deckOf(c, LN) !== d) continue;
+      const b = BUF[c.id], xa = W / 2 + (c.start - pb) * ppb, xb = W / 2 + (clipEnd(c) - pb) * ppb;
+      if (xb < 0 || xa > W) continue;
+      g.fillStyle = '#ffffff07'; g.fillRect(xa, y0 + 2, xb - xa, rh - 4);
+      if (!b?.bands) continue;
+      const B = b.bands, sr = b.buffer.sampleRate;
+      for (let x = Math.max(0, Math.floor(xa)); x < Math.min(W, xb); x++) {
+        const tl = pb + (x - W / 2) / ppb;
+        const a0 = Math.floor(fileT(c, tlToTb(c, tl)) * sr / PEAK), a1 = Math.max(a0 + 1, Math.ceil(fileT(c, tlToTb(c, tl + 1 / ppb)) * sr / PEAK));
+        let l = 0, m = 0, h = 0;
+        for (let k = Math.max(0, a0); k < Math.min(B.lo.length, a1); k++) { if (B.lo[k] > l) l = B.lo[k]; if (B.mi[k] > m) m = B.mi[k]; if (B.hi[k] > h) h = B.hi[k]; }
+        const past = x < W / 2;
+        for (const [v, col] of [[l, past ? '#1b3f80' : '#2a6cff'], [m, past ? '#7a5523' : '#ffae3d'], [h, past ? '#777' : '#f4f4f4']]) {
+          const hh = Math.min(1, v * 1.2) * s; g.fillStyle = col; g.fillRect(x, mid - hh, 1, hh * 2 || 0.5);
+        }
+      }
+    }
+    for (let k = Math.ceil(pb - 16); k <= pb + 16; k++) {   // grille : un trait par temps, rouge sur chaque mesure
+      const x = Math.round(W / 2 + (k - pb) * ppb);
+      g.fillStyle = k % 4 ? '#ffffff30' : '#ff4b4baa'; g.fillRect(x, y0, 1, k % 4 ? 7 : rh);
+      if (k % 4 === 0) g.fillRect(x, y0 + rh - 7, 1, 7);
+    }
+    g.fillStyle = DECKCOL[d]; g.font = '800 13px ui-monospace, Menlo, monospace'; g.fillText('AB'[d], 6, y0 + 16);
+    g.fillStyle = '#22222e'; g.fillRect(0, y0 + rh - 1, W, 1);
+  }
+  g.fillStyle = '#fff'; g.fillRect(W / 2 - 1, 0, 2, DECKH);
+  for (let d = 0; d < 2; d++) deckInfo(d, pb, LN);
+}
+function deckInfo(d, pb, LN) {   // morceau en lecture sur la voie, sinon le prochain qui y arrive
+  const el = $('deck' + d), on = deckClip(d, pb, LN);
+  const c = on || S.clips.filter(o => deckOf(o, LN) === d && o.start > pb).sort((a, b) => a.start - b.start)[0];
+  if (el.cid !== (c?.id ?? null) || el.ct !== (c && ct(c))) {
+    el.cid = c?.id ?? null; el.ct = c && ct(c);
+    const t = c && S.tracks[c.trackId];
+    el.querySelector('.dt').textContent = t ? t.name : '—';
+    const k = el.querySelector('.key'); k.textContent = t ? camOf(t) : ''; k.style.background = t ? keyColor(camOf(t)) : 'none';
+    el.querySelector('.dbpm').textContent = c ? ct(c).toFixed(1) : '—';
+  }
+  el.querySelector('.dtime').textContent = on ? `${fmtTime(U.pos - secAt(on.start))} / -${fmtTime(secAt(clipEnd(on)) - U.pos)}` : '';
+  const st = el.querySelector('.dst');
+  st.className = 'dst ' + (on ? 'air' : 'nxt'); st.textContent = on ? '● en lecture' : c ? `entre dans ${fmtTime(secAt(c.start) - U.pos)}` : '';
+  const cv = el.querySelector('canvas'), b = c && BUF[c.id];   // vue d'ensemble du morceau, partie jouée en couleur
+  const [g, W] = setupCanvas(cv, 28); g.clearRect(0, 0, W, 28); g.fillStyle = '#0f0f15'; g.fillRect(0, 0, W, 28);
+  if (!b?.peaks) return;
+  const dur = b.buffer.duration, pos = on ? fileT(c, tlToTb(c, pb)) : fileT(c, c.in), per = b.peaks.length / W;
+  const u0 = fileT(c, c.in) / dur * W, u1 = fileT(c, c.in + c.len) / dur * W;
+  g.fillStyle = '#ffffff10'; g.fillRect(u0, 0, u1 - u0, 28);   // partie utilisée dans le mix
+  for (let x = 0; x < W; x++) {
+    let m = 0; for (let k = Math.floor(x * per); k < Math.floor((x + 1) * per); k++) if (b.peaks[k] > m) m = b.peaks[k];
+    g.fillStyle = x < pos / dur * W ? DECKCOL[d] : '#5a5a70'; const hh = Math.min(1, m) * 13; g.fillRect(x, 14 - hh, 1, hh * 2 || 0.5);
+  }
+  g.fillStyle = '#fff'; g.fillRect(pos / dur * W, 0, 2, 28);
+}
+$('deckC').addEventListener('mousedown', e => {   // clic sur les formes d'onde : on avance / recule (le centre = lecture)
+  const r = $('deckC').getBoundingClientRect(), d = (e.clientX - r.left - r.width / 2) / (r.width / 32);
+  U.pos = Math.max(0, secAt(Math.round(beatAt(U.pos) + d))); if (U.playing) play(U.pos); draw();
+});
+$('decksBtn').onclick = e => { $('decks').hidden = !$('decks').hidden; e.target.classList.toggle('on', !$('decks').hidden); draw(); };
+
+// table de mixage
+const knobR = k => { const P = PARAMS[KNOB[k][1]]; return [P.min, P.max, P.def]; };
+function knobU(k, v) { const [lo, hi, df] = knobR(k); return df === lo ? (v - lo) / (hi - lo) * 2 - 1 : v < df ? -(df - v) / (df - lo) : (v - df) / (hi - df); }   // -1..1, zéro au centre
+function knobV(k, u) { const [lo, hi, df] = knobR(k); return df === lo ? lo + (u + 1) / 2 * (hi - lo) : u < 0 ? df + u * (df - lo) : df + u * (hi - df); }
+const chanHTML = d => `<div class="knobs">${Object.keys(KNOB).map(k => `<div class="knob" data-d="${d}" data-k="${k}"><i></i>${KNOB[k][0]}</div>`).join('')}</div>
+  <input type="range" class="fader" data-d="${d}" min="0" max="1" step="0.01" value="1" title="Volume de la voie ${'AB'[d]}">`;
+$('mixer').innerHTML = `<div class="chan" style="--dc:${DECKCOL[0]}">${chanHTML(0)}</div>
+  <div class="mixmid">
+    <button id="rec" title="Pendant la lecture, tes gestes sur la table s'écrivent en lignes rouges sur les morceaux (comme l'automation d'Ableton)">● REC</button>
+    <input type="range" id="xf" min="-1" max="1" step="0.01" value="0" title="Crossfader (double-clic : centre)">
+    <div class="xfl"><span>A</span><span>CROSSFADER</span><span>B</span></div>
+    <button id="mixReset" title="Tous les boutons à zéro">Remettre à zéro</button>
+  </div>
+  <div class="chan rev" style="--dc:${DECKCOL[1]}">${chanHTML(1)}</div>`;
+function mixUI() {
+  document.querySelectorAll('#mixer .knob').forEach(el => {
+    const d = +el.dataset.d, k = el.dataset.k, v = MIX.d[d][k];
+    el.style.setProperty('--a', knobU(k, v) * 135); el.classList.toggle('mod', Math.abs(v - neutral()[k]) > 1e-3);
+    el.title = `${PARAMS[KNOB[k][1]].label} ${'AB'[d]} : ${PARAMS[KNOB[k][1]].fmt(v)} (glisser haut / bas · double-clic : zéro)`;
+  });
+  document.querySelectorAll('#mixer .fader').forEach(el => el.value = MIX.d[+el.dataset.d].fader);
+  $('xf').value = MIX.xf; $('rec').classList.toggle('on', !!U.rec);
+}
+function setMix(d, k, v) {
+  if (k === 'xf') MIX.xf = v; else MIX.d[d][k] = v;
+  applyLive(); mixUI();
+  if (!U.rec || !U.playing) return;
+  if (k === 'xf' || k === 'fader') for (const dd of k === 'xf' ? [0, 1] : [d]) recWrite(dd, 'vol', gainDb(deckGain(dd)));
+  else recWrite(d, KNOB[k][1], v);
+}
+// REC : écrit le geste sur la ligne du morceau en lecture (remplace ce qu'il y avait entre deux gestes, comme Ableton)
+const REC = new Map();   // morceau + réglage -> { pt : dernier point écrit, from : temps du point d'avant }
+function recWrite(d, p, v) {
+  const beat = beatAt(livePos()), c = deckClip(d, beat); if (!c) return;
+  const tb = tlToTb(c, beat), key = c.id + p; let st = REC.get(key);
+  if (!REC.size) pushUndo();   // une prise = un ⌘Z
+  if (!st) { const a = { b:tb - 0.05, v:autoValue(c, p, tb - 0.05) }; c.auto[p].push(a); st = { pt:a, from:a.b }; REC.set(key, st); }   // la ligne garde sa valeur jusqu'au geste
+  c.auto[p] = c.auto[p].filter(q => q.b <= st.pt.b || q.b > tb + 1e-6);
+  if (tb - st.from < 0.125 && st.pt.b > st.from) { st.pt.b = tb; st.pt.v = v; }   // gestes rapprochés : on déplace le dernier point
+  else { st.from = st.pt.b; st.pt = { b:tb, v }; c.auto[p].push(st.pt); }
+  c.auto[p].sort((a, b) => a.b - b.b); draw();
+}
+function recEnd() {   // fin de prise : les boutons reviennent à zéro, les lignes rouges rejouent le geste
+  if (!REC.size) return;
+  REC.clear(); MIX.d = [neutral(), neutral()]; MIX.xf = 0; mixUI(); applyLive();
+  save(); renderInsp(); restartIfPlaying();
+}
+$('mixer').addEventListener('mousedown', e => {
+  const el = e.target.closest('.knob'); if (!el) return;
+  e.preventDefault(); const d = +el.dataset.d, k = el.dataset.k, y0 = e.clientY, u0 = knobU(k, MIX.d[d][k]);
+  const mm = m => setMix(d, k, knobV(k, clamp(u0 + (y0 - m.clientY) / 110, -1, 1)));
+  const up = () => { removeEventListener('mousemove', mm); removeEventListener('mouseup', up); };
+  addEventListener('mousemove', mm); addEventListener('mouseup', up);
+});
+$('mixer').addEventListener('dblclick', e => {
+  const el = e.target.closest('.knob'); if (el) setMix(+el.dataset.d, el.dataset.k, neutral()[el.dataset.k]);
+  else if (e.target.id === 'xf') setMix(null, 'xf', 0);
+});
+$('mixer').addEventListener('input', e => {
+  if (e.target.classList.contains('fader')) setMix(+e.target.dataset.d, 'fader', +e.target.value);
+  else if (e.target.id === 'xf') setMix(null, 'xf', +e.target.value);
+});
+$('rec').onclick = () => { U.rec = !U.rec; if (!U.rec) recEnd(); mixUI(); };
+$('mixReset').onclick = () => { MIX.d = [neutral(), neutral()]; MIX.xf = 0; applyLive(); mixUI(); };
+mixUI();
+
+// ============ Barre d'outils ============
+$('play').onclick = () => U.playing ? stop() : play();
+$('toStart').onclick = () => { U.pos = 0; U.scrollX = -2; U.playing ? play(0) : draw(); };
+$('snap').onchange = e => U.snap = +e.target.value;
+$('click').onclick = e => { U.click = !U.click; e.target.classList.toggle('on', U.click); restartIfPlaying(); };
+$('undo').onclick = undo;
+$('params').innerHTML = ['none', ...PKEYS].map(k => `<button data-p="${k}">${k === 'none' ? 'Masquer' : PARAMS[k].label}</button>`).join('');
+$('params').onclick = e => { const p = e.target.dataset.p; if (p) { U.param = p; paramsUI(); draw(); } };
+function paramsUI() {
+  document.querySelectorAll('#params button').forEach(b => b.classList.toggle('on', b.dataset.p === U.param));
+  $('hint').textContent = PARAMS[U.param] ? `Ligne rouge ${PARAMS[U.param].label} : clic sur la ligne = point · glisser un point = le déplacer · double-clic / clic droit = supprimer · ailleurs = déplacer le morceau` : 'Glisse un morceau pour le déplacer, tire ses bords pour le couper · Maj = sans aimant';
+}
+addEventListener('keydown', e => {
+  if (e.target.matches('input, select')) return;
+  if (e.code === 'Space') { e.preventDefault(); $('play').click(); }
+  else if ((e.metaKey || e.ctrlKey) && e.key === 'z') { e.preventDefault(); undo(); }
+  else if ((e.key === 'Delete' || e.key === 'Backspace') && selClip()) { pushUndo(); S.clips = S.clips.filter(c => c.id !== U.sel); U.sel = null; changed(); }
+  else if (e.key >= '0' && e.key <= '7') { U.param = ['none', ...PKEYS][+e.key]; paramsUI(); draw(); }
+  else if (e.key === 'Home') $('toStart').click();
+  else if (e.key === 'f' || e.key === 'F') zoomFit();
+  else if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && selClip()) {   // ← → : d'une phrase (Maj : d'un temps)
+    e.preventDefault(); pushUndo(); const c = selClip(), s = c.start, next = following(c);
+    c.start = Math.max(0, c.start + (e.key === 'ArrowLeft' ? -1 : 1) * (e.shiftKey ? 1 : PHRASE));
+    shiftAll(next, e.altKey ? 0 : c.start - s); changed();   // les suivants suivent (Alt : lui seul)
+  }
+});
+
+$('autoMix').onclick = async () => {
+  if (S.clips.length < 2) return alert('Ajoute au moins 2 morceaux au mix.');
+  pushUndo();
+  const ids = await (await fetch('/api/order', { method:'POST', body:JSON.stringify(Object.values(S.tracks).filter(t => S.clips.some(c => c.trackId === t.id))) })).json();
+  const order = ids.flatMap(id => S.clips.filter(c => c.trackId === id));
+  let pos = 0;
+  order.forEach((c, i) => { c.auto = blankAuto(); c.len = Math.max(PHRASE, Math.floor(c.len / PHRASE) * PHRASE); c.start = i ? Math.max(0, pos - MIXIN) : 0; pos = clipEnd(c); });
+  S.clips = order;
+  changed();
+  await kickAll();
+};
+$('fillHour').onclick = async () => {   // le mix d'1 h en un clic : à partir de la liste affichée (filtre, dossier, tonalité)
+  const used = new Set(S.clips.map(c => c.trackId)), mixSec = () => secAt(Math.max(0, ...S.clips.map(clipEnd)));
+  const ok = t => !used.has(t.id) && (!S.tempo || Math.abs(fold(t.bpm) / S.tempo - 1) <= 0.06);
+  if (!libRows().some(ok)) return alert('Aucun morceau disponible dans la liste affichée (tempo à ±6 % du mix).');
+  for (const t of libRows()) if (ok(t)) { if (S.tempo && mixSec() >= 3600) break; addToMix(t); used.add(t.id); }
+  if (S.clips.length > 1) await $('autoMix').onclick();
+  zoomFit();
+  if (mixSec() < 3600) alert(`Mix de ${Math.round(mixSec() / 60)} min : il n'y a pas assez de morceaux au même tempo pour atteindre 1 h.`);
+};
+
+// ============ Panneau de droite ============
+$('inspTabs').onclick = e => { const t = e.target.closest('button')?.dataset.tab; if (t) { U.inspTab = t; renderInsp(); } };
+function renderInsp() {
+  showTempo();
+  document.querySelectorAll('#inspTabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === U.inspTab));
+  const c = selClip(), el = $('insp');
+  if (U.inspTab === 'fx') {
+    el.innerHTML = `
+      <h2>Écho</h2>
+      <div class="row"><select id="fxDiv" style="flex:1">${[[0.25,'1/16'],[0.5,'1/8'],[0.75,'3/16 (pointé)'],[1,'1/4 (un temps)'],[1.5,'3/8'],[2,'1/2']].map(([v, l]) => `<option value="${v}" ${S.fx.delayDiv == v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+      <div class="slider"><span>Répétitions</span><input type="range" id="fxFb" min="0" max="0.85" step="0.01" value="${S.fx.delayFb}"><span>${Math.round(S.fx.delayFb * 100)} %</span></div>
+      <h2>Réverbe</h2>
+      <div class="slider"><span>Durée</span><input type="range" id="fxRv" min="1" max="10" step="0.5" value="${S.fx.reverbSec}"><span>${S.fx.reverbSec} s</span></div>
+      <h2>Sortie</h2>
+      <div class="slider"><span>Volume</span><input type="range" id="fxMa" min="-12" max="6" step="0.5" value="${S.fx.master}"><span>${S.fx.master} dB</span></div>
+      <div class="note">Ces réglages valent pour tout le mix. L'écho est toujours calé sur le tempo.</div>
+      <h2>Raccourcis</h2>
+      <div class="note">Espace = lecture · ⌘Z = annuler · Suppr = retirer le morceau · ⌘ + molette = zoom · 0 à 7 = outil de dessin · Maj = sans aimant.</div>`;
+    const fx = (id, k, unit) => $(id).oninput = e => { S.fx[k] = +e.target.value; const s = e.target.nextElementSibling; if (s && unit) s.textContent = unit(S.fx[k]); restartIfPlaying(); save(); };
+    fx('fxDiv', 'delayDiv'); fx('fxFb', 'delayFb', v => `${Math.round(v * 100)} %`); fx('fxRv', 'reverbSec', v => `${v} s`); fx('fxMa', 'master', v => `${v} dB`);
+    return;
+  }
+  if (!c) { el.innerHTML = `<div class="note" style="margin-top:14px">Clique un morceau dans la timeline pour régler sa transition.<br><br>Pas encore de morceau ? Double-clic sur un titre de la bibliothèque, ou fais-le glisser en bas.</div>`; return; }
+  const t = S.tracks[c.trackId];
+  if (U.inspTab === 'trans') {
+    const n = nextOf(c), nt = n && S.tracks[n.trackId];
+    const ov = n ? clipEnd(c) - n.start : 0;
+    el.innerHTML = `
+      <div class="pair">
+        <div><span class="key" style="background:${keyColor(camOf(t))}">${camOf(t)}</span><b title="${esc(t.name)}">${esc(t.name)}</b></div>
+        <span style="font-size:18px">→</span>
+        <div>${nt ? `<span class="key" style="background:${keyColor(camOf(nt))}">${camOf(nt)}</span><b title="${esc(nt.name)}">${esc(nt.name)}</b>` : '<b style="color:var(--dim)">fin du mix</b>'}</div>
+      </div>
+      ${nt ? `<div class="note ${compatible(camOf(t), camOf(nt)) ? 'ok' : 'warn'}">${compatible(camOf(t), camOf(nt)) ? '✓ Tonalités compatibles' : '⚠ Tonalités éloignées : transpose un des deux (onglet Morceau) ou préfère une coupe / un écho'}</div>
+      <div class="note">${ov > 0 ? `Les deux jouent ensemble pendant ${ov % 4 ? `${ov} temps` : `${ov / 4} mesure(s)`}.` : ov === 0 ? 'Le suivant démarre pile à la fin.' : `Silence de ${-ov} temps entre les deux.`}</div>` : ''}
+      ${n ? `<h2>1 · Le suivant entre</h2>
+      <div class="grid3">
+        <button data-in-next="64">16 mesures avant</button><button data-in-next="32">8 mesures avant</button><button data-in-next="16">4 mesures avant</button>
+        <button data-in-next="4">sur la dernière mesure</button><button data-in-next="1">sur le dernier temps</button><button data-in-next="0">à la fin</button>
+      </div>` : ''}
+      <h2>${n ? '2 · Comment ça passe' : 'Sortie du mix'}</h2>
+      <div class="grid2">
+        <button class="fxcard" data-fx="fade"><b>Fondu</b><span>volume croisé + échange des basses</span></button>
+        <button class="fxcard" data-fx="filter"><b>Filtre</b><span>l'un se ferme, l'autre s'ouvre</span></button>
+        <button class="fxcard" data-fx="echo"><b>Écho</b><span>le dernier temps répète</span></button>
+        <button class="fxcard" data-fx="reverb"><b>Réverbe</b><span>la dernière mesure s'envole</span></button>
+        ${n ? '<button class="fxcard" data-fx="cut"><b>Coupe</b><span>coupe nette pile à l\'entrée</span></button>' : ''}
+        <button class="fxcard" data-fx="clear"><b>Effacer</b><span>enlève les effets de ce morceau</span></button>
+      </div>
+      <div class="note">Tu peux combiner (écho + réverbe…) et tout retoucher avec « Dessiner » en bas.</div>
+      <h2>Calage</h2><div class="row"><button data-kick="1">🥁 Caler le kick sur les temps</button><button data-realign="1">↺ Calage d'origine</button></div>${c.kickMs != null ? `<div class="note">🥁 Kick calé sur les temps (${c.kickMs > 0 ? '+' : ''}${c.kickMs} ms).</div>` : ''}`;
+  } else {
+    el.innerHTML = `
+      <div class="insp-title">${esc(t.name)}</div>
+      <div class="sub">${t.key} · ${t.camelot} · ${t.detected.toFixed(2)} BPM d'origine · entre à ${fmtTime(secAt(c.start))} · joué à ${ct(c)} BPM</div>
+      <h2>Tempo et calage</h2>
+      <div class="row"><input type="number" id="tBpm" step="0.01" value="${t.bpm.toFixed(2)}" style="width:86px"> BPM <button data-bpm="0.5">÷2</button><button data-bpm="2">×2</button></div>
+      <div class="note">Les kicks ne tombent pas sur les traits ? Active <b>Clic</b> et décale (les suivants suivent, Alt : ce morceau seul) :</div>
+      <div class="grid3" style="margin-bottom:6px">
+        <button data-nudge="-10">◀ 10 ms</button><button data-nudge="-0.5b">◀ ½ temps</button><button data-in="-1">◀ 1 temps</button>
+        <button data-nudge="10">10 ms ▶</button><button data-nudge="0.5b">½ temps ▶</button><button data-in="1">1 temps ▶</button>
+      </div>
+      <div class="note">Décalage : ${t.nudge.toFixed(0)} ms</div>
+      <h2>Tonalité</h2>
+      <div class="row"><button data-semi="-1">− ½ ton</button>
+        <span class="key" style="background:${keyColor(camOf(t))}">${camOf(t)}</span> <span>${keyName(t)}</span>
+        <button data-semi="1">+ ½ ton</button></div>
+      <div class="note">Transpose sans changer le tempo, pour rendre deux morceaux compatibles.</div>
+      <h2>Commencer le morceau à</h2>
+      <div class="grid2">
+        <button data-from="0">Début</button><button data-from="32">+ 8 mesures</button>
+        <button data-from="64">+ 16 mesures</button><button data-from="128">+ 32 mesures</button>
+      </div>
+      <div class="note">Saute l'intro sans bouger le morceau sur le mix.</div>
+      <h2>Réglages du morceau</h2>
+      ${PKEYS.map(k => `<div class="slider"><span>${PARAMS[k].label}</span><input type="range" data-base="${k}" min="${PARAMS[k].min}" max="${PARAMS[k].max}" step="${PARAMS[k].max > 1 ? 0.5 : 0.01}" value="${c.base[k]}"><span>${PARAMS[k].fmt(c.base[k])}</span></div>`).join('')}
+      <div class="note">Valeurs quand il n'y a pas d'automation dessinée.</div>
+      <div class="row"><button id="rm">Retirer du mix</button></div>`;
+  }
+}
+$('insp').addEventListener('click', e => {
+  const btn = e.target.closest('button'), c = selClip(); if (!c || !btn) return;
+  const d = btn.dataset, t = S.tracks[c.trackId];
+  if (d.bpm) { pushUndo(); t.bpm = Math.round(t.bpm * +d.bpm * 1000) / 1000; t.nudge = t.man = 0; }
+  else if (d.nudge || d.in) {   // décale ce morceau et les suivants (Alt : ce morceau seul), pour qu'ils restent calés entre eux
+    pushUndo(); const list = [c, ...(e.altKey ? [] : following(c).map(([o]) => o))], seen = new Set();
+    list.forEach(o => {
+      if (d.in) { o.in -= +d.in; return; }
+      const to = S.tracks[o.trackId]; if (seen.has(to)) return; seen.add(to);
+      const ms = d.nudge.endsWith('b') ? parseFloat(d.nudge) * 60 / ct(o) * 1000 : +d.nudge; to.nudge += ms; to.man = (to.man || 0) + ms;
+    });
+  }
+  else if (d.semi) { pushUndo(); t.semi = clamp((t.semi || 0) + +d.semi, -6, 6); }
+  else if (d.from) {
+    pushUndo(); const end = clipEnd(c), max = trackBeats(t, ct(c))[1];
+    c.in = +d.from; c.len = Math.max(PHRASE, Math.min(end - c.start, Math.floor((max - c.in) / PHRASE) * PHRASE));
+  }
+  else if (d.inNext) { const n = nextOf(c), s = n.start, nx = following(n); pushUndo(); n.start = Math.max(0, clipEnd(c) - +d.inNext); shiftAll(nx, n.start - s); kickAlign(n).then(changed, () => {}); }
+  else if (d.kick) { pushUndo(); kickAlign(c).then(changed, () => {}); return; }
+  else if (d.realign) { pushUndo(); t.nudge = t.man = 0; }
+  else if (d.fx === 'clear') { pushUndo(); c.auto = blankAuto(); }
+  else if (d.fx) { pushUndo(); applyFx(c, d.fx); }
+  else if (btn.id === 'rm') { pushUndo(); S.clips = S.clips.filter(x => x !== c); U.sel = null; }
+  else return;
+  changed();
+});
+$('insp').addEventListener('input', e => {
+  const c = selClip(), k = e.target.dataset.base; if (!c || !k) return;
+  c.base[k] = +e.target.value; e.target.nextElementSibling.textContent = PARAMS[k].fmt(c.base[k]);
+  draw(); restartIfPlaying(); save();
+});
+$('insp').addEventListener('change', e => {
+  const c = selClip(); if (!c || e.target.id !== 'tBpm') return;
+  const v = +e.target.value; if (!(v > 40 && v < 250)) return;
+  pushUndo(); S.tracks[c.trackId].bpm = v; changed();
+});
+
+// ============ Projets ============
+let saveT;
+function save() {
+  clearTimeout(saveT);
+  try { localStorage.setItem('mixauto-last', S.name); } catch {}
+  saveT = setTimeout(() => fetch(`/api/project?name=${encodeURIComponent(S.name)}`, { method:'POST', body:JSON.stringify({ ...S, nextId }) }).then(listProjects), 800);
+}
+function changed() { loadAll(); renderInsp(); renderLib(); draw(); restartIfPlaying(); save(); }
+async function listProjects() {
+  const list = await (await fetch('/api/projects')).json();
+  $('projOpen').innerHTML = '<option value="">Ouvrir…</option>' + list.map(n => `<option>${esc(n)}</option>`).join('');
+}
+$('projOpen').onchange = async e => { if (!e.target.value) return; await openProject(e.target.value); e.target.value = ''; };
+async function openProject(name) {
+  stop(); const p = await (await fetch(`/api/project?name=${encodeURIComponent(name)}`)).json();
+  nextId = p.nextId || 1; delete p.nextId; S = { ...newProject(), ...p };
+  let end = 0;   // un morceau sans position valide est replacé à la suite du précédent
+  for (const c of S.clips) { if (!Number.isFinite(c.start)) c.start = Math.max(0, end - 32); if (!Number.isFinite(c.len)) c.len = 64; end = Math.max(end, clipEnd(c)); }
+  U.sel = null; U.undo = []; U.pos = 0; U.scrollX = -2;
+  $('projName').value = S.name;
+  for (const t of Object.values(S.tracks)) {   // la bibliothèque a été ré-analysée : on reprend BPM et premier temps
+    const l = LIB.find(x => x.id === t.id);
+    if (l && (l.bpm !== t.detected || l.first_beat !== t.first_beat)) {
+      Object.assign(t, { detected:l.bpm, bpm:fold(l.bpm), first_beat:l.first_beat, nudge:0, man:0 });
+    }
+  }
+  if ((S.grid || 0) < 3) Object.values(S.tracks).forEach(t => t.nudge = 0);   // anciens recalages automatiques : remis à 0
+  if ((S.grid || 0) < 4) for (const c of S.clips) {   // plus de fondu automatique : on enlève une fois les points de fin (volume, aigus, basses)
+    const n = nextOf(c), z = tlToTb(c, Math.min(clipEnd(c) - 16, n && n.start < clipEnd(c) ? n.start : Infinity)) - 1e-6;
+    for (const p of ['vol', 'high', 'low']) c.auto[p] = c.auto[p].filter(q => q.b < z);
+  }
+  if ((S.grid || 0) < 5) Object.values(S.tracks).forEach(t => t.man = 0);   // recalages à la main faits contre l'ancien calage (faux) : oubliés une fois
+  S.grid = 5;
+  for (const c of S.clips) {   // morceau rogné hors des temps (ancien bug du bord gauche) : ses temps reviennent sur ceux du mix
+    const f = c.start - c.in - Math.round(c.start - c.in);
+    if (Math.abs(f) > 1e-6) c.in += f;
+  }
+  loadAll().then(kickAll);   // à chaque ouverture : tous les kicks recalés sur les temps
+  try { localStorage.setItem('mixauto-last', name); } catch {}
+  renderInsp(); renderLib(); draw();
+}
+$('projName').onchange = e => { S.name = e.target.value.trim() || 'Mon mix'; save(); };
+$('newProj').onclick = () => {
+  stop(); S = newProject(); let i = 2;
+  const names = [...$('projOpen').options].map(o => o.value);
+  while (names.includes(S.name)) S.name = `Mon mix ${i++}`;
+  $('projName').value = S.name; U.sel = null; U.undo = []; U.pos = 0; changed();
+};
+
+// ============ Export ============
+async function exportMix() {
+  if (!S.clips.length) return alert('Le mix est vide.');
+  if (S.clips.some(c => !BUF[c.id]?.buffer || BUF[c.id].loading)) return alert('Attends que tous les morceaux soient prêts (« Calage au tempo du mix… »).');
+  stop();
+  const start = secAt(Math.min(...S.clips.map(c => c.start)));
+  const total = secAt(Math.max(...S.clips.map(clipEnd))) + 6;
+  const CH = 60, PRE = 12, SR = 44100, id = Math.random().toString(36).slice(2);
+  modal('Export du mix', 'Calcul de l\'audio avec tous les effets…');
+  try {
+    let i = 0;
+    for (let t0 = start; t0 < total; t0 += CH, i++) {   // par blocs, avec 12 s de préchauffe pour les queues d'effets
+      modalProgress((t0 - start) / (total - start), `${fmtTime(t0 - start)} / ${fmtTime(total - start)}`);
+      const pre = Math.min(PRE, t0 - start), len = Math.min(CH, total - t0);
+      const oc = new OfflineAudioContext(2, Math.round((pre + len) * SR), SR);
+      const bus = buildBus(oc, false);
+      for (const c of S.clips) scheduleClip(oc, bus, c, t0 - pre, 0);
+      const buf = await oc.startRendering();
+      const L = buf.getChannelData(0), R = buf.getChannelData(1), s = Math.round(pre * SR), n = Math.round(len * SR);
+      const pcm = new Int16Array(n * 2);
+      for (let k = 0; k < n; k++) { pcm[2 * k] = clamp(L[s + k], -1, 1) * 32767; pcm[2 * k + 1] = clamp(R[s + k], -1, 1) * 32767; }
+      const r = await fetch(`/api/export/chunk?id=${id}&i=${i}`, { method:'POST', body:pcm.buffer });
+      if (!r.ok) throw new Error('envoi');
+    }
+    modalProgress(1, 'Encodage MP3…');
+    const list = sorted().map(c => `${fmtTime(secAt(c.start) - start)}  ${S.tracks[c.trackId].name}  (${S.tracks[c.trackId].key} / ${S.tracks[c.trackId].camelot})`).join('\n');
+    const name = `${S.name} - ${new Date().toLocaleString('fr-FR').replace(/[/:]/g, '-')}`;
+    const r = await fetch(`/api/export/finish?id=${id}&name=${encodeURIComponent(name)}`, { method:'POST', body:`${S.name} · ${S.tempo} BPM · ${fmtTime(total - start)}\n\n${list}\n` });
+    const { mp3, error } = await r.json(); if (error) throw new Error(error);
+    modal('Mix exporté ✔', `${esc(mp3)} — ${window.WEB ? 'téléchargé (dossier Téléchargements).' : 'rangé dans le dossier « mixes » de l\'app.'}`, [[window.WEB ? 'Télécharger encore' : 'Montrer le fichier', () => fetch('/api/reveal?name=' + encodeURIComponent(mp3))], ['Fermer', closeModal]]);
+    modalProgress(1);
+  } catch (e) { modal('Export impossible', esc(e.message), [['Fermer', closeModal]]); }
+}
+$('export').onclick = exportMix;
+
+function modal(title, text, btns = []) {
+  $('modal').hidden = false; $('mTitle').textContent = title; $('mText').innerHTML = text;
+  $('mBtns').innerHTML = ''; btns.forEach(([l, f]) => { const b = document.createElement('button'); b.textContent = l; b.onclick = f; $('mBtns').append(b); });
+  modalProgress(0);
+}
+function modalProgress(p, text) { $('mBar').style.width = `${p * 100}%`; if (text) $('mText').textContent = text; }
+function closeModal() { $('modal').hidden = true; }
+
+// ============ Démarrage ============
+if (window.WEB) $('webBadge').hidden = false;
+paramsUI(); renderInsp(); draw();
+(async () => {
+  await Promise.all([refreshLib(), listProjects()]);
+  let last = null; try { last = localStorage.getItem('mixauto-last'); } catch {}
+  const names = [...$('projOpen').options].map(o => o.value).filter(Boolean);   // du plus récent au plus ancien
+  if (names.length) openProject(names.includes(last) ? last : names[0]);
+})();
+</script>
+</body>
+</html>
