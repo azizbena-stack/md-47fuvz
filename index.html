@@ -105,8 +105,9 @@
   .mixer { position:relative; }
   .transp { display:flex; align-items:center; gap:8px; }
   .rnd { width:40px; height:40px; padding:0; border-radius:50%; background:transparent; border:1.5px solid #ffffff4d; font-weight:800; font-size:11px; letter-spacing:.5px; }
-  #mCue { color:#ffae3d; border-color:#ffae3d88; } #mCue:active, #mCue.on { background:#ffae3d; color:#0c0c11; box-shadow:0 0 10px #ffae3d99; }
-  #mPlay { color:#ff3b3b; border-color:#ff3b3b88; font-size:15px; } #mPlay.on { background:linear-gradient(180deg,#ff4d4d,#c81e1e); color:#fff; border-color:#ff7a7a; box-shadow:0 0 12px #ff3b3b88; }
+  .ccol { display:flex; flex-direction:column; align-items:center; gap:6px; }
+  .rnd.cue { color:#ffae3d; border-color:#ffae3d88; } .rnd.cue:active, .rnd.cue.on { background:#ffae3d; color:#0c0c11; box-shadow:0 0 10px #ffae3d99; }
+  .rnd.pp { color:#ff3b3b; border-color:#ff3b3b88; font-size:15px; } .rnd.pp.on { background:linear-gradient(180deg,#ff4d4d,#c81e1e); color:#fff; border-color:#ff7a7a; box-shadow:0 0 12px #ff3b3b88; }
   .mixmid { display:flex; flex-direction:column; align-items:center; gap:5px; }
   #xf { width:150px; }
   .xfl { display:flex; justify-content:space-between; width:150px; font:700 10px ui-monospace, monospace; color:var(--dim); }
@@ -747,7 +748,7 @@ function play(from = U.pos, seamless = false) {
       o.connect(g).connect(ctx.destination); o.start(at); o.stop(at + 0.05); nodes.push(o);
     }
   }
-  U.playing = true; for (const b of [$('play'), $('mPlay')]) if (b) { b.textContent = '❚❚'; b.classList.add('on'); }
+  U.playing = true; for (const b of [$('play'), ...document.querySelectorAll('.rnd.pp')]) { b.textContent = '❚❚'; b.classList.add('on'); }
   const id = tick.n = (tick.n || 0) + 1; requestAnimationFrame(() => tick(id));
 }
 function stop(keepPos = true) {
@@ -758,7 +759,7 @@ function stop(keepPos = true) {
     const m = live.bus.master; setTimeout(() => m.disconnect(), 50);
     live = null;
   }
-  U.playing = false; for (const b of [$('play'), $('mPlay')]) if (b) { b.textContent = '▶'; b.classList.remove('on'); }
+  U.playing = false; for (const b of [$('play'), ...document.querySelectorAll('.rnd.pp')]) { b.textContent = '▶'; b.classList.remove('on'); }
   recEnd(); draw();
 }
 const livePos = () => live ? (live.seam ? x => x : x => Math.max(live.from, x))(live.from + (ctx.currentTime - live.base) * live.k) : U.pos;   // relance sans trou : l'ancien son joue encore, la tête ne se fige pas
@@ -1550,11 +1551,20 @@ addEventListener('resize', draw);
 // ============ Étages : hauteur au choix (poignées), grand écran, retour à sa place ============
 const LAY = { deckH:120, rackH:null, libH:null, tlH:null };
 try { Object.assign(LAY, JSON.parse(localStorage.getItem('mixauto-layout') || '{}')); } catch {}
+function scaleMixer() {   // rack agrandi : la table grossit avec (zoom), sans dépasser la moitié de la largeur
+  const m = $('mixer'); if (!m) return;
+  m.style.zoom = ''; if (!LAY.rackH || innerWidth <= 760) return;
+  m.style.alignSelf = 'start'; const h = m.offsetHeight, w = m.offsetWidth; m.style.alignSelf = '';
+  const R = $('rack'), z = Math.max(1, Math.min((R.clientHeight - 12) / h, R.clientWidth * 0.5 / w));
+  m.style.zoom = z.toFixed(3);
+}
+addEventListener('resize', () => scaleMixer());
 function applyLay() {
   const r = document.documentElement.style;
   LAY.libH ? r.setProperty('--libH', `${LAY.libH}px`) : r.removeProperty('--libH');
   LAY.tlH ? r.setProperty('--tlH', `${LAY.tlH}px`) : r.removeProperty('--tlH');
   LAY.rackH ? r.setProperty('--rackH', `${LAY.rackH}px`) : r.removeProperty('--rackH');
+  scaleMixer();
   try { localStorage.setItem('mixauto-layout', JSON.stringify(LAY)); } catch {}
   draw();
 }
@@ -1590,7 +1600,7 @@ function setMax(id) {   // un étage en grand écran (sous l'en-tête) ; même b
     el.classList.add('maxed'); const b = document.querySelector(`.maxb[data-max="${id}"]`); b.textContent = '✕'; b.classList.add('on'); b.title = 'Remettre à sa place (Échap)';
   }
   document.body.classList.toggle('has-max', !!document.querySelector('.maxed'));
-  requestAnimationFrame(() => { draw(); if (id === 'lower') zoomFit(); });
+  requestAnimationFrame(() => { scaleMixer(); draw(); if (id === 'lower') zoomFit(); });
 }
 document.addEventListener('click', e => { const b = e.target.closest('.maxb'); if (b) setMax(b.dataset.max); });
 addEventListener('keydown', e => { if (e.key === 'Escape' && document.querySelector('.maxed') && !$('prefs').open) setMax(null); });
@@ -1690,7 +1700,8 @@ $('decksBtn').onclick = e => { $('decks').hidden = !$('decks').hidden; e.current
 const knobR = k => { const P = PARAMS[KNOB[k][1]]; return [P.min, P.max, P.def]; };
 function knobU(k, v) { const [lo, hi, df] = knobR(k); return df === lo ? (v - lo) / (hi - lo) * 2 - 1 : v < df ? -(df - v) / (df - lo) : (v - df) / (hi - df); }   // -1..1, zéro au centre
 function knobV(k, u) { const [lo, hi, df] = knobR(k); return df === lo ? lo + (u + 1) / 2 * (hi - lo) : u < 0 ? df + u * (df - lo) : df + u * (hi - df); }
-const chanHTML = d => `<div class="knobs">${Object.keys(KNOB).map(k => `<div class="knob" data-d="${d}" data-k="${k}"><i></i>${KNOB[k][0]}</div>`).join('')}</div>
+const chanHTML = d => `<div class="ccol"><div class="knobs">${Object.keys(KNOB).map(k => `<div class="knob" data-d="${d}" data-k="${k}"><i></i>${KNOB[k][0]}</div>`).join('')}</div>
+  <div class="transp"><button class="rnd cue" data-d="${d}" title="CUE ${'AB'[d]} · à l'arrêt : pose le point de départ ici · en lecture : revient au point et s'arrête">CUE</button><button class="rnd pp" title="Lecture / pause (Espace)">▶</button></div></div>
   <div class="fwrap">${[0, 6, 12, 20, 30, 40].map(db => `<span class="tick ${db ? '' : 'z'}" style="bottom:${7.5 + 10 ** (-db / 40) * 97}px">${db}</span>`).join('')}<span class="tick" style="bottom:7.5px">∞</span>
   <input type="range" class="fader cfad" data-d="${d}" min="0" max="1" step="0.01" value="1" title="Volume de la voie ${'AB'[d]} (repères en dB)"></div>`;   // gain = fader², donc -dB = 40·log10
 $('mixer').innerHTML = `<div class="chan" style="--dc:${DECKCOL[0]}">${chanHTML(0)}</div>
@@ -1698,7 +1709,7 @@ $('mixer').innerHTML = `<div class="chan" style="--dc:${DECKCOL[0]}">${chanHTML(
     <button id="rec" title="Pendant la lecture, tes gestes sur la table s'écrivent en lignes rouges sur les morceaux (comme l'automation d'Ableton)">● REC</button>
     <div><input type="range" id="xf" class="cfad" min="-1" max="1" step="0.01" value="0" title="Crossfader (double-clic : centre)"><div class="hticks c"></div></div>
     <div class="xfl"><span>A</span><span>CROSSFADER</span><span>B</span></div>
-    <div class="transp"><button id="mCue" class="rnd" title="CUE · à l'arrêt : pose le point de départ ici · en lecture : revient au point de départ et s'arrête">CUE</button><button id="mixReset" title="Tous les boutons à zéro">Remettre à zéro</button><button id="mPlay" class="rnd" title="Lecture / pause (Espace)">▶</button></div>
+    <button id="mixReset" title="Tous les boutons à zéro">Remettre à zéro</button>
   </div>
   <div class="chan rev" style="--dc:${DECKCOL[1]}">${chanHTML(1)}</div>`;
 function mixUI() {
@@ -1755,11 +1766,14 @@ mixUI();
 
 // ============ Barre d'outils ============
 $('play').onclick = () => U.playing ? stop() : play();
-$('mPlay').onclick = () => $('play').click();
-$('mCue').onclick = () => {   // façon CDJ : à l'arrêt on pose le point CUE, en lecture on y revient et on s'arrête
-  if (U.playing) { stop(); U.pos = U.cue || 0; } else U.cue = U.pos;
-  $('mCue').classList.add('on'); setTimeout(() => $('mCue').classList.remove('on'), 180); draw();
-};
+U.cue = [0, 0];
+document.querySelectorAll('.rnd.pp').forEach(b => b.onclick = () => $('play').click());
+document.querySelectorAll('.rnd.cue').forEach(b => b.onclick = () => {   // façon CDJ, un point CUE par côté : à l'arrêt on le pose, en lecture on y revient et on s'arrête
+  const d = +b.dataset.d;
+  if (U.playing) { stop(); U.pos = U.cue[d]; } else U.cue[d] = U.pos;
+  b.classList.add('on'); setTimeout(() => b.classList.remove('on'), 180); draw();
+});
+scaleMixer();
 $('toStart').onclick = () => { U.pos = 0; U.scrollX = -2; U.playing ? play(0) : draw(); };
 $('snap').onchange = e => U.snap = +e.target.value;
 $('click').onclick = e => { U.click = !U.click; e.target.classList.toggle('on', U.click); restartIfPlaying(); };
