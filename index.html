@@ -52,7 +52,16 @@
   label.inl { display:flex; align-items:center; gap:6px; color:var(--dim); }
 
   /* ---------- Zones ---------- */
-  .app { display:grid; grid-template-rows:auto max(var(--libH), 190px) 6px max(440px, calc(100vh - var(--libH) - 330px)); }
+  .app { display:grid; grid-template-rows:auto max(var(--libH), 190px) 6px var(--tlH, max(440px, calc(100vh - var(--libH) - 330px))) 6px; }
+  .vsplit { background:var(--line); cursor:row-resize; height:6px; position:relative; }
+  .vsplit:hover, .vsplit.on { background:#ff3b3b; }
+  .vsplit::after { content:''; position:absolute; left:50%; top:2px; width:34px; height:2px; margin-left:-17px; border-radius:1px; background:#ffffff40; }
+  #decks, #libPane, .lower { position:relative; }
+  .maxb { padding:2px 8px; font-size:13px; line-height:1.2; }
+  #decks > .maxb { position:absolute; top:6px; right:8px; z-index:2; opacity:.75; }
+  #decks > .maxb:hover { opacity:1; }
+  .maxed { position:fixed !important; left:0; right:0; top:var(--hdrH, 96px); bottom:0; z-index:40; height:auto !important; background:var(--bg); box-shadow:0 -10px 30px #000c; }
+  body.has-max { overflow:hidden; }
 
   /* ---------- Platines (façon Rekordbox / VirtualDJ) ---------- */
   #decks { background:#07070a; border-bottom:1px solid var(--line); }
@@ -94,12 +103,12 @@
   .xfl { display:flex; justify-content:space-between; width:150px; font:700 10px ui-monospace, monospace; color:var(--dim); }
   #rec { font-weight:700; } #rec.on { background:#e5243b; border-color:#e5243b; animation:blink 1s steps(2) infinite; }
   @keyframes blink { 50% { opacity:.6; } }
-  #split { background:var(--line); cursor:row-resize; }
+  #split { cursor:row-resize; }
   #split:hover { background:var(--acc); }
   .lower { display:grid; grid-template-columns:minmax(0,1fr) min(310px, 34vw); min-height:0; overflow:hidden; }
 
   /* ---------- Bibliothèque ---------- */
-  #libPane { display:grid; grid-template-rows:auto 1fr; min-height:0; background:var(--panel); }
+  #libPane { display:grid; grid-template-columns:minmax(0,1fr); grid-template-rows:auto 1fr; min-height:0; background:var(--panel); }
   .libbar { display:flex; gap:6px; align-items:center; padding:8px 10px; border-bottom:1px solid var(--line); flex-wrap:wrap; }
   .tabs { display:flex; gap:2px; background:#0f0f15; border-radius:9px; padding:3px; }
   .tabs button { border:0; background:transparent; padding:5px 11px; border-radius:7px; color:var(--dim); }
@@ -123,6 +132,8 @@
   body.dragover .tablewrap { outline:2px solid var(--acc); outline-offset:-2px; }
   table { width:100%; border-collapse:collapse; }
   th { position:sticky; top:0; background:#181822; text-align:left; font-weight:500; color:var(--dim); font-size:11px; text-transform:uppercase; letter-spacing:.6px; padding:6px 8px; cursor:pointer; z-index:1; white-space:nowrap; }
+  th.tth { color:#fff; font-weight:800; letter-spacing:1px; }
+  .tlogo { width:15px; height:15px; vertical-align:-3px; margin-right:6px; }
   th.s::after { content:' ▾'; } th.s.up::after { content:' ▴'; }
   td { padding:5px 8px; border-bottom:1px solid #1d1d28; white-space:nowrap; }
   tr.trk { cursor:grab; }
@@ -215,6 +226,35 @@
   .bar { height:6px; background:var(--line); border-radius:3px; overflow:hidden; margin:10px 0; }
   .bar div { height:100%; width:0; background:linear-gradient(90deg,var(--acc),var(--acc2)); }
   [hidden] { display:none !important; }
+  /* ---------- Pads : néon fin ; curseurs : faders console à la taille de la case, ligne graduée ---------- */
+  .fxcard { border:1px solid color-mix(in srgb, var(--k, #ffffff) 75%, transparent) !important; box-shadow:0 0 6px color-mix(in srgb, var(--k, #ffffff) 45%, transparent), inset 0 0 8px color-mix(in srgb, var(--k, #ffffff) 14%, transparent) !important; }
+  .fxcard:hover { border-color:var(--k, #fff) !important; box-shadow:0 0 12px color-mix(in srgb, var(--k, #ffffff) 70%, transparent), inset 0 0 10px color-mix(in srgb, var(--k, #ffffff) 22%, transparent) !important; }
+  .slider input[type=range] { -webkit-appearance:none; appearance:none; height:24px; margin:0; cursor:grab;
+    background:repeating-linear-gradient(90deg, #5c5c72 0 1px, transparent 1px 10%) 6px 100% / calc(100% - 12px) 5px no-repeat,
+               linear-gradient(#fff, #fff) 50% 100% / 1px 7px no-repeat; }
+  .slider input[type=range]::-webkit-slider-runnable-track { height:4px; background:#020203; border:1px solid #3c3c4c; border-radius:1px; box-shadow:inset 0 1px 2px #000; }
+  .slider input[type=range]::-moz-range-track { height:4px; background:#020203; border:1px solid #3c3c4c; border-radius:1px; }
+  .slider input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:11px; height:20px; margin-top:-9px; border:0; border-radius:2px;
+    background:linear-gradient(90deg, #a9a9b3, #f4f4f7 22%, #fff 38%, #111 38%, #111 62%, #fff 62%, #ececf0 80%, #9c9ca6); box-shadow:0 2px 4px #000d, 0 0 0 1px #0008; }
+  .slider input[type=range]::-moz-range-thumb { width:11px; height:20px; border:0; border-radius:2px;
+    background:linear-gradient(90deg, #a9a9b3, #f4f4f7 22%, #fff 38%, #111 38%, #111 62%, #fff 62%, #ececf0 80%, #9c9ca6); box-shadow:0 2px 4px #000d; }
+  /* ---------- Téléphone : tout s'empile, chaque étage garde une hauteur utilisable ---------- */
+  @media (max-width:760px) {
+    header { padding:6px 8px; gap:6px; position:relative !important; }   /* pas collé en haut : il prendrait un tiers de l'écran */
+    header h1 { font-size:16px; }
+    #webBadge, .sep, #projName { display:none; }
+    #clock { min-width:0; font-size:14px; }
+    .tfader input { width:96px; }
+    .app { grid-template-rows:auto min(max(var(--libH), 400px), 75vh) 6px var(--tlH, 78vh) 6px; }
+    .deckrow { grid-template-columns:1fr 1fr; }
+    .deckrow .mixer { grid-column:1 / -1; grid-row:2; justify-content:center; flex-wrap:wrap; row-gap:8px; }
+    .libbar { gap:4px; padding:6px; } #search { width:100%; order:9; } #libTabs { flex-wrap:wrap; max-width:100%; }
+    .libbody { grid-template-columns:minmax(0,1fr); } #libSide { width:auto; } #impPane, #impPane[hidden] { display:none !important; }
+    td.title { max-width:160px; }
+    .lower { grid-template-columns:minmax(0,1fr); grid-template-rows:minmax(0,1fr) 40%; }
+    .lower aside { border-left:0; border-top:1px solid var(--line); }
+    #decks > .maxb { top:4px; right:4px; }
+  }
 </style>
 </head>
 <body>
@@ -256,6 +296,7 @@
 
 <div class="app">
   <section id="decks">
+    <button class="maxb" data-max="decks" title="Grand écran (Échap pour revenir)">⛶</button>
     <canvas id="deckC" title="Clic : aller à cet endroit"></canvas>
     <div class="deckrow">
       <div class="deck" id="deck0" style="--dc:#3aa0ff"><div class="dh"><span class="dl">A</span><span class="dt">—</span><span class="key"></span></div><div class="dn"><span><b class="dbpm">—</b> BPM</span><span class="dtime"></span><span class="dst"></span></div><canvas></canvas></div>
@@ -277,13 +318,14 @@
       <span class="note" id="libCount"></span>
       <button id="impFiles">+ Morceaux</button>
       <button id="impDir">+ Dossier</button>
+      <button class="maxb" data-max="libPane" title="Grand écran (Échap pour revenir)">⛶</button>
       <button id="delAll" title="Supprime de la bibliothèque tous les morceaux de la liste affichée">🗑 Tout supprimer</button>
     </div>
     <div class="libbody">
       <div id="libSide"></div>
       <div class="tablewrap">
         <table><thead><tr>
-          <th data-sort="name">Titre</th><th data-sort="bpm" class="num">BPM</th><th data-sort="camelot">Tonalité</th>
+          <th data-sort="name" class="tth"><svg class="tlogo" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10.5" fill="#0c0c11" stroke="#ff3b3b" stroke-width="1.5"/><circle cx="12" cy="12" r="7.5" fill="none" stroke="#ffffff22"/><circle cx="12" cy="12" r="5" fill="none" stroke="#ffffff22"/><circle cx="12" cy="12" r="3.2" fill="#ff3b3b"/><circle cx="12" cy="12" r=".9" fill="#0c0c11"/><path d="M17.5 3.5l3 3-6.2 6.2" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/></svg>Tracks à mixer</th><th data-sort="bpm" class="num">BPM</th><th data-sort="camelot">Tonalité</th>
           <th data-sort="energy">Énergie</th><th data-sort="duration" class="num">Durée</th><th data-sort="folder">Dossier</th><th></th>
         </tr></thead><tbody id="libT"></tbody></table>
         <div id="dropHint" hidden><b style="color:var(--txt);font-size:15px">Glisse tes morceaux ou un dossier ici</b>MP3, WAV, AIFF, FLAC, M4A · tout reste sur ton Mac</div>
@@ -300,8 +342,9 @@
     </div>
     <input type="file" id="inFiles" multiple accept="audio/*,.aif,.aiff,.flac" hidden>
     <input type="file" id="inDir" webkitdirectory hidden>
+    <div class="vsplit" id="splitD" title="Glisser pour agrandir les platines · double-clic : taille d'origine"></div>
   </section>
-  <div id="split" title="Glisser pour agrandir"></div>
+  <div id="split" class="vsplit" title="Glisser pour agrandir · double-clic : taille d'origine"></div>
 
   <div class="lower">
     <div class="center">
@@ -316,6 +359,7 @@
         <span class="params" id="params"></span>
         <div class="grow"></div>
         <span class="hint" id="hint"></span>
+        <button class="maxb" data-max="lower" title="Grand écran (Échap pour revenir)">⛶</button>
       </div>
     </div>
     <aside>
@@ -327,6 +371,7 @@
       <div id="insp"></div>
     </aside>
   </div>
+  <div class="vsplit" id="splitT" title="Glisser pour agrandir la timeline · double-clic : taille d'origine"></div>
 </div>
 
 <dialog id="prefs">
@@ -1489,16 +1534,68 @@ $('zoomIn').onclick = () => zoom(1.5); $('zoomOut').onclick = () => zoom(1 / 1.5
 function zoomFit() { U.pxb = clamp($('rowsC').clientWidth / (Math.max(64, ...S.clips.map(clipEnd)) + 8), 0.3, 40); U.scrollX = -2; draw(); }
 $('zoomFit').onclick = zoomFit;
 addEventListener('resize', draw);
-$('split').onmousedown = e => {
-  const y0 = e.clientY, h0 = $('libPane').getBoundingClientRect().height;
-  const mm = m => { document.documentElement.style.setProperty('--libH', `${clamp(h0 + m.clientY - y0, 120, innerHeight - 260)}px`); draw(); };
-  const up = () => { removeEventListener('mousemove', mm); removeEventListener('mouseup', up); };
-  addEventListener('mousemove', mm); addEventListener('mouseup', up);
-};
+// ============ Étages : hauteur au choix (poignées), grand écran, retour à sa place ============
+const LAY = { deckH:120, libH:null, tlH:null };
+try { Object.assign(LAY, JSON.parse(localStorage.getItem('mixauto-layout') || '{}')); } catch {}
+function applyLay() {
+  const r = document.documentElement.style;
+  LAY.libH ? r.setProperty('--libH', `${LAY.libH}px`) : r.removeProperty('--libH');
+  LAY.tlH ? r.setProperty('--tlH', `${LAY.tlH}px`) : r.removeProperty('--tlH');
+  try { localStorage.setItem('mixauto-layout', JSON.stringify(LAY)); } catch {}
+  draw();
+}
+function grip(id, key, el, min, def) {   // glisser : nouvelle hauteur ; double-clic : taille d'origine
+  $(id).onmousedown = e => {
+    const y0 = e.clientY, h0 = key === 'deckH' ? LAY.deckH : document.querySelector(el).getBoundingClientRect().height;
+    $(id).classList.add('on');
+    const mm = m => { LAY[key] = Math.round(Math.max(min, h0 + m.clientY - y0)); applyLay(); };
+    const up = () => { $(id).classList.remove('on'); removeEventListener('mousemove', mm); removeEventListener('mouseup', up); };
+    addEventListener('mousemove', mm); addEventListener('mouseup', up);
+  };
+  $(id).ondblclick = () => { LAY[key] = def; applyLay(); };
+}
+grip('splitD', 'deckH', '#deckC', 50, 120);
+grip('split', 'libH', '#libPane', 120, null);
+grip('splitT', 'tlH', '.lower', 220, null);
+function setMax(id) {   // un étage en grand écran (sous l'en-tête) ; même bouton ou Échap : il revient à sa place
+  const cur = document.querySelector('.maxed');
+  if (cur) { cur.classList.remove('maxed'); document.querySelectorAll('.maxb').forEach(b => { b.textContent = '⛶'; b.classList.remove('on'); }); }
+  const el = id && (id === 'lower' ? document.querySelector('.lower') : $(id));
+  if (el && el !== cur) {
+    document.documentElement.style.setProperty('--hdrH', `${document.querySelector('header').offsetHeight}px`);
+    el.classList.add('maxed'); const b = document.querySelector(`.maxb[data-max="${id}"]`); b.textContent = '✕'; b.classList.add('on'); b.title = 'Remettre à sa place (Échap)';
+  }
+  document.body.classList.toggle('has-max', !!document.querySelector('.maxed'));
+  requestAnimationFrame(() => { draw(); if (id === 'lower') zoomFit(); });
+}
+document.addEventListener('click', e => { const b = e.target.closest('.maxb'); if (b) setMax(b.dataset.max); });
+addEventListener('keydown', e => { if (e.key === 'Escape' && document.querySelector('.maxed') && !$('prefs').open) setMax(null); });
+applyLay();
+// Téléphone / tablette : le doigt fait comme la souris (boutons rotatifs, poignées, platines, règle, pistes).
+// Sur les pistes, un simple toucher clique (tête de lecture, sélection, point) et glisser fait défiler la page.
+{
+  const DRAG = '.knob, .vsplit, #deckC, #rulerC', fake = (type, t, el) => el.dispatchEvent(new MouseEvent(type, { clientX:t.clientX, clientY:t.clientY, bubbles:true, cancelable:true, button:0, buttons:type === 'mouseup' ? 0 : 1 }));
+  let on = null, tap = null;
+  document.addEventListener('touchstart', e => {
+    if (e.touches.length > 1) return;
+    const t = e.touches[0], el = e.target.closest(DRAG);
+    if (el) { on = el; e.preventDefault(); fake('mousedown', t, el); }
+    else if (e.target === rowsC) tap = { x:t.clientX, y:t.clientY, at:performance.now() };
+  }, { passive:false });
+  document.addEventListener('touchmove', e => { if (on) { e.preventDefault(); fake('mousemove', e.touches[0], document); } }, { passive:false });
+  document.addEventListener('touchend', e => {
+    const t = e.changedTouches[0];
+    if (on) { fake('mouseup', t, document); on = null; return; }
+    if (tap && Math.hypot(t.clientX - tap.x, t.clientY - tap.y) < 8 && performance.now() - tap.at < 400) { e.preventDefault(); fake('mousedown', t, rowsC); fake('mouseup', t, document); }
+    tap = null;
+  });
+}
 
 // ============ Platines : formes d'onde qui défilent, infos des morceaux, table de mixage ============
-const DECKCOL = ['#3aa0ff', '#ff9a2e'], DECKH = 120;
+const DECKCOL = ['#3aa0ff', '#ff9a2e'];
 function drawDecks(LN) {
+  const DECKH = $('decks').classList.contains('maxed')   // grand écran : les formes d'onde prennent toute la place
+    ? Math.max(120, innerHeight - document.querySelector('header').offsetHeight - $('decks').querySelector('.deckrow').offsetHeight - 14) : LAY.deckH;
   if ($('decks').hidden) return;
   const [g, W] = setupCanvas($('deckC'), DECKH), pb = beatAt(U.pos), ppb = W / 32, rh = DECKH / 2;   // 8 mesures visibles, lecture au centre
   g.fillStyle = '#07070a'; g.fillRect(0, 0, W, DECKH);
