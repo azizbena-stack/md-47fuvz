@@ -53,7 +53,7 @@
 
   /* ---------- Zones ---------- */
   .app { display:grid; grid-template-rows:auto max(var(--libH), 190px) 6px var(--tlH, max(440px, calc(100vh - var(--libH) - 330px))) 6px; }
-  .vsplit { background:var(--line); cursor:row-resize; height:6px; position:relative; }
+  .vsplit { background:#ffffff45; cursor:row-resize; height:6px; position:relative; }
   .vsplit:hover, .vsplit.on { background:#ffffff; box-shadow:0 0 8px #ffffff99; }
   .vsplit::after { content:''; position:absolute; left:50%; top:2px; width:34px; height:2px; margin-left:-17px; border-radius:1px; background:#ffffff99; }
   .vsplit:hover::after, .vsplit.on::after { background:#0c0c11; }
@@ -69,6 +69,7 @@
   /* ---------- Platines (façon Rekordbox / VirtualDJ) ---------- */
   #decks { background:#07070a; border-bottom:1px solid var(--line); }
   #deckC { display:block; width:100%; height:120px; cursor:pointer; }
+  #decks .deckrow { height:var(--rackH, auto); box-sizing:border-box; }
   .deckrow { display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); gap:8px; padding:6px 8px; }
   .deck { display:grid; grid-template-columns:minmax(0,1fr); grid-template-rows:auto auto 1fr; overflow:hidden; gap:3px; min-width:0; background:var(--card); border:1px solid var(--line); border-radius:10px; padding:6px 10px; border-top:3px solid var(--dc); }
   .deck .dh { display:flex; align-items:center; gap:8px; min-width:0; }
@@ -119,6 +120,7 @@
   .tabs button.on { background:linear-gradient(180deg, #34344a, #28283a); color:var(--txt); box-shadow:inset 0 1px 0 #ffffff14, 0 1px 4px #0006; }
   #search { width:200px; }
   .libbody { display:grid; grid-template-columns:auto minmax(0,1fr) auto; min-height:0; }
+  #libSide { grid-column:1; } .libbody > .tablewrap { grid-column:2; } #impPane { grid-column:3; }   /* zone d'import toujours calée à droite */
   #impPane { width:min(340px, 30vw); padding:8px; border-left:1px solid var(--line); background:var(--panel); min-height:0; display:flex; }
   #impPane[hidden] { display:none; }
   #impDrop { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:safe center; gap:5px; text-align:center; border:2px dashed #3a3a4e; border-radius:12px; padding:8px; overflow:auto; color:var(--txt); cursor:pointer; transition:border-color .15s, background .15s; }
@@ -250,10 +252,10 @@
     #clock { min-width:0; font-size:14px; }
     .tfader input { width:96px; }
     .app { grid-template-rows:auto min(max(var(--libH), 400px), 75vh) 6px var(--tlH, 78vh) 6px; }
-    .deckrow { grid-template-columns:1fr 1fr; }
+    .deckrow { grid-template-columns:1fr 1fr; } #decks .deckrow { height:auto; }
     .deckrow .mixer { grid-column:1 / -1; grid-row:2; justify-content:center; flex-wrap:wrap; row-gap:8px; }
     .libbar { gap:4px; padding:6px; } #search { width:100%; order:9; } #libTabs { flex-wrap:wrap; max-width:100%; }
-    .libbody { grid-template-columns:minmax(0,1fr); } #libSide { width:auto; } #impPane, #impPane[hidden] { display:none !important; }
+    .libbody { grid-template-columns:minmax(0,1fr); } .libbody > * { grid-column:auto !important; } #libSide { width:auto; } #impPane, #impPane[hidden] { display:none !important; }
     td.title { max-width:160px; }
     .lower { grid-template-columns:minmax(0,1fr); grid-template-rows:minmax(0,1fr) 40%; }
     .lower aside { border-left:0; border-top:1px solid var(--line); }
@@ -304,12 +306,13 @@
   <section id="decks">
     <button class="maxb" data-max="decks" title="Pleine page (Échap pour revenir)">⛶ Pleine page</button>
     <canvas id="deckC" title="Clic : aller à cet endroit"></canvas>
+    <div class="vsplit" id="splitR" title="Glisser pour agrandir les formes d'onde · double-clic : taille d'origine"></div>
     <div class="deckrow">
       <div class="deck" id="deck0" style="--dc:#3aa0ff"><div class="dh"><span class="dl">A</span><span class="dt">—</span><span class="key"></span></div><div class="dn"><span><b class="dbpm">—</b> BPM</span><span class="dtime"></span><span class="dst"></span></div><canvas></canvas></div>
       <div class="mixer" id="mixer"></div>
       <div class="deck" id="deck1" style="--dc:#ff9a2e"><div class="dh"><span class="dl">B</span><span class="dt">—</span><span class="key"></span></div><div class="dn"><span><b class="dbpm">—</b> BPM</span><span class="dtime"></span><span class="dst"></span></div><canvas></canvas></div>
     </div>
-    <div class="vsplit" id="splitD" title="Glisser pour agrandir les platines · double-clic : taille d'origine"></div>
+    <div class="vsplit" id="splitD" title="Glisser pour agrandir les platines A / B et la table · double-clic : taille d'origine"></div>
   </section>
   <section id="libPane">
     <div class="libbar">
@@ -1540,12 +1543,13 @@ function zoomFit() { U.pxb = clamp($('rowsC').clientWidth / (Math.max(64, ...S.c
 $('zoomFit').onclick = zoomFit;
 addEventListener('resize', draw);
 // ============ Étages : hauteur au choix (poignées), grand écran, retour à sa place ============
-const LAY = { deckH:120, libH:null, tlH:null };
+const LAY = { deckH:120, rackH:null, libH:null, tlH:null };
 try { Object.assign(LAY, JSON.parse(localStorage.getItem('mixauto-layout') || '{}')); } catch {}
 function applyLay() {
   const r = document.documentElement.style;
   LAY.libH ? r.setProperty('--libH', `${LAY.libH}px`) : r.removeProperty('--libH');
   LAY.tlH ? r.setProperty('--tlH', `${LAY.tlH}px`) : r.removeProperty('--tlH');
+  LAY.rackH ? r.setProperty('--rackH', `${LAY.rackH}px`) : r.removeProperty('--rackH');
   try { localStorage.setItem('mixauto-layout', JSON.stringify(LAY)); } catch {}
   draw();
 }
@@ -1559,7 +1563,8 @@ function grip(id, key, el, min, def) {   // glisser : nouvelle hauteur ; double-
   };
   $(id).ondblclick = () => { LAY[key] = def; applyLay(); };
 }
-grip('splitD', 'deckH', '#deckC', 50, 120);
+grip('splitR', 'deckH', '#deckC', 50, 120);
+grip('splitD', 'rackH', '#decks .deckrow', 150, null);
 grip('split', 'libH', '#libPane', 120, null);
 grip('splitT', 'tlH', '.lower', 220, null);
 function setMax(id) {   // un étage en grand écran (sous l'en-tête) ; même bouton ou Échap : il revient à sa place
@@ -1649,16 +1654,17 @@ function deckInfo(d, pb, LN) {   // morceau en lecture sur la voie, sinon le pro
   const st = el.querySelector('.dst');
   st.className = 'dst ' + (on ? 'air' : 'nxt'); st.textContent = on ? '● en lecture' : c ? `entre dans ${fmtTime(secAt(c.start) - U.pos)}` : '';
   const cv = el.querySelector('canvas'), b = c && BUF[c.id];   // vue d'ensemble du morceau, partie jouée en couleur
-  const [g, W] = setupCanvas(cv, 28); g.clearRect(0, 0, W, 28); g.fillStyle = '#0f0f15'; g.fillRect(0, 0, W, 28);
+  const H = LAY.rackH && innerWidth > 760 ? Math.max(28, el.clientHeight - el.querySelector('.dh').offsetHeight - el.querySelector('.dn').offsetHeight - 22) : 28;   // rack agrandi : la forme d'onde grandit
+  const [g, W] = setupCanvas(cv, H); g.clearRect(0, 0, W, H); g.fillStyle = '#0f0f15'; g.fillRect(0, 0, W, H);
   if (!b?.peaks) return;
   const dur = b.buffer.duration, pos = on ? fileT(c, tlToTb(c, pb)) : fileT(c, c.in), per = b.peaks.length / W;
   const u0 = fileT(c, c.in) / dur * W, u1 = fileT(c, c.in + c.len) / dur * W;
-  g.fillStyle = '#ffffff10'; g.fillRect(u0, 0, u1 - u0, 28);   // partie utilisée dans le mix
+  g.fillStyle = '#ffffff10'; g.fillRect(u0, 0, u1 - u0, H);   // partie utilisée dans le mix
   for (let x = 0; x < W; x++) {
     let m = 0; for (let k = Math.floor(x * per); k < Math.floor((x + 1) * per); k++) if (b.peaks[k] > m) m = b.peaks[k];
-    g.fillStyle = x < pos / dur * W ? DECKCOL[d] : '#5a5a70'; const hh = Math.min(1, m) * 13; g.fillRect(x, 14 - hh, 1, hh * 2 || 0.5);
+    g.fillStyle = x < pos / dur * W ? DECKCOL[d] : '#5a5a70'; const hh = Math.min(1, m) * (H / 2 - 1); g.fillRect(x, H / 2 - hh, 1, hh * 2 || 0.5);
   }
-  g.fillStyle = '#fff'; g.fillRect(pos / dur * W, 0, 2, 28);
+  g.fillStyle = '#fff'; g.fillRect(pos / dur * W, 0, 2, H);
 }
 $('deckC').addEventListener('mousedown', e => {   // clic sur les formes d'onde : on avance / recule (le centre = lecture)
   const r = $('deckC').getBoundingClientRect(), d = (e.clientX - r.left - r.width / 2) / (r.width / 32);
