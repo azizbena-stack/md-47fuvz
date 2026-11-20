@@ -77,17 +77,19 @@
   #deckC { display:block; width:100%; height:120px; cursor:pointer; }
   #decks .deckrow { height:var(--rackH, auto); box-sizing:border-box; }
   .deckrow { display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); gap:8px; padding:6px 8px; }
-  .deck { display:grid; grid-template-columns:minmax(0,1fr); grid-template-rows:auto auto auto 1fr; overflow:hidden; gap:3px; min-width:0; background:var(--card); border:1px solid var(--line); border-radius:10px; padding:6px 10px; border-top:3px solid var(--dc); }
+  .deck { display:grid; grid-template-columns:auto minmax(0,1fr); column-gap:9px; grid-template-rows:auto auto auto 1fr; overflow:hidden; gap:3px; min-width:0; background:var(--card); border:1px solid var(--line); border-radius:10px; padding:6px 10px; border-top:3px solid var(--dc); }
   .deck .dh { display:flex; align-items:center; gap:8px; min-width:0; }
-  .deck .dcov { width:38px; height:38px; flex:none; border-radius:5px; object-fit:cover; border:1px solid #ffffff40; box-shadow:0 0 6px #0008; }
-  .deck .dcov[hidden] { display:none; }
+  .deck .dside { grid-row:1 / 4; display:flex; flex-direction:column; align-items:center; gap:3px; }
+  .deck > canvas { grid-column:1 / -1; }
+  .deck .dcov { width:50px; height:50px; flex:none; border-radius:6px; background:center / cover no-repeat; border:1px solid #ffffff30; box-shadow:0 0 6px #0008; }
+  .deck .dcov.ph { background-image:radial-gradient(circle, var(--dc) 0 13%, #0c0c11 14% 20%, #1c1c26 21% 30%, #111118 31% 45%, #1c1c26 46% 60%, #0c0c11 61%); opacity:.75; }
   .deck .dl { font:800 20px ui-monospace, Menlo, monospace; color:var(--dc); }
   .deck .dt { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:600; }
   .deck .dn { display:flex; flex-wrap:wrap; gap:2px 14px; white-space:nowrap; align-items:baseline; color:var(--dim); font:600 11px ui-monospace, Menlo, monospace; }
   .deck .dn b { color:var(--txt); font-size:17px; }
   .deck .air { color:var(--acc2); } .deck .nxt { color:var(--warn); }
   .dpads { display:flex; gap:4px; align-items:center; } .dpads button { padding:2px 0; flex:1; min-width:0; font:800 11px ui-monospace, Menlo, monospace; border-radius:5px; }
-  .dpads .lsep { width:6px; } .dpads .hc.set { background:var(--hcc); border-color:var(--hcc); color:#0c0c11; } .dpads .lp.on { background:var(--acc2); border-color:var(--acc2); color:#0c0c11; animation:glow 1s ease-in-out infinite; }
+  .dpads .lsep { width:6px; } .dpads .sh { flex:1.4; font-size:9.5px; letter-spacing:.5px; } .dpads .sh.on, .dpads .sh.hold { background:#fff; border-color:#fff; color:#0c0c11; } .dpads .hc.set { background:var(--hcc); border-color:var(--hcc); color:#0c0c11; } .dpads .lp.on { background:var(--acc2); border-color:var(--acc2); color:#0c0c11; animation:glow 1s ease-in-out infinite; }
   #recSet.on { background:#ff3b3b; color:#fff; border-color:#ff7a7a; animation:glow 1s ease-in-out infinite; }
   .deck canvas { width:100%; height:28px; display:block; align-self:end; border-radius:4px; }
   .mixer { display:flex; gap:10px; align-items:center; background:var(--card); border:1px solid var(--line); border-radius:10px; padding:6px 10px; }
@@ -221,7 +223,12 @@
   .note { color:var(--dim); font-size:12px; margin:6px 0; }
 
   /* ---------- Timeline ---------- */
-  .center { display:grid; grid-template-rows:30px 1fr auto auto; min-width:0; min-height:0; }
+  .center { display:grid; grid-template-rows:30px 1fr auto auto; min-width:0; min-height:0; position:relative; }
+  #scBtn { color:#ff7a33; border-color:#ff550088; }
+  #tools { position:absolute; top:3px; right:8px; z-index:3; display:flex; gap:2px; background:var(--panel); border:1px solid var(--line); border-radius:6px; padding:2px; }
+  #tools button { width:26px; height:20px; padding:0; display:grid; place-items:center; border:0; border-radius:4px; background:none; color:var(--dim); }
+  #tools button svg { width:15px; height:15px; } #tools button:hover { color:#fff; }
+  #tools button.on { background:#ff3b3b; color:#fff; }
   #hscroll { overflow-x:scroll; overflow-y:hidden; height:12px; background:var(--panel); border-top:1px solid var(--line); }
   #hscroll div { height:1px; }
   #hscroll::-webkit-scrollbar { height:12px; }   /* toujours visible (macOS cache les barres par défaut) */
@@ -361,6 +368,7 @@
   <button id="fillHour" title="Ajoute les morceaux de la liste affichée (tempo à ±6 %) jusqu'à 1 h de mix, les range et pose les transitions">⚡ Mix 1 h</button>
   <button id="autoMix" title="Range les morceaux du mix dans le meilleur ordre et pose des transitions">Ordre auto</button>
   <button id="export" class="big">⇪ Exporter / Transférer</button>
+  <button id="scBtn" title="Exporter le mix puis l'envoyer sur SoundCloud : la page d'envoi s'ouvre, la tracklist est copiée et le fichier est prêt à glisser">☁ SoundCloud</button>
   <button id="prefsBtn" title="Réglages : carte son, entrée micro, échantillonnage, options">⚙ Réglages</button>
 </header>
 
@@ -369,9 +377,9 @@
     <canvas id="deckC" title="Clic : aller à cet endroit"></canvas>
     <div class="vsplit" id="splitR" title="Glisser vers le haut pour agrandir les platines A / B et la table · double-clic : taille d'origine"></div>
     <div class="deckrow" id="rack">
-      <div class="deck" id="deck0" style="--dc:#3aa0ff"><div class="dh"><img class="dcov" hidden alt=""><span class="dl">A</span><span class="dt">—</span><span class="key"></span></div><div class="dn"><span><b class="dbpm">—</b> BPM</span><span class="dtime"></span><span class="dst"></span></div><div class="dpads" data-d="0"><button class="hc" data-hc="0" title="Hot cue 1 : clic = poser / y aller · Maj + clic = effacer">1</button><button class="hc" data-hc="1" title="Hot cue 2 : clic = poser / y aller · Maj + clic = effacer">2</button><button class="hc" data-hc="2" title="Hot cue 3 : clic = poser / y aller · Maj + clic = effacer">3</button><button class="hc" data-hc="3" title="Hot cue 4 : clic = poser / y aller · Maj + clic = effacer">4</button><span class="lsep"></span><button class="lp" data-lp="4" title="Boucle de 4 temps (clic à nouveau : sortir)">⟲ 4</button><button class="lp" data-lp="8" title="Boucle de 8 temps (clic à nouveau : sortir)">⟲ 8</button><button class="lp" data-lp="16" title="Boucle de 16 temps (clic à nouveau : sortir)">⟲ 16</button></div><canvas></canvas></div>
+      <div class="deck" id="deck0" style="--dc:#3aa0ff"><div class="dside"><span class="dl">A</span><div class="dcov ph"></div></div><div class="dh"><span class="dt">—</span><span class="key"></span></div><div class="dn"><span><b class="dbpm">—</b> BPM</span><span class="dtime"></span><span class="dst"></span></div><div class="dpads" data-d="0"><button class="sh" title="SHIFT : puis un pad 1 à 4 = l'effacer, puis CUE = remettre le CUE au premier kick (touche Maj du clavier : pareil)">SHIFT</button><button class="hc" data-hc="0" title="Hot cue 1 : clic = poser / y aller · Maj + clic = effacer">1</button><button class="hc" data-hc="1" title="Hot cue 2 : clic = poser / y aller · Maj + clic = effacer">2</button><button class="hc" data-hc="2" title="Hot cue 3 : clic = poser / y aller · Maj + clic = effacer">3</button><button class="hc" data-hc="3" title="Hot cue 4 : clic = poser / y aller · Maj + clic = effacer">4</button><span class="lsep"></span><button class="lp" data-lp="4" title="Boucle de 4 temps (clic à nouveau : sortir)">⟲ 4</button><button class="lp" data-lp="8" title="Boucle de 8 temps (clic à nouveau : sortir)">⟲ 8</button><button class="lp" data-lp="16" title="Boucle de 16 temps (clic à nouveau : sortir)">⟲ 16</button></div><canvas></canvas></div>
       <div class="mixer" id="mixer"></div>
-      <div class="deck" id="deck1" style="--dc:#ff9a2e"><div class="dh"><img class="dcov" hidden alt=""><span class="dl">B</span><span class="dt">—</span><span class="key"></span></div><div class="dn"><span><b class="dbpm">—</b> BPM</span><span class="dtime"></span><span class="dst"></span></div><div class="dpads" data-d="1"><button class="hc" data-hc="0" title="Hot cue 1 : clic = poser / y aller · Maj + clic = effacer">1</button><button class="hc" data-hc="1" title="Hot cue 2 : clic = poser / y aller · Maj + clic = effacer">2</button><button class="hc" data-hc="2" title="Hot cue 3 : clic = poser / y aller · Maj + clic = effacer">3</button><button class="hc" data-hc="3" title="Hot cue 4 : clic = poser / y aller · Maj + clic = effacer">4</button><span class="lsep"></span><button class="lp" data-lp="4" title="Boucle de 4 temps (clic à nouveau : sortir)">⟲ 4</button><button class="lp" data-lp="8" title="Boucle de 8 temps (clic à nouveau : sortir)">⟲ 8</button><button class="lp" data-lp="16" title="Boucle de 16 temps (clic à nouveau : sortir)">⟲ 16</button></div><canvas></canvas></div>
+      <div class="deck" id="deck1" style="--dc:#ff9a2e"><div class="dside"><span class="dl">B</span><div class="dcov ph"></div></div><div class="dh"><span class="dt">—</span><span class="key"></span></div><div class="dn"><span><b class="dbpm">—</b> BPM</span><span class="dtime"></span><span class="dst"></span></div><div class="dpads" data-d="1"><button class="sh" title="SHIFT : puis un pad 1 à 4 = l'effacer, puis CUE = remettre le CUE au premier kick (touche Maj du clavier : pareil)">SHIFT</button><button class="hc" data-hc="0" title="Hot cue 1 : clic = poser / y aller · Maj + clic = effacer">1</button><button class="hc" data-hc="1" title="Hot cue 2 : clic = poser / y aller · Maj + clic = effacer">2</button><button class="hc" data-hc="2" title="Hot cue 3 : clic = poser / y aller · Maj + clic = effacer">3</button><button class="hc" data-hc="3" title="Hot cue 4 : clic = poser / y aller · Maj + clic = effacer">4</button><span class="lsep"></span><button class="lp" data-lp="4" title="Boucle de 4 temps (clic à nouveau : sortir)">⟲ 4</button><button class="lp" data-lp="8" title="Boucle de 8 temps (clic à nouveau : sortir)">⟲ 8</button><button class="lp" data-lp="16" title="Boucle de 16 temps (clic à nouveau : sortir)">⟲ 16</button></div><canvas></canvas></div>
     </div>
     <div class="vsplit" id="splitD" title="Glisser pour agrandir les platines A / B et la table · double-clic : taille d'origine"></div>
   </section>
@@ -418,6 +426,7 @@
   <div class="lower">
     <div class="center">
       <canvas id="rulerC"></canvas>
+      <div id="tools"><button data-tool="arrow" class="on" title="Flèche : déplacer et couper les morceaux (les points ne bougent pas) · touche B"><svg viewBox="0 0 24 24"><path d="M5 3l14 9-6.2 1.3L16 20l-2.6 1.2-3.2-6.6L5 19z" fill="currentColor"/></svg></button><button data-tool="pen" title="Stylo : clic sur un morceau = point d'automation · glisser = le déplacer · clic sur un point = l'enlever · touche B"><svg viewBox="0 0 24 24"><path d="M3 21l1.2-4.6L16.6 4a2 2 0 0 1 2.8 0l.6.6a2 2 0 0 1 0 2.8L7.6 19.8z" fill="currentColor"/></svg></button></div>
       <div id="scroller">
         <canvas id="rowsC"></canvas>
         <div id="empty">Glisse un morceau de la bibliothèque jusqu'ici<br>(ou double-clic dessus) pour commencer ton mix.</div>
@@ -526,7 +535,7 @@ let LIB = [];                       // morceaux analysés (serveur)
 const BUF = {};                     // id morceau -> { key, buffer, peaks } ou { key, loading }
 const PHRASE = 32;   // 8 mesures de 4 temps : les morceaux entrent et sortent sur ces repères
 const MIXIN = 64;    // le suivant entre 16 mesures avant la fin du précédent
-const U = { rate:1, pxb:8, scrollX:-2, userScroll:0, sel:null, param:'vol', snap:0.5, pos:0, playing:false, click:false, undo:[],
+const U = { tool:'arrow', rate:1, pxb:8, scrollX:-2, userScroll:0, sel:null, param:'vol', snap:0.5, pos:0, playing:false, click:false, undo:[],
             libTab:'all', keys:new Set(), compat:true, folder:null, sort:'name', up:true, inspTab:'trans' };
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -899,7 +908,7 @@ function tick(id) {   // une seule boucle à la fois : deux boucles s'annulaient
   if (!U.playing || id !== tick.n) return;
   U.pos = livePos();
   const x = (beatAt(U.pos) - U.scrollX) * U.pxb, W = $('rowsC').clientWidth;
-  if ((x > W * 0.85 || x < 0) && performance.now() - U.userScroll > 4000) U.scrollX = beatAt(U.pos) - W * 0.15 / U.pxb;   // on laisse regarder ailleurs 4 s après un défilement à la main
+  if ((x > W * 0.85 || x < 0) && U.tool !== 'pen' && performance.now() - U.userScroll > 4000) U.scrollX = beatAt(U.pos) - W * 0.15 / U.pxb;   // on laisse regarder ailleurs 4 s après un défilement à la main
   const end = secAt(Math.max(0, ...S.clips.map(clipEnd))) + 8;
   if (U.pos > end) return stop();
   draw(true); requestAnimationFrame(() => tick(id));
@@ -1641,14 +1650,10 @@ function pointAt(h) {
   const vy = v => h.by + h.bh - 3 - (v - P.min) / (P.max - P.min) * (h.bh - 6);
   return h.c.auto[p].findIndex(p => Math.hypot((h.c.start + p.b - h.c.in - U.scrollX) * U.pxb - h.x, vy(p.v) - h.y) < 7);
 }
-function onLine(h) {   // la souris est sur la ligne rouge (à 6 px près) : clic = nouveau point, comme dans Ableton
-  const P = PARAMS[U.param]; if (!P || !h.c) return false;
-  const v = autoValue(h.c, U.param, tlToTb(h.c, h.beat));
-  return Math.abs(h.by + h.bh - 3 - (v - P.min) / (P.max - P.min) * (h.bh - 6) - h.y) < 6;
-}
 const yToV = (h, y) => { const P = PARAMS[U.param]; return clamp(P.min + (h.by + h.bh - 3 - y) / (h.bh - 6) * (P.max - P.min), P.min, P.max); };
 
 rowsC.addEventListener('mousedown', e => {
+  U.userScroll = performance.now();   // on travaille ici : l'écran ne suit plus la lecture pendant 4 s
   const h = hit(e), onPt = h.c && pointAt(h) >= 0, tr = onPt ? null : TRR.findLast(r => h.x >= r.x && h.x <= r.x + r.w && h.y >= r.y && h.y <= r.y + r.h);   // un point d'automation passe avant l'étiquette de l'effet
   if (tr && e.button === 0 && Math.hypot(h.x - tr.cx, h.y - tr.y - 7) < 8) {   // ✕ : on enlève l'automation de cette transition
     pushUndo(); removeTr(tr.c, tr.c.tr.findIndex(r => r.kind === tr.kind)); U.tr = null; changed(); return;
@@ -1664,14 +1669,16 @@ rowsC.addEventListener('mousedown', e => {
   const c = h.c, o = { start:c.start, in:c.in, len:c.len };
   if (e.button === 2) return;   // clic droit : géré par contextmenu (supprimer un point)
   if (pointAt(h) >= 0) h.zone = h.zone === 'tail' ? 'tail' : 'body';   // un point posé au bord du morceau reste attrapable
-  if (h.zone === 'tail' && !PARAMS[U.param]) return;   // prolongation : seulement des points
+  const pen = U.tool === 'pen' && PARAMS[U.param];   // stylo : les points ; flèche : les morceaux
+  if (h.zone === 'tail' && !pen) return;   // prolongation : seulement des points
   let move;
   // bords : on rogne temps par temps (Maj ou aimant « libre » : au choix) ; le début du fichier est arrondi au temps entier
   // suivant, sinon tout le morceau glisse d'une fraction de temps et ses kicks tombent entre les traits
   const edge = (b, m) => snapB(b, m, U.snap ? 1 : 0);
+  if (pen && h.zone !== 'title') h.zone = h.zone === 'tail' ? 'tail' : 'body';   // stylo : les bords servent aussi à poser des points
   if (h.zone === 'left') move = m => { const s = clamp(edge(o.start + m.beat - h.beat, m), o.start - (o.in - Math.ceil(trackBeats(S.tracks[c.trackId], ct(c))[0] - 1e-6)), o.start + o.len - 1); c.in = o.in + s - o.start; c.len = o.len - (s - o.start); c.start = s; };
   else if (h.zone === 'right') move = m => { c.len = clamp(edge(o.start + o.len + m.beat - h.beat, m) - c.start, 1, trackBeats(S.tracks[c.trackId], ct(c))[1] - c.in); };
-  else if (h.zone !== 'tail' && (h.zone === 'title' || !PARAMS[U.param] || (pointAt(h) < 0 && !onLine(h)))) {   // hors de la ligne rouge : on déplace le morceau ; les suivants bougent avec lui (Alt : lui seul)
+  else if (h.zone !== 'tail' && (h.zone === 'title' || !pen)) {   // hors de la ligne rouge : on déplace le morceau ; les suivants bougent avec lui (Alt : lui seul)
     const next = following(c);
     move = m => { c.start = Math.max(0, snapB(o.start + m.beat - h.beat, m)); shiftAll(next, m.altKey ? 0 : c.start - o.start); };
   }
@@ -1702,7 +1709,7 @@ rowsC.addEventListener('mousedown', e => {
 const following = c => S.clips.filter(o => o !== c && o.start > c.start).map(o => [o, o.start]);
 const shiftAll = (list, d) => list.forEach(([o, s]) => o.start = s + d);
 function drag(move, onUp) {
-  const mm = m => { move({ ...hit(m), shiftKey:m.shiftKey, altKey:m.altKey }); draw(); };
+  const mm = m => { U.userScroll = performance.now(); move({ ...hit(m), shiftKey:m.shiftKey, altKey:m.altKey }); draw(); };
   const up = () => {
     removeEventListener('mousemove', mm); removeEventListener('mouseup', up);
     onUp?.(); changed();
@@ -1721,7 +1728,7 @@ rowsC.addEventListener('mousemove', e => {
   const tr = TRR.find(r => { const h = hit(e); return Math.hypot(h.x - r.cx, h.y - r.y - 7) < 8; });
   if (tr) { rowsC.style.cursor = 'pointer'; return; }
   const h = hit(e);
-  rowsC.style.cursor = !h.c ? 'default' : pointAt(h) >= 0 ? 'move' : h.zone === 'left' || h.zone === 'right' ? 'ew-resize' : h.zone === 'title' || !PARAMS[U.param] || !onLine(h) ? 'grab' : PEN;
+  rowsC.style.cursor = !h.c ? 'default' : U.tool === 'pen' && pointAt(h) >= 0 ? 'move' : h.zone === 'left' || h.zone === 'right' ? 'ew-resize' : h.zone === 'title' || U.tool !== 'pen' || !PARAMS[U.param] ? 'grab' : PEN;
 });
 // Glisser un morceau de la bibliothèque sur la timeline
 $('scroller').addEventListener('dragover', e => { if (isTrackDrag(e)) { e.preventDefault(); $('scroller').classList.add('drop'); } });
@@ -1955,8 +1962,8 @@ function deckInfo(d, pb, LN) {   // morceau en lecture sur la voie, sinon le pro
     el.querySelector('.dt').textContent = t ? t.name : LV.on ? 'Glisse un morceau ici' : '—';
     const k = el.querySelector('.key'); k.textContent = t ? KL(camOf(t)) : ''; k.style.color = t ? keyColor(camOf(t)) : '';
     el.querySelector('.dbpm').textContent = bpm;
-    const im = el.querySelector('.dcov'), id = t?.id; im.hidden = true;
-    if (id) coverOf(id).then(u => { if (el.cid === (c?.id ?? null) && u) { im.src = u; im.hidden = false; } });
+    const im = el.querySelector('.dcov'), id = t?.id; im.style.backgroundImage = ''; im.classList.add('ph');   // pochette sous la lettre ; sans image : un vinyle
+    if (id) coverOf(id).then(u => { if (el.cid === (c?.id ?? null) && u) { im.style.backgroundImage = `url("${u}")`; im.classList.remove('ph'); } });
   }
   const b = c && (LV.on ? BUF[c.id] || (P.buf && { buffer:P.buf }) : BUF[c.id]);
   const dur = b?.buffer?.duration || 0, pos = !c ? 0 : LV.on ? lvPos(P) : on ? fileT(c, tlToTb(c, pb)) : fileT(c, c.in);
@@ -2154,10 +2161,17 @@ function lvLoopSet(d, n) {
   else { const tb = Math.floor(lvTb(P, f) + 1e-6); P.loop = [lvF(P, tb), lvF(P, tb + n)]; P.loopN = n; P.pos = f < P.loop[0] ? P.loop[0] : f; }
   if (was) lvPlay(d); lvUI();
 }
+// SHIFT (bouton de la platine, ou touche Maj) : pad = effacer le hot cue, CUE = remettre le CUE au premier kick
+const shiftOf = (d, e) => { const b = document.querySelector(`.dpads[data-d="${d}"] .sh`), on = e?.shiftKey || b.classList.contains('on'); b.classList.remove('on'); return on; };
+function lvCueReset(d) { const P = LV.d[d]; if (!P.buf) return; P.cue = Math.max(0, lvF(P, downbeat(P.t).kick)); lvUI(); draw(true); }
 document.querySelectorAll('.dpads').forEach(el => el.onclick = e => {
-  const b = e.target.closest('button'); if (!b) return; const d = +el.dataset.d; LV.last = d; liveOn();
-  if (b.dataset.hc != null) lvHot(d, +b.dataset.hc, e.shiftKey); else lvLoopSet(d, +b.dataset.lp);
+  const b = e.target.closest('button'); if (!b) return; const d = +el.dataset.d; LV.last = d;
+  if (b.classList.contains('sh')) return b.classList.toggle('on');
+  liveOn();
+  if (b.dataset.hc != null) lvHot(d, +b.dataset.hc, shiftOf(d, e)); else lvLoopSet(d, +b.dataset.lp);
 });
+addEventListener('keydown', e => { if (e.key === 'Shift') document.querySelectorAll('.dpads .sh').forEach(b => b.classList.add('hold')); });
+addEventListener('keyup', e => { if (e.key === 'Shift') document.querySelectorAll('.dpads .sh').forEach(b => b.classList.remove('hold')); });
 // Enregistrement du set (Mix Live) : tout ce qui sort de la table, en PCM 16 bits, puis format + emplacement comme l'export
 const SETREC = { on:false, node:null, parts:[], sr:0, t0:0 };
 function recSetStart() {
@@ -2211,8 +2225,8 @@ $('liveBtn').onclick = () => LV.on ? liveOff() : liveOn();
 document.querySelectorAll('.rnd.pp').forEach(b => b.onclick = () => {   // chaque voie a sa lecture : elle passe en Mix Live si besoin
   const d = +b.dataset.d; LV.last = d; liveOn(); LV.d[d].playing ? lvPause(d) : lvPlay(d);
 });
-document.querySelectorAll('.rnd.cue').forEach(b => b.onclick = () => {
-  const d = +b.dataset.d; LV.last = d; liveOn(); lvCue(d);
+document.querySelectorAll('.rnd.cue').forEach(b => b.onclick = e => {
+  const d = +b.dataset.d; LV.last = d; liveOn(); shiftOf(d, e) ? lvCueReset(d) : lvCue(d);
   b.classList.add('on'); setTimeout(() => b.classList.remove('on'), 180);
 });
 [0, 1].forEach(d => {   // glisser un morceau de la bibliothèque sur une platine = le charger sur cette voie
@@ -2229,9 +2243,14 @@ $('undo').onclick = undo;
 $('params').innerHTML = ['none', ...PKEYS].map(k => `<button data-p="${k}">${k === 'none' ? 'Masquer' : PARAMS[k].label}</button>`).join('');
 $('params').onclick = e => { const p = e.target.dataset.p; if (p) { U.param = p; paramsUI(); draw(); } };
 function showLine(kind) { const p = TRP[kind]?.[0]; if (p) { U.param = p; paramsUI(); } }   // une automation choisie : sa ligne rouge s'affiche (réverbe, noise…)
+function setTool(t) {
+  U.tool = t; if (t === 'pen' && !PARAMS[U.param]) U.param = 'vol';
+  document.querySelectorAll('#tools button').forEach(b => b.classList.toggle('on', b.dataset.tool === t)); paramsUI(); draw();
+}
+$('tools').onclick = e => { const t = e.target.closest('button')?.dataset.tool; if (t) setTool(t); };
 function paramsUI() {
   document.querySelectorAll('#params button').forEach(b => b.classList.toggle('on', b.dataset.p === U.param));
-  $('hint').textContent = PARAMS[U.param] ? `Ligne rouge ${PARAMS[U.param].label} : clic sur la ligne = point · glisser un point = le déplacer · clic sur un point = l'enlever · ailleurs = déplacer le morceau` : 'Glisse un morceau pour le déplacer, tire ses bords pour le couper · Maj = sans aimant';
+  $('hint').textContent = U.tool === 'pen' && PARAMS[U.param] ? `Stylo · ${PARAMS[U.param].label} : clic = point · glisser un point = le déplacer · clic sur un point = l'enlever · titre = déplacer le morceau` : 'Flèche : glisse un morceau pour le déplacer, tire ses bords pour le couper · Maj = sans aimant · B = stylo';
 }
 addEventListener('keydown', e => {
   if (e.target.matches('input, select')) return;
@@ -2239,10 +2258,12 @@ addEventListener('keydown', e => {
   else if ((e.metaKey || e.ctrlKey) && e.key === 'z') { e.preventDefault(); undo(); }
   else if ((e.key === 'Delete' || e.key === 'Backspace') && selClip() && trSel(selClip()) >= 0) { pushUndo(); removeTr(selClip(), trSel(selClip())); U.tr = null; changed(); }   // Suppr : la transition sélectionnée
   else if ((e.key === 'Delete' || e.key === 'Backspace') && selClip()) { pushUndo(); S.clips = S.clips.filter(c => c.id !== U.sel); U.sel = null; changed(); }
+  else if (LV.on && /^Digit[1-4]$/.test(e.code) && !e.metaKey && !e.ctrlKey) { const d = LV.last ?? 0; lvHot(d, +e.code[5] - 1, shiftOf(d, e)); }   // Mix Live : 1 à 4 = hot cues de la dernière platine (Maj : effacer)
   else if (e.key >= '0' && e.key <= '8') { U.param = ['none', ...PKEYS][+e.key]; paramsUI(); draw(); }
   else if (e.key === 'Home') $('toStart').click();
-  else if ((e.key === 'q' || e.key === 'Q') && LV.on) lvHome(LV.last ?? 0);   // Mix Live : Q = la dernière platine touchée revient au début
+  else if ((e.key === 'q' || e.key === 'Q') && LV.on && !e.metaKey && !e.ctrlKey) { const d = LV.last ?? 0; shiftOf(d, e) ? lvCueReset(d) : lvHome(d); }   // Q : retour au premier kick ; Maj + Q : CUE remis au premier kick   // Mix Live : Q = la dernière platine touchée revient au début
   else if (e.key === 'f' || e.key === 'F') zoomFit();
+  else if ((e.key === 'b' || e.key === 'B') && !e.metaKey && !e.ctrlKey) setTool(U.tool === 'pen' ? 'arrow' : 'pen');
   else if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && selClip()) {   // ← → : d'une mesure (Maj : d'un temps)
     e.preventDefault(); pushUndo(); const c = selClip(), s = c.start, next = following(c);
     c.start = Math.max(0, c.start + (e.key === 'ArrowLeft' ? -1 : 1) * (e.shiftKey ? 1 : 4));
@@ -2500,7 +2521,7 @@ $('newProj').onclick = () => {
 
 // ============ Export ============
 const FMTS = { mp3:['MP3', 'audio/mpeg'], wav:['WAV', 'audio/wav'], aiff:['AIFF', 'audio/aiff'], flac:['FLAC', 'audio/flac'], m4a:['M4A', 'audio/mp4'] };
-function exportMix(rec) {   // 1. format (+ niveau, pochette)  2. emplacement  3. calcul + encodage ; rec = un set enregistré en Mix Live
+function exportMix(rec, sc = false) {   // 1. format (+ niveau, pochette)  2. emplacement  3. calcul + encodage ; rec = un set enregistré en Mix Live
   if (!rec?.parts) {
     rec = null;
     if (!S.clips.length) return alert('Le mix est vide.');
@@ -2508,13 +2529,13 @@ function exportMix(rec) {   // 1. format (+ niveau, pochette)  2. emplacement  3
   }
   const fm = Object.keys(FMTS).filter(f => !window.WEB || !['flac', 'm4a'].includes(f));   // FLAC / M4A : encodés par ffmpeg, dans l'app Mac
   const lufs = window.WEB ? '' : `<label class="exopt">Niveau <select id="exLufs"><option value="">D'origine</option><option value="-9">Club : −9 LUFS</option><option value="-14">Streaming : −14 LUFS</option></select></label>`;
-  modal(rec ? 'Enregistrer le set' : 'Exporter le mix', `Choisis le format, puis où l'enregistrer.<div class="exopts">${lufs}<label class="exopt"><input type="checkbox" id="exCover" checked> Pochette (image carrée)</label></div><div class="fmtnote">MP3 ${PREF.mp3} kbit/s : léger, pour partager · WAV / AIFF : qualité CD sans perte${window.WEB ? '' : ' · FLAC : sans perte et compressé · M4A : AAC 256 kbit/s (Apple)'}${window.WEB ? '<br>FLAC et M4A : dans l\'app Mac.' : ''}</div>`,
+  modal(rec ? 'Enregistrer le set' : sc ? 'Exporter pour SoundCloud' : 'Exporter le mix', `Choisis le format, puis où l'enregistrer.<div class="exopts">${lufs}<label class="exopt"><input type="checkbox" id="exCover" checked> Pochette (image carrée)</label><label class="exopt"><input type="checkbox" id="exSC"${sc ? ' checked' : ''}> ☁ Envoyer sur SoundCloud après l'export</label></div><div class="fmtnote">MP3 ${PREF.mp3} kbit/s : léger, pour partager · WAV / AIFF : qualité CD sans perte${window.WEB ? '' : ' · FLAC : sans perte et compressé · M4A : AAC 256 kbit/s (Apple)'}${window.WEB ? '<br>FLAC et M4A : dans l\'app Mac.' : ''}</div>`,
     [...fm.map(f => [FMTS[f][0], () => pickDest(f, rec)]), ['Annuler', closeModal]]);
   if (U.lufs != null && $('exLufs')) $('exLufs').value = U.lufs;
   $('mBar').parentElement.hidden = true; $('mBtns').classList.add('fmts');
 }
 async function pickDest(fmt, rec) {
-  const opt = { lufs:$('exLufs')?.value || '', cover:$('exCover')?.checked };
+  const opt = { lufs:$('exLufs')?.value || '', cover:$('exCover')?.checked, sc:$('exSC')?.checked };
   U.lufs = opt.lufs;
   const name = `${rec?.name || S.name} - ${new Date().toLocaleString('fr-FR').replace(/[/:]/g, '-').replace(/,/g, '')}`;
   let dest = '', handle = null;
@@ -2572,9 +2593,11 @@ async function finishExport(id, fmt, name, dest, handle, tl, sr, opt, title) {
     const png = await makeCover(title, `${+S.tempo.toFixed(0)} BPM · ${new Date().toLocaleDateString('fr-FR')}`);
     if (window.WEB) dlBlob(png, `${name}.png`); else await fetch(`/api/export/cover?path=${encodeURIComponent(path.replace(/\.[^./]+$/, '.png'))}`, { method:'POST', body:png });
   }
+  const toSC = () => { navigator.clipboard?.writeText(tl).catch(() => {}); window.WEB ? open('https://soundcloud.com/upload', '_blank') : fetch('/api/open?url=' + encodeURIComponent('https://soundcloud.com/upload')); if (!window.WEB) fetch('/api/reveal?path=' + encodeURIComponent(path)); };
+  if (opt.sc && !window.WEB) toSC();   // demandé dans la fenêtre d'export : la page SoundCloud s'ouvre tout de suite (web : bouton ci-dessous, le navigateur bloque les fenêtres ouvertes sans clic)
   const file = path || mp3, where = window.WEB ? (handle ? 'enregistré.' : 'téléchargé (dossier Téléchargements).') : `enregistré dans ${esc(path.replace(/\/[^/]*$/, ''))}`;
   modal('Mix exporté ✔', `<b>${esc(file.split('/').pop())}</b><br>${where}<div class="fmtnote">SoundCloud : la page d'envoi s'ouvre, la tracklist est copiée (à coller dans la description), il ne reste qu'à glisser le fichier.</div>`, [
-    ['☁ Envoyer sur SoundCloud', () => { navigator.clipboard?.writeText(tl).catch(() => {}); window.WEB ? open('https://soundcloud.com/upload', '_blank') : fetch('/api/open?url=' + encodeURIComponent('https://soundcloud.com/upload')); if (!window.WEB) fetch('/api/reveal?path=' + encodeURIComponent(path)); }],
+    ['☁ Envoyer sur SoundCloud', toSC],
     [window.WEB ? 'Télécharger encore' : 'Montrer le fichier', () => fetch(`/api/reveal?name=${encodeURIComponent(mp3 || '')}&path=${encodeURIComponent(path || '')}`)],
     ['Fermer', closeModal]]);
   modalProgress(1);
@@ -2592,7 +2615,8 @@ function makeCover(title, sub) {   // 1400 × 1400 : disque du logo, nom du mix,
   g.fillStyle = '#8b8ba1'; g.font = '600 30px -apple-system, Helvetica, sans-serif'; g.fillText('MIX AUTO REC', cx, N * 0.95);
   return new Promise(ok => cv.toBlob(ok, 'image/png'));
 }
-$('export').onclick = exportMix;
+$('export').onclick = () => exportMix();
+$('scBtn').onclick = () => exportMix(null, true);
 
 function modal(title, text, btns = []) {
   window.modalCancel = false; $('modal').hidden = false; $('mTitle').textContent = title; $('mText').innerHTML = text;
@@ -2941,6 +2965,13 @@ function startChoice(names, last) {   // à l'ouverture : nouvelle session ou un
 ["D'origine",'Original','Original','Original','原始','الأصلي'],
 ['Club : −9 LUFS','Club: −9 LUFS','Club: −9 LUFS','Club: −9 LUFS','俱乐部：−9 LUFS','نادي: −9 LUFS'],
 ['Streaming : −14 LUFS','Streaming: −14 LUFS','Streaming: −14 LUFS','Streaming: −14 LUFS','流媒体：−14 LUFS','بث: −14 LUFS'],
+['Flèche : déplacer et couper les morceaux (les points ne bougent pas) · touche B','Arrow: move and trim tracks (points stay put) · B key','Flecha: mover y recortar pistas (los puntos no se mueven) · tecla B','Pfeil: Titel verschieben und schneiden (Punkte bleiben) · Taste B','箭头：移动和裁剪曲目（点不动）· B 键','السهم: تحريك المقاطع وقصها (النقاط لا تتحرك) · مفتاح B'],
+["Stylo : clic sur un morceau = point d'automation · glisser = le déplacer · clic sur un point = l'enlever · touche B",'Pen: click a track = automation point · drag = move it · click a point = remove it · B key','Lápiz: clic en una pista = punto de automatización · arrastrar = moverlo · clic en un punto = quitarlo · tecla B','Stift: Klick auf einen Titel = Automationspunkt · ziehen = verschieben · Klick auf einen Punkt = entfernen · Taste B','画笔：点击曲目 = 自动化点 · 拖动 = 移动 · 点击点 = 删除 · B 键','القلم: نقرة على مقطع = نقطة أتمتة · السحب = تحريكها · نقرة على نقطة = حذفها · مفتاح B'],
+['Flèche : glisse un morceau pour le déplacer, tire ses bords pour le couper · Maj = sans aimant · B = stylo','Arrow: drag a track to move it, pull its edges to trim it · Shift = no snap · B = pen','Flecha: arrastra una pista para moverla, tira de los bordes para recortarla · Mayús = sin imán · B = lápiz','Pfeil: Titel ziehen zum Verschieben, Ränder ziehen zum Schneiden · Umschalt = ohne Raster · B = Stift','箭头：拖动曲目移动，拉边缘裁剪 · Shift = 不吸附 · B = 画笔','السهم: اسحب مقطعًا لتحريكه، واسحب حوافه لقصه · Shift = بلا مغناطيس · B = القلم'],
+["SHIFT : puis un pad 1 à 4 = l'effacer, puis CUE = remettre le CUE au premier kick (touche Maj du clavier : pareil)",'SHIFT: then a pad 1 to 4 = clear it, then CUE = reset CUE to the first kick (keyboard Shift key: same)','SHIFT: luego un pad 1 a 4 = borrarlo, luego CUE = devolver el CUE al primer kick (tecla Mayús: igual)','SHIFT: dann Pad 1 bis 4 = löschen, dann CUE = CUE auf den ersten Kick zurück (Umschalttaste: gleich)','SHIFT：再按 1 到 4 号垫 = 清除，再按 CUE = 把 CUE 重置到第一个底鼓（键盘 Shift 键：相同）','SHIFT: ثم لوحة من 1 إلى 4 = مسحها، ثم CUE = إعادة CUE إلى أول ضربة (مفتاح Shift: نفس الشيء)'],
+["Exporter le mix puis l'envoyer sur SoundCloud : la page d'envoi s'ouvre, la tracklist est copiée et le fichier est prêt à glisser",'Export the mix then send it to SoundCloud: the upload page opens, the tracklist is copied and the file is ready to drag','Exportar la mezcla y enviarla a SoundCloud: se abre la página de subida, la tracklist se copia y el archivo está listo para arrastrar','Mix exportieren und an SoundCloud senden: die Upload-Seite öffnet sich, die Tracklist wird kopiert, die Datei ist bereit zum Ziehen','导出混音并发送到 SoundCloud：打开上传页面，复制曲目列表，文件可直接拖入','تصدير المزيج ثم إرساله إلى SoundCloud: تُفتح صفحة الرفع وتُنسخ قائمة المقاطع ويصبح الملف جاهزًا للسحب'],
+["☁ Envoyer sur SoundCloud après l'export",'☁ Send to SoundCloud after export','☁ Enviar a SoundCloud tras exportar','☁ Nach dem Export an SoundCloud senden','☁ 导出后发送到 SoundCloud','☁ الإرسال إلى SoundCloud بعد التصدير'],
+['Exporter pour SoundCloud','Export for SoundCloud','Exportar para SoundCloud','Für SoundCloud exportieren','为 SoundCloud 导出','تصدير لـ SoundCloud'],
 ['Pochette (image carrée)','Cover (square image)','Portada (imagen cuadrada)','Cover (quadratisches Bild)','封面（方形图片）','غلاف (صورة مربعة)'],
 ['Gate','Gate','Gate','Gate','门限','بوابة'],
 ['Brake','Brake','Freno','Brake','刹车','فرملة'],
@@ -2989,6 +3020,7 @@ function startChoice(names, last) {   // à l'ouverture : nouvelle session ou un
       `MP3 ${a} kbit/s: leicht, zum Teilen · WAV / AIFF: verlustfreie CD-Qualität${mac ? ' · FLAC: verlustfrei und komprimiert · M4A: AAC 256 kbit/s (Apple)' : ''}${web ? ' · FLAC und M4A: in der Mac-App.' : ''}`,
       `MP3 ${a} kbit/s：体积小，便于分享 · WAV / AIFF：CD 无损音质${mac ? ' · FLAC：无损压缩 · M4A：AAC 256 kbit/s（Apple）' : ''}${web ? ' · FLAC 和 M4A：在 Mac 应用中。' : ''}`,
       `MP3 ${a} kbit/s: خفيف للمشاركة · WAV / AIFF: جودة CD بلا فقدان${mac ? ' · FLAC: بلا فقدان ومضغوط · M4A: AAC 256 kbit/s (Apple)' : ''}${web ? ' · FLAC وM4A: في تطبيق Mac.' : ''}`]; }],
+    [/^Stylo · (.+) : clic = point · glisser un point = le déplacer · clic sur un point = l'enlever · titre = déplacer le morceau$/, a => [`Pen · ${a}: click = point · drag a point = move it · click a point = remove it · title = move the track`, `Lápiz · ${a}: clic = punto · arrastrar un punto = moverlo · clic en un punto = quitarlo · título = mover la pista`, `Stift · ${a}: Klick = Punkt · Punkt ziehen = verschieben · Klick auf Punkt = entfernen · Titel = Titel verschieben`, `画笔 · ${a}：点击 = 点 · 拖动点 = 移动 · 点击点 = 删除 · 标题 = 移动曲目`, `القلم · ${a}: نقرة = نقطة · سحب نقطة = تحريكها · نقرة على نقطة = حذفها · العنوان = تحريك المقطع`]],
     [/^Hot cue (\d) : clic = poser \/ y aller · Maj \+ clic = effacer$/, a => [`Hot cue ${a}: click = set / jump · Shift + click = clear`, `Hot cue ${a}: clic = poner / ir · Mayús + clic = borrar`, `Hot Cue ${a}: Klick = setzen / springen · Umschalt + Klick = löschen`, `热点 ${a}：点击 = 设置 / 跳转 · Shift + 点击 = 清除`, `نقطة سريعة ${a}: نقرة = وضع / انتقال · Shift + نقرة = مسح`]],
     [/^Boucle de (\d+) temps \(clic à nouveau : sortir\)$/, a => [`${a}-beat loop (click again: exit)`, `Bucle de ${a} tiempos (clic otra vez: salir)`, `Loop über ${a} Schläge (nochmal klicken: beenden)`, `${a} 拍循环（再次点击：退出）`, `حلقة من ${a} نبضات (انقر مجددًا: خروج)`]],
     [/^grave (\d+)$/, a => [`low ${a}`, `grave ${a}`, `tief ${a}`, `低 ${a}`, `منخفض ${a}`]], [/^aigu (\d+)$/, a => [`high ${a}`, `agudo ${a}`, `hoch ${a}`, `高 ${a}`, `مرتفع ${a}`]],
