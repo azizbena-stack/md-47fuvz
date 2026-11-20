@@ -312,7 +312,7 @@
   <section id="decks">
     <button class="maxb" data-max="decks" title="Pleine page (Échap pour revenir)">⛶ Pleine page</button>
     <canvas id="deckC" title="Clic : aller à cet endroit"></canvas>
-    <div class="vsplit" id="splitR" title="Glisser pour agrandir les formes d'onde · double-clic : taille d'origine"></div>
+    <div class="vsplit" id="splitR" title="Glisser vers le haut pour agrandir les platines A / B et la table · double-clic : taille d'origine"></div>
     <div class="deckrow" id="rack">
       <div class="deck" id="deck0" style="--dc:#3aa0ff"><div class="dh"><span class="dl">A</span><span class="dt">—</span><span class="key"></span></div><div class="dn"><span><b class="dbpm">—</b> BPM</span><span class="dtime"></span><span class="dst"></span></div><canvas></canvas></div>
       <div class="mixer" id="mixer"></div>
@@ -1580,11 +1580,17 @@ function grip(id, key, el, min, def) {   // glisser : nouvelle hauteur ; double-
 }
 grip('splitR', 'deckH', '#deckC', 50, 120);
 grip('splitD', 'rackH', '#decks .deckrow', 150, null);
-{ const g = $('splitR').onmousedown;   // platines en pleine page : la ligne du haut agrandit le rack A / table / B (vers le haut)
+{   // la ligne du haut agrandit le rack A / table / B vers le haut (sans bouger le reste)
+  $('splitR').ondblclick = () => { LAY.deckH = 120; LAY.rackH = null; applyLay(); };
   $('splitR').onmousedown = e => {
-    if (!$('decks').classList.contains('maxed')) return g(e);
-    const y0 = e.clientY, h0 = $('rack').getBoundingClientRect().height; $('splitR').classList.add('on');
-    const mm = m => { LAY.rackH = Math.round(Math.max(150, Math.min(innerHeight - 260, h0 - (m.clientY - y0)))); applyLay(); };
+    const y0 = e.clientY, h0 = $('rack').getBoundingClientRect().height, d0 = LAY.deckH, max = $('decks').classList.contains('maxed');
+    $('splitR').classList.add('on');
+    const mm = m => {   // le rack grandit vers le haut en prenant sur les formes d'onde : rien d'autre ne bouge
+      const dy = m.clientY - y0;
+      if (max) LAY.rackH = Math.round(Math.max(150, Math.min(innerHeight - 260, h0 - dy)));
+      else { const dh = Math.max(50, Math.min(d0 + h0 - 150, d0 + dy)); LAY.deckH = Math.round(dh); LAY.rackH = Math.round(h0 - (dh - d0)); }
+      applyLay();
+    };
     const up = () => { $('splitR').classList.remove('on'); removeEventListener('mousemove', mm); removeEventListener('mouseup', up); };
     addEventListener('mousemove', mm); addEventListener('mouseup', up);
   };
