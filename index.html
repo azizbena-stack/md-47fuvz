@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Mix Auto</title>
+<title>Mix Auto Rec</title>
 <style>
   :root { --bg:#0c0c11; --panel:#14141c; --card:#1a1a24; --line:#272735; --txt:#ececf3; --dim:#8b8ba1; --acc:#ff3b3b; --acc2:#22d3a6; --warn:#ffb547; --err:#ff5c7a; --libH:min(300px, 32vh); }
   * { box-sizing:border-box; }
@@ -30,6 +30,7 @@
   header { display:flex; align-items:center; gap:10px; padding:8px 14px; background:linear-gradient(180deg, #1a1a26, #111119); border-bottom:1px solid #2c2c40; box-shadow:0 4px 18px #0007; flex-wrap:wrap; position:relative; z-index:30; }
   header h1 { font-size:19px; margin:0 4px 0 0; letter-spacing:-.5px; font-weight:800; display:flex; align-items:center; gap:7px; }
   header h1::before { content:''; width:22px; height:22px; border-radius:50%; background:conic-gradient(from 200deg, #3aa0ff, #ffffff, #ff9a2e, #ff3b3b, #3aa0ff); box-shadow:0 0 12px #ff3b3b66; mask:radial-gradient(circle, transparent 3px, #000 4px); }
+  h1 .rec { font-style:normal; font-size:.62em; font-weight:900; color:#fff; background:#ff3b3b; border-radius:4px; padding:0 4px; vertical-align:3px; letter-spacing:.5px; -webkit-text-fill-color:#fff; }
   .ico { width:15px; height:15px; vertical-align:-3px; margin-right:3px; }
   header h1 .brand { display:flex; flex-direction:column; line-height:1; } header h1 small { font-size:9px; font-weight:700; letter-spacing:1.6px; text-transform:uppercase; color:var(--acc); margin-top:2px; opacity:.85; }
   header h1 .bt span { background:linear-gradient(90deg, #ff5c5c, #ff2a2a); -webkit-background-clip:text; background-clip:text; color:transparent; }
@@ -57,8 +58,11 @@
   .app { display:grid; align-content:start; grid-template-rows:auto max(var(--libH), 190px) 6px var(--tlH, max(440px, calc(100vh - var(--libH) - 330px))); }
   .vsplit { background:#ffffff45; cursor:row-resize; height:6px; position:relative; }
   .vsplit:hover, .vsplit.on { background:#ffffff; box-shadow:0 0 8px #ffffff99; }
-  .vsplit::after { content:''; position:absolute; left:50%; top:2px; width:34px; height:2px; margin-left:-17px; border-radius:1px; background:#ffffff99; }
-  .vsplit:hover::after, .vsplit.on::after { background:#0c0c11; }
+  .vsplit { z-index:3; }
+  .vsplit::before, .vsplit::after { position:absolute; left:50%; width:22px; margin-left:-11px; height:11px; line-height:11px; text-align:center; font-size:8px; color:#fff; background:#3a3a4c; pointer-events:none; }   /* petites flèches ▲ ▼ au milieu : ça se tire */
+  .vsplit::before { content:'▲'; bottom:6px; border-radius:6px 6px 0 0; }
+  .vsplit::after { content:'▼'; top:6px; border-radius:0 0 6px 6px; }
+  .vsplit:hover::before, .vsplit:hover::after, .vsplit.on::before, .vsplit.on::after { background:#fff; color:#0c0c11; }
   #decks, #libPane, .lower { position:relative; }
   .maxb { padding:3px 10px; font-size:12px; line-height:1.2; white-space:nowrap; }
   .maxb.on { font-size:15px; font-weight:800; padding:2px 10px; color:#fff; background:linear-gradient(180deg,#ff4d4d,#c81e1e); border-color:#ff7a7a; box-shadow:0 0 10px #ff3b3b88; opacity:1 !important; }
@@ -73,7 +77,7 @@
   #deckC { display:block; width:100%; height:120px; cursor:pointer; }
   #decks .deckrow { height:var(--rackH, auto); box-sizing:border-box; }
   .deckrow { display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); gap:8px; padding:6px 8px; }
-  .deck { display:grid; grid-template-columns:minmax(0,1fr); grid-template-rows:auto auto 1fr; overflow:hidden; gap:3px; min-width:0; background:var(--card); border:1px solid var(--line); border-radius:10px; padding:6px 10px; border-top:3px solid var(--dc); }
+  .deck { display:grid; grid-template-columns:minmax(0,1fr); grid-template-rows:auto auto auto 1fr; overflow:hidden; gap:3px; min-width:0; background:var(--card); border:1px solid var(--line); border-radius:10px; padding:6px 10px; border-top:3px solid var(--dc); }
   .deck .dh { display:flex; align-items:center; gap:8px; min-width:0; }
   .deck .dcov { width:38px; height:38px; flex:none; border-radius:5px; object-fit:cover; border:1px solid #ffffff40; box-shadow:0 0 6px #0008; }
   .deck .dcov[hidden] { display:none; }
@@ -82,6 +86,9 @@
   .deck .dn { display:flex; flex-wrap:wrap; gap:2px 14px; white-space:nowrap; align-items:baseline; color:var(--dim); font:600 11px ui-monospace, Menlo, monospace; }
   .deck .dn b { color:var(--txt); font-size:17px; }
   .deck .air { color:var(--acc2); } .deck .nxt { color:var(--warn); }
+  .dpads { display:flex; gap:4px; align-items:center; } .dpads button { padding:2px 0; flex:1; min-width:0; font:800 11px ui-monospace, Menlo, monospace; border-radius:5px; }
+  .dpads .lsep { width:6px; } .dpads .hc.set { background:var(--hcc); border-color:var(--hcc); color:#0c0c11; } .dpads .lp.on { background:var(--acc2); border-color:var(--acc2); color:#0c0c11; animation:glow 1s ease-in-out infinite; }
+  #recSet.on { background:#ff3b3b; color:#fff; border-color:#ff7a7a; animation:glow 1s ease-in-out infinite; }
   .deck canvas { width:100%; height:28px; display:block; align-self:end; border-radius:4px; }
   .mixer { display:flex; gap:10px; align-items:center; background:var(--card); border:1px solid var(--line); border-radius:10px; padding:6px 10px; }
   .chan { display:flex; gap:6px; align-items:center; } .chan.rev { flex-direction:row-reverse; }
@@ -159,6 +166,8 @@
   tr.trk { cursor:grab; }
   tr.trk:hover td { background:#ffffff07; }
   tr.trk.used td:first-child { box-shadow:inset 3px 0 var(--acc2); }
+  .inmix { display:inline-block; margin-right:6px; padding:1px 6px; border-radius:9px; background:var(--acc2); color:#0c0c11; font:800 10px -apple-system, sans-serif; vertical-align:1px; }
+  tr.trk.selt td { background:#ff3b3b14 !important; } tr.trk.selt td:first-child { box-shadow:inset 3px 0 #ff3b3b; } tr.trk.selt .inmix { background:#ff3b3b; color:#fff; }
   td.title { min-width:200px; white-space:normal; word-break:break-word; line-height:1.3; }   /* titre complet (sur 2 lignes si besoin) */
   .tablewrap { overflow-x:hidden; }
   td.title b { font-weight:600; } td.title span { color:var(--dim); }
@@ -184,9 +193,15 @@
   .trchips { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px; }
   .trchip { border-radius:999px; padding:3px 11px; font-size:12px; font-weight:700; border-color:var(--k); color:var(--k); background:color-mix(in srgb, var(--k) 12%, #1e1e2a); }
   .trchip.on { background:var(--k); color:#0c0c11; }
+  .autosave { font:600 10px ui-monospace, Menlo, monospace; color:var(--acc2); margin-left:-4px; }
+  .verb { text-align:left; }
+  .exopts { display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; } .exopt { display:flex; gap:6px; align-items:center; font-size:12px; }
+  .recrow { display:flex; gap:6px; justify-content:center; }
   #mBtns.fmts { display:grid; grid-template-columns:repeat(auto-fill, minmax(70px, 1fr)); gap:6px; } #mBtns.fmts button { font-weight:800; padding:12px 0; }
   .fmtnote { margin-top:8px; font-size:11px; color:var(--dim); line-height:1.5; }
   #legal { width:min(640px, 94vw); overflow:auto; } .legal p, .legal li { font-size:12px; line-height:1.55; color:#c9c9d6; margin:4px 0 8px; } .legal ul { padding-left:18px; margin:4px 0; } .legal h4 { margin:14px 0 2px; }
+  body.ar #mTitle { display:block; padding:0 30px; }
+  body.ar dialog, body.ar #modal .box, body.ar .note, body.ar #hint { direction:rtl; text-align:right; }
   .dellist { display:flex; flex-direction:column; gap:6px; max-height:300px; overflow:auto; margin-top:10px; text-align:left; }
   .dellist label { display:flex; gap:8px; align-items:center; padding:7px 10px; border:1px solid var(--line); border-radius:8px; cursor:pointer; }
   .dellist label:has(input:checked) { border-color:#ff5c5c; background:#ff5c5c14; }
@@ -313,12 +328,12 @@
 </head>
 <body>
 <header>
-  <h1><span class="brand"><span class="bt">Mix <span>Auto</span></span><small>version bêta</small></span></h1>
+  <h1><span class="brand"><span class="bt">Mix <span>Auto</span> <em class="rec">Rec</em></span><small>version bêta</small></span></h1>
   <span id="webBadge" hidden style="font-size:11px;color:var(--warn);border:1px solid var(--warn);border-radius:6px;padding:2px 6px" title="Tout tourne dans ce navigateur : tes morceaux ne sont envoyés nulle part et restent ici pour la prochaine fois. Différence avec le logiciel Mac / PC : le tempo est calé en changeant la vitesse (la tonalité bouge un peu) et la transposition ½ ton n'existe pas.">Démo · version web</span>
   <input type="text" id="projName" value="Mon mix" title="Nom du projet" style="width:140px">
   <select id="projOpen" title="Ouvrir un projet"><option value="">Ouvrir…</option></select>
   <button id="newProj">Nouveau</button>
-  <button id="saveBtn" title="Sauvegarder le mix (⌘S) : tu choisis où ranger le fichier. Sans sauvegarde, la console repart vide quand tu actualises."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h11l4 4v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a1 1 0 0 1 1-2z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M8 3v5h7V3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 11v6m-3-3 3 3 3-3" fill="none" stroke="#ff3b3b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> Sauvegarder</button>
+  <button id="saveBtn" title="Sauvegarder le mix (⌘S) : tu choisis où ranger le fichier. Sans sauvegarde, la console repart vide quand tu actualises."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h11l4 4v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a1 1 0 0 1 1-2z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M8 3v5h7V3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 11v6m-3-3 3 3 3-3" fill="none" stroke="#ff3b3b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> Sauvegarder</button><span id="autoSave" class="autosave"></span>
   <input type="file" id="inProj" accept=".json,.mixauto,application/json" hidden>
   <div class="sep"></div>
   <button id="toStart" title="Retour au début">⏮</button>
@@ -331,7 +346,7 @@
     <button id="tap" title="Tape en rythme pour donner le tempo">TAP</button>
     <button id="sync" title="Le morceau sélectionné et les suivants prennent son tempo d'origine">SYNC</button>
   </div>
-  <div class="tfader" title="Fader de tempo, comme sur une CDJ : tout le mix accélère ou ralentit en direct. Double-clic : retour à 0 %">
+  <div class="tfader" title="Fader de tempo : tout le mix accélère ou ralentit en direct. Double-clic : retour à 0 %">
     <button id="mt" class="on" title="MASTER TEMPO allumé : le tempo change sans changer la tonalité (les voix et les basses restent naturelles). Éteint : comme un vinyle, ça monte ou descend avec la vitesse">MASTER<br>TEMPO</button>
     <div class="tf"><input type="range" id="tf" class="cfad" min="-10" max="10" step="0.02" value="0"><div class="hticks c"></div></div>
     <span id="tfv">0.00 %</span>
@@ -354,9 +369,9 @@
     <canvas id="deckC" title="Clic : aller à cet endroit"></canvas>
     <div class="vsplit" id="splitR" title="Glisser vers le haut pour agrandir les platines A / B et la table · double-clic : taille d'origine"></div>
     <div class="deckrow" id="rack">
-      <div class="deck" id="deck0" style="--dc:#3aa0ff"><div class="dh"><img class="dcov" hidden alt=""><span class="dl">A</span><span class="dt">—</span><span class="key"></span></div><div class="dn"><span><b class="dbpm">—</b> BPM</span><span class="dtime"></span><span class="dst"></span></div><canvas></canvas></div>
+      <div class="deck" id="deck0" style="--dc:#3aa0ff"><div class="dh"><img class="dcov" hidden alt=""><span class="dl">A</span><span class="dt">—</span><span class="key"></span></div><div class="dn"><span><b class="dbpm">—</b> BPM</span><span class="dtime"></span><span class="dst"></span></div><div class="dpads" data-d="0"><button class="hc" data-hc="0" title="Hot cue 1 : clic = poser / y aller · Maj + clic = effacer">1</button><button class="hc" data-hc="1" title="Hot cue 2 : clic = poser / y aller · Maj + clic = effacer">2</button><button class="hc" data-hc="2" title="Hot cue 3 : clic = poser / y aller · Maj + clic = effacer">3</button><button class="hc" data-hc="3" title="Hot cue 4 : clic = poser / y aller · Maj + clic = effacer">4</button><span class="lsep"></span><button class="lp" data-lp="4" title="Boucle de 4 temps (clic à nouveau : sortir)">⟲ 4</button><button class="lp" data-lp="8" title="Boucle de 8 temps (clic à nouveau : sortir)">⟲ 8</button><button class="lp" data-lp="16" title="Boucle de 16 temps (clic à nouveau : sortir)">⟲ 16</button></div><canvas></canvas></div>
       <div class="mixer" id="mixer"></div>
-      <div class="deck" id="deck1" style="--dc:#ff9a2e"><div class="dh"><img class="dcov" hidden alt=""><span class="dl">B</span><span class="dt">—</span><span class="key"></span></div><div class="dn"><span><b class="dbpm">—</b> BPM</span><span class="dtime"></span><span class="dst"></span></div><canvas></canvas></div>
+      <div class="deck" id="deck1" style="--dc:#ff9a2e"><div class="dh"><img class="dcov" hidden alt=""><span class="dl">B</span><span class="dt">—</span><span class="key"></span></div><div class="dn"><span><b class="dbpm">—</b> BPM</span><span class="dtime"></span><span class="dst"></span></div><div class="dpads" data-d="1"><button class="hc" data-hc="0" title="Hot cue 1 : clic = poser / y aller · Maj + clic = effacer">1</button><button class="hc" data-hc="1" title="Hot cue 2 : clic = poser / y aller · Maj + clic = effacer">2</button><button class="hc" data-hc="2" title="Hot cue 3 : clic = poser / y aller · Maj + clic = effacer">3</button><button class="hc" data-hc="3" title="Hot cue 4 : clic = poser / y aller · Maj + clic = effacer">4</button><span class="lsep"></span><button class="lp" data-lp="4" title="Boucle de 4 temps (clic à nouveau : sortir)">⟲ 4</button><button class="lp" data-lp="8" title="Boucle de 8 temps (clic à nouveau : sortir)">⟲ 8</button><button class="lp" data-lp="16" title="Boucle de 16 temps (clic à nouveau : sortir)">⟲ 16</button></div><canvas></canvas></div>
     </div>
     <div class="vsplit" id="splitD" title="Glisser pour agrandir les platines A / B et la table · double-clic : taille d'origine"></div>
   </section>
@@ -444,28 +459,29 @@
     <label class="chk"><input type="checkbox" data-p="autogain"> Auto-gain : tous les morceaux au même volume</label>
     <label class="chk"><input type="checkbox" data-p="limiter"> Limiteur sur la sortie master (évite la saturation)</label>
     <h4>Affichage et export</h4>
+    <label>Langue / Language / 语言 / اللغة<select id="langSel"><option value="fr">Français</option><option value="en">English</option><option value="es">Español</option><option value="de">Deutsch</option><option value="zh">中文</option><option value="ar">العربية</option></select></label>
     <label>Notation des tonalités<select data-p="keys"><option value="camelot">Camelot (8A)</option><option value="open">Open Key (1m)</option><option value="classic">Classique (Am)</option></select></label>
     <label>Qualité MP3<select data-p="mp3"><option value="320">320 kbit/s</option><option value="256">256 kbit/s</option><option value="192">192 kbit/s</option></select></label>
     <p class="note" id="pNote"></p>
-    <p class="note"><button type="button" onclick="$('legal').showModal()">Mentions légales et licences</button> · Mix Auto version bêta · © 2026 Aziz Bena</p>
+    <p class="note"><button type="button" onclick="$('legal').showModal()">Mentions légales et licences</button> · Mix Auto Rec version bêta · © 2026 Aziz Bena</p>
   </form>
 </dialog>
 <dialog id="legal">
   <form method="dialog" class="legal">
     <div class="phead"><b>Mentions légales et licences</b><button value="close" title="Fermer">✕</button></div>
     <h4>Éditeur</h4>
-    <p>Mix Auto est édité par Aziz Bena, à titre personnel (France).<br>Contact : <i>[adresse e-mail de contact à compléter]</i></p>
+    <p>Mix Auto Rec est édité par Aziz Bena, à titre personnel (France).<br>Contact : <i>[adresse e-mail de contact à compléter]</i></p>
     <h4>Hébergement (version web)</h4>
     <p>GitHub Pages — GitHub, Inc., 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, États-Unis — github.com. L'app Mac fonctionne entièrement sur l'ordinateur, sans serveur distant.</p>
     <h4>Version bêta, propriété et garantie</h4>
-    <p>© 2026 Aziz Bena. Tous droits réservés. Le logiciel, son code et son interface ne peuvent être copiés, revendus ou redistribués sans autorisation écrite. Mix Auto est une version bêta fournie « en l'état », sans garantie d'aucune sorte : l'auteur ne peut être tenu responsable d'une perte de données, d'un défaut d'export ou d'un usage non conforme. Pense à garder une copie de tes morceaux et de tes projets.</p>
+    <p>© 2026 Aziz Bena. Tous droits réservés. Le logiciel, son code et son interface ne peuvent être copiés, revendus ou redistribués sans autorisation écrite. Mix Auto Rec est une version bêta fournie « en l'état », sans garantie d'aucune sorte : l'auteur ne peut être tenu responsable d'une perte de données, d'un défaut d'export ou d'un usage non conforme. Pense à garder une copie de tes morceaux et de tes projets.</p>
     <h4>Données personnelles (RGPD)</h4>
-    <p>Mix Auto ne collecte aucune donnée personnelle : pas de compte, pas de publicité, pas de mesure d'audience, pas de cookie de suivi. Tes morceaux, projets et réglages restent sur ton appareil (dossier Musique/Mix Auto sur Mac ; stockage local du navigateur sur la version web, effaçable à tout moment depuis les réglages du navigateur). La version web charge l'encodeur MP3 depuis cdnjs (Cloudflare), qui reçoit ton adresse IP comme pour toute page web ; l'hébergeur GitHub peut tenir des journaux techniques. Le bouton SoundCloud ouvre simplement soundcloud.com : l'envoi se fait par toi, sous les conditions de SoundCloud.</p>
+    <p>Mix Auto Rec ne collecte aucune donnée personnelle : pas de compte, pas de publicité, pas de mesure d'audience, pas de cookie de suivi. Tes morceaux, projets et réglages restent sur ton appareil (dossier Musique/Mix Auto sur Mac ; stockage local du navigateur sur la version web, effaçable à tout moment depuis les réglages du navigateur). La version web charge l'encodeur MP3 depuis cdnjs (Cloudflare), qui reçoit ton adresse IP comme pour toute page web ; l'hébergeur GitHub peut tenir des journaux techniques. Le bouton SoundCloud ouvre simplement soundcloud.com : l'envoi se fait par toi, sous les conditions de SoundCloud.</p>
     <h4>Droits sur la musique</h4>
-    <p>Tu es seul responsable des morceaux que tu importes, mixes et publies. Publier ou diffuser un mix contenant des œuvres d'autrui demande les droits correspondants (auteurs, producteurs ; en France SACEM / SDRM pour les diffusions publiques ; règles propres à chaque plateforme, comme SoundCloud ou Mixcloud). Mix Auto ne fournit aucune musique.</p>
+    <p>Tu es seul responsable des morceaux que tu importes, mixes et publies. Publier ou diffuser un mix contenant des œuvres d'autrui demande les droits correspondants (auteurs, producteurs ; en France SACEM / SDRM pour les diffusions publiques ; règles propres à chaque plateforme, comme SoundCloud ou Mixcloud). Mix Auto Rec ne fournit aucune musique.</p>
     <h4>Logiciels tiers et licences</h4>
     <ul>
-      <li><b>FFmpeg</b> — LGPL / GPL v2+ (version compilée avec Rubber Band, donc sous GPL). Sources : ffmpeg.org. Copie de la licence : gnu.org/licenses.</li>
+      <li><b>FFmpeg</b> — GPL v3 (version compilée avec Rubber Band). Sources : ffmpeg.org. Copie de la licence : gnu.org/licenses.</li>
       <li><b>Rubber Band Library</b> (étirement du tempo) — GPL v2+. Sources : breakfastquay.com/rubberband.</li>
       <li><b>LAME / lamejs</b> (MP3, version web) — LGPL v2+. github.com/zhuker/lamejs.</li>
       <li><b>Python</b> — Python Software Foundation License.</li>
@@ -478,7 +494,7 @@
 </dialog>
 <div id="modal" hidden><div class="box"><button id="mClose" title="Annuler / fermer">✕</button><b id="mTitle"></b><div class="bar"><div id="mBar"></div></div><div id="mText" class="note"></div><div class="row" id="mBtns"></div></div></div>
 
-<script src="web.js?v=d50c2c25"></script>
+<script src="web.js?v=8320fb83"></script>
 <script>
 // ============ Modèle ============
 // Tout est en TEMPS (beats) : début sur la timeline, position dans le morceau, automations.
@@ -736,7 +752,7 @@ function buildBus(ac, liveMix = true) {
     deckParams(n, d, M);
     return n;
   });
-  return { master, reverb:rIn, delay:dIn, decks };
+  return { master, out:PREF.limiter ? lim : master, reverb:rIn, delay:dIn, decks };
 }
 const applyLive = () => [live?.bus, LV?.bus].forEach(b => b?.decks.forEach((n, d) => deckParams(n, d, MIX, ctx.currentTime)));
 
@@ -805,6 +821,10 @@ function scheduleClip(ac, bus, c, from, base, rate = ac === ctx ? U.rate : 1) {
   const id = v => v;
   curve(g.gain, 'vol', toParam.vol); curve(lo.gain, 'low', id); curve(mi.gain, 'mid', id); curve(hi.gain, 'high', id);
   curve(lp.frequency, 'filter', toParam.lp); curve(hp.frequency, 'filter', toParam.hp); curve(sr.gain, 'reverb', id); curve(sd.gain, 'delay', id);
+  if (c.tr?.some(r => r.kind === 'brake')) {   // Brake : la vitesse de lecture tombe presque à zéro sur les 2 derniers temps
+    const bs = secAt(clipEnd(c) - 2);
+    if (t0 < ce && ce - Math.max(t0, bs) > 0.02) { src.playbackRate.setValueAtTime(speed, at(Math.max(t0, bs))); src.playbackRate.linearRampToValueAtTime(speed * 0.04, at(ce)); }
+  }
   const out = [src];
   if (c.auto.noise?.some(p => p.v > 0)) {   // Noise : bruit blanc en boucle, filtre qui monte avec le réglage, un peu de réverbe
     const ns = ac.createBufferSource(), nf = ac.createBiquadFilter(), ng = ac.createGain(), nr = ac.createGain();
@@ -1076,15 +1096,16 @@ function libRows() {
   return list.sort((a, b) => (val(a) > val(b) ? 1 : val(a) < val(b) ? -1 : 0) * dir);
 }
 function renderLib() {
-  const used = new Set(S.clips.map(c => c.trackId)), ref = refTrack(), rows = libRows();
+  const used = new Set(S.clips.map(c => c.trackId)), ref = refTrack(), rows = libRows(), selT = selClip()?.trackId;
+  const pos = {}; sorted().forEach((c, i) => (pos[c.trackId] ||= []).push(i + 1));   // place(s) dans le mix : repère n°1, n°2…
   if (!LIB.length) { $('impPane').hidden = false; $('impTab').classList.add('on'); }
   $('libCount').textContent = LIB.length ? `${rows.length} / ${LIB.length} morceaux` : '';
   document.querySelectorAll('th[data-sort]').forEach(th => { th.classList.toggle('s', th.dataset.sort === U.sort && U.libTab !== 'suggest'); th.classList.toggle('up', !U.up); });
   $('libT').innerHTML = rows.map(t => {
     const far = S.tempo && Math.abs(fold(t.bpm) / S.tempo - 1) > 0.06;
     const match = ref && ref.id !== t.id && compatible(ref.camelot, t.camelot);
-    return `<tr class="trk ${used.has(t.id) ? 'used' : ''}" draggable="true" data-id="${t.id}">
-      <td class="title" title="${esc(t.name)}"><button class="pre ${preview.id === t.id ? 'on' : ''}" data-pre="${t.id}" title="Pré-écoute">${preview.id === t.id ? '❚❚' : '▶'}</button> <b>${esc(t.title)}</b> <span>${esc(t.artist)}</span></td>
+    return `<tr class="trk ${used.has(t.id) ? 'used' : ''} ${selT === t.id ? 'selt' : ''}" draggable="true" data-id="${t.id}">
+      <td class="title" title="${esc(t.name)}"><button class="pre ${preview.id === t.id ? 'on' : ''}" data-pre="${t.id}" title="Pré-écoute">${preview.id === t.id ? '❚❚' : '▶'}</button> ${pos[t.id] ? `<span class="inmix" title="Dans le mix, position ${pos[t.id].join(' et ')}">${pos[t.id].map(n => `n°${n}`).join(' · ')}</span>` : ''}<b>${esc(t.title)}</b> <span>${esc(t.artist)}</span></td>
       <td class="num">${fold(t.bpm).toFixed(2)}${far ? '<span class="warnTxt" title="Tempo éloigné du mix : il sera fortement étiré">⚠</span>' : ''}</td>
       <td><span class="key ${match ? 'match' : ''}" style="color:${keyColor(t.camelot)}" title="${t.key}${match ? ' · compatible avec ' + esc(ref.name) : ''}">${KL(t.camelot)}</span></td>
       <td><span class="energy" title="Énergie ${t.energy}/10">${Array.from({ length:10 }, (_, i) => `<i class="${i < t.energy ? 'f' : ''}" style="height:${5 + i}px;--h:${140 - i * 14}"></i>`).join('')}</span></td>
@@ -1355,8 +1376,8 @@ function bassSwap(a, b, o0, o1) {   // un seul morceau dans les basses à la foi
 }
 // Transitions posées par les cartes : gardées sur le morceau qui sort (a.tr), affichées et nommées sur sa piste,
 // sélectionnables (clic sur l'étiquette) pour les écouter, les remplacer ou les supprimer.
-const TRK = { fade:['Fondu', '#f2f2f7'], filter:['Filtre', '#22d3a6'], echo:['Écho', '#ffb547'], reverb:['Réverbe', '#3aa0ff'], dly:['Délai', '#c084fc'], noise:['Noise', '#a3e635'], sweep:['Sweep', '#f472b6'], cut:['Coupe', '#ff5c7a'] };
-const TRP = { fade:['vol', 'high', 'low'], filter:['filter', 'low'], echo:['delay', 'vol'], reverb:['reverb', 'filter'], dly:['delay', 'vol'], noise:['noise'], sweep:['filter', 'reverb', 'low'], cut:[] };   // réglages écrits par chaque carte
+const TRK = { fade:['Fondu', '#f2f2f7'], filter:['Filtre', '#22d3a6'], echo:['Écho', '#ffb547'], reverb:['Réverbe', '#3aa0ff'], dly:['Délai', '#c084fc'], noise:['Noise', '#a3e635'], sweep:['Sweep', '#f472b6'], gate:['Gate', '#facc15'], brake:['Brake', '#94a3b8'], cut:['Coupe', '#ff5c7a'] };
+const TRP = { fade:['vol', 'high', 'low'], filter:['filter', 'low'], echo:['delay', 'vol'], reverb:['reverb', 'filter'], dly:['delay', 'vol'], noise:['noise'], sweep:['filter', 'reverb', 'low'], gate:['vol'], brake:['vol'], cut:[] };   // réglages écrits par chaque carte
 const trZone = (a, r) => [a.start + r.t0 - a.in, a.start + r.t1 - a.in];   // en temps du mix
 function removeTr(a, i) {   // efface les points que la carte a écrits dans sa zone (sur les deux morceaux), remet la longueur après une coupe
   const r = a.tr[i], [m0, m1] = trZone(a, r), b = S.clips.find(o => o.id === r.partner);
@@ -1368,7 +1389,7 @@ function applyFx(a, kind, b = nextOf(a)) {
   const e = clipEnd(a);
   const ov = b && b.start < e ? [b.start, e] : null;     // zone où les deux morceaux jouent ensemble
   const [z0, z1] = kind === 'echo' ? [e - 1.02, e] : kind === 'reverb' ? [e - 4, e + 16] : kind === 'dly' ? [e - 8, e + 8] : kind === 'noise' ? [e - 32, e + 0.25]
-    : kind === 'sweep' ? [e - 32, e + 8] : kind === 'cut' ? [b ? b.start : e, e] : ov || [e - 16, e];
+    : kind === 'sweep' ? [e - 32, e + 8] : kind === 'gate' ? [e - 8, e] : kind === 'brake' ? [e - 2, e] : kind === 'cut' ? [b ? b.start : e, e] : ov || [e - 16, e];
   a.tr = (a.tr || []).filter(r => r.kind !== kind);   // une seule transition de chaque sorte par morceau
   a.tr.push({ kind, t0:tlToTb(a, z0), t1:tlToTb(a, z1), partner:b?.id ?? null, len:a.len });
   setPts.kind = kind; try { fxPoints(a, kind, b, e, ov); } finally { setPts.kind = null; }
@@ -1406,6 +1427,13 @@ function fxPoints(a, kind, b, e, ov) {
   }
   if (kind === 'noise') {     // riser : bruit blanc qui monte sur 8 mesures et s'arrête net sur la fin
     setPts(a, 'noise', [[e - 32, 0], [e, 0.85], [e + 0.25, 0]]);
+  }
+  if (kind === 'gate') {      // gate rythmique : les 2 dernières mesures hachées en croches (le son s'ouvre et se ferme)
+    const pts = []; for (let b = e - 8; b < e - 1e-6; b += 0.5) pts.push([b, 0], [b + 0.25, 0], [b + 0.252, -40], [b + 0.498, -40]);
+    setPts(a, 'vol', [...pts, [e, 0]]);
+  }
+  if (kind === 'brake') {     // arrêt vinyle : la platine freine sur les 2 derniers temps (la vitesse tombe, le volume aussi)
+    setPts(a, 'vol', [[e - 2, 0], [e, -24]]);
   }
   if (kind === 'sweep') {     // sweep : le filtre passe-haut monte sur 8 mesures (les basses disparaissent), un peu de réverbe qui traîne après
     setPts(a, 'filter', [[e - 32, 0], [e, 0.85]]);
@@ -1524,7 +1552,7 @@ function drawClip(g, c, i, W) {
     const y = i * ROW + 5 + TITLE, h = ROW - 10 - TITLE;
     g.fillStyle = '#ff3b3b0d'; g.fillRect(x1, y, xt - x1, h);
     g.strokeStyle = '#ff3b3b55'; g.setLineDash([3, 3]); g.strokeRect(x1 + 0.5, y + 0.5, xt - x1 - 1, h - 1); g.setLineDash([]);
-    if (xt - x1 > 70) { g.fillStyle = '#ff3b3b99'; g.font = '600 9px -apple-system, sans-serif'; g.fillText('PROLONGATION', x1 + 5, y + 11); }
+    if (xt - x1 > 70) { g.fillStyle = '#ff3b3b99'; g.font = '600 9px -apple-system, sans-serif'; g.fillText(tr('PROLONGATION') === 'PROLONGATION' && document.documentElement.lang === 'en' ? 'EXTENSION' : 'PROLONGATION', x1 + 5, y + 11); }
   }
   const y = i * ROW + 5, h = ROW - 10, h2 = hue(t.id), sel = c.id === U.sel;
   g.fillStyle = `hsla(${h2},60%,50%,.13)`; g.fillRect(x0, y, x1 - x0, h);
@@ -1539,7 +1567,7 @@ function drawClip(g, c, i, W) {
       let m = 0; for (let k = Math.max(0, Math.floor(a0)); k < Math.min(b.peaks.length, Math.ceil(a1)); k++) if (b.peaks[k] > m) m = b.peaks[k];
       const hh = Math.min(1, m) * bh * 0.46; g.fillRect(x, mid - hh, 1, hh * 2 || 0.5);
     }
-  } else { g.fillStyle = '#8b8ba1'; g.font = '12px sans-serif'; g.fillText(b?.error ? `Erreur : ${b.error}` : 'Calage au tempo du mix…', Math.max(x0, 0) + 8, mid + 4); }
+  } else { g.fillStyle = '#8b8ba1'; g.font = '12px sans-serif'; g.fillText(tr(b?.error ? `Erreur : ${b.error}` : 'Calage au tempo du mix…'), Math.max(x0, 0) + 8, mid + 4); }
   // titre : tonalité, nom, BPM d'origine et étirement
   g.save(); g.beginPath(); g.rect(x0, y, x1 - x0, TITLE); g.clip();
   let tx = Math.max(x0, 0) + 5;
@@ -1621,7 +1649,7 @@ function onLine(h) {   // la souris est sur la ligne rouge (à 6 px près) : cli
 const yToV = (h, y) => { const P = PARAMS[U.param]; return clamp(P.min + (h.by + h.bh - 3 - y) / (h.bh - 6) * (P.max - P.min), P.min, P.max); };
 
 rowsC.addEventListener('mousedown', e => {
-  const h = hit(e), tr = TRR.findLast(r => h.x >= r.x && h.x <= r.x + r.w && h.y >= r.y && h.y <= r.y + r.h);
+  const h = hit(e), onPt = h.c && pointAt(h) >= 0, tr = onPt ? null : TRR.findLast(r => h.x >= r.x && h.x <= r.x + r.w && h.y >= r.y && h.y <= r.y + r.h);   // un point d'automation passe avant l'étiquette de l'effet
   if (tr && e.button === 0 && Math.hypot(h.x - tr.cx, h.y - tr.y - 7) < 8) {   // ✕ : on enlève l'automation de cette transition
     pushUndo(); removeTr(tr.c, tr.c.tr.findIndex(r => r.kind === tr.kind)); U.tr = null; changed(); return;
   }
@@ -1629,7 +1657,7 @@ rowsC.addEventListener('mousedown', e => {
     const up = m => { removeEventListener('mouseup', up); if (Math.hypot(m.clientX - e.clientX, m.clientY - e.clientY) < 4) { U.pos = Math.max(0, secAt(h.beat)); if (U.playing) play(U.pos); draw(); } };
     addEventListener('mouseup', up);
   }
-  if (tr) { U.sel = tr.c.id; U.tr = { id:tr.c.id, kind:tr.kind }; U.inspTab = 'trans'; renderInsp(); renderLib(); draw(); return; }   // clic sur une transition
+  if (tr) { U.sel = tr.c.id; U.tr = { id:tr.c.id, kind:tr.kind }; U.inspTab = 'trans'; showLine(tr.kind); renderInsp(); renderLib(); draw(); return; }   // clic sur une transition
   if (U.tr) { U.tr = null; renderInsp(); }
   if (!h.c) { U.sel = null; renderInsp(); renderLib(); draw(); return; }
   if (U.sel !== h.c.id) { U.sel = h.c.id; renderInsp(); renderLib(); }
@@ -1655,7 +1683,9 @@ rowsC.addEventListener('mousedown', e => {
     draw();
     const show = () => $('hint').textContent = `${PARAMS[U.param].label} : ${PARAMS[U.param].fmt(pt.v)}`;
     show();
-    return drag(m => { pt.b = snapB(tlToTb(c, m.beat), m, ab); pt.v = yToV(h, m.y); c.auto[U.param].sort((a, b) => a.b - b.b); show(); }, paramsUI);
+    let moved = false;   // simple clic sur un point existant (sans le bouger) : il s'enlève
+    return drag(m => { if (!moved && Math.hypot(m.x - h.x, m.y - h.y) < 3) return; moved = true; pt.b = snapB(tlToTb(c, m.beat), m, ab); pt.v = yToV(h, m.y); c.auto[U.param].sort((a, b) => a.b - b.b); show(); },
+      () => { paramsUI(); if (idx >= 0 && !moved) { c.auto[U.param].splice(c.auto[U.param].indexOf(pt), 1); $('hint').textContent = 'Point enlevé (⌘Z pour le remettre)'; } });
   }
   pushUndo();
   drag(move, () => {   // posé entre deux temps (½, ¼, libre) : la fraction devient un décalage à la main (t.man), gardé par le recalage
@@ -1684,7 +1714,6 @@ const delPoint = e => {   // double-clic ou clic droit sur un point : on l'enlè
   const i = pointAt(h); if (i < 0) return;
   e.preventDefault(); pushUndo(); h.c.auto[U.param].splice(i, 1); changed();
 };
-rowsC.addEventListener('dblclick', delPoint);
 rowsC.addEventListener('contextmenu', delPoint);
 const PEN = `url("data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M3 21l1.2-4.6L16.6 4a2 2 0 0 1 2.8 0l.6.6a2 2 0 0 1 0 2.8L7.6 19.8z" fill="#fff" stroke="#000" stroke-width="1.4" stroke-linejoin="round"/><path d="M3 21l1.2-4.6 3.4 3.4z" fill="#ff3b3b" stroke="#000" stroke-width="1"/></svg>')}") 2 22, crosshair`;   // stylo pour dessiner l'automation
 rowsC.addEventListener('mousemove', e => {
@@ -1976,7 +2005,7 @@ const chanHTML = d => `<div class="ccol"><div class="knobs">${Object.keys(KNOB).
 $('mixer').innerHTML = `<div class="chan" style="--dc:${DECKCOL[0]}">${chanHTML(0)}</div>
   <div class="mixmid">
     <button id="liveBtn" title="Mix Live : les platines A et B jouent chacune de leur côté (▶ et CUE par voie), tu mixes en direct à la table. Glisse un morceau de la bibliothèque sur une platine pour le charger.">MIX LIVE</button>
-    <button id="rec" title="Pendant la lecture, tes gestes sur la table s'écrivent en lignes rouges sur les morceaux (comme l'automation d'Ableton)">● REC</button>
+    <div class="recrow"><button id="rec" title="Pendant la lecture, tes gestes sur la table s'écrivent en lignes rouges sur les morceaux (comme l'automation d'Ableton)">● REC</button><button id="recSet" title="Enregistre le son de ton set Mix Live (tout ce qui sort), puis tu choisis le format et l'emplacement">⏺ SET</button></div>
     <div><input type="range" id="xf" class="cfad" min="-1" max="1" step="0.01" value="0" title="Crossfader (double-clic : centre)"><div class="hticks c"></div></div>
     <div class="xfl"><span>A</span><span>CROSSFADER</span><span>B</span></div>
     <button id="mixReset" title="Tous les boutons à zéro">Remettre à zéro</button>
@@ -2047,13 +2076,13 @@ U.cue = [0, 0];
 // Les deux voies jouent au tempo du mix ; ▶ sur une voie pendant que l'autre joue part calé sur ses temps (quantize).
 var LV = { on:false, bus:null, d:[0, 1].map(() => ({ c:null, t:null, buf:null, T:0, src:null, g:null, t0:0, f0:0, sp:1, pos:0, cue:0, playing:false })) };
 const lvSpeed = P => U.rate * S.tempo / P.T;
-const lvPos = P => P.playing ? Math.min(P.buf.duration, P.f0 + (ctx.currentTime - P.t0) * P.sp) : P.pos;
+const lvPos = P => { if (!P.playing) return P.pos; let f = P.f0 + (ctx.currentTime - P.t0) * P.sp; const L = P.loop; if (L && f > L[1]) f = L[0] + (f - L[0]) % (L[1] - L[0]); return Math.min(P.buf.duration, f); };
 const lvTb = (P, f) => ((f - P.t.nudge / 1000) * P.T - fb0(P.t) * P.t.bpm) / 60;   // seconde du fichier -> temps du morceau
 const lvF = (P, tb) => (fb0(P.t) * P.t.bpm + tb * 60) / P.T + P.t.nudge / 1000;
 function lvBus() { if (!LV.bus) LV.bus = buildBus(ctx); return LV.bus; }
 function lvSet(d, c, buf, T, f) {   // pose un morceau sur une voie (arrêtée), tête et CUE à f secondes du fichier
   const P = LV.d[d]; lvPause(d);
-  Object.assign(P, { c, t:S.tracks[c.trackId], buf, T, pos:Math.max(0, f), cue:Math.max(0, f) });
+  Object.assign(P, { c, t:S.tracks[c.trackId], buf, T, pos:Math.max(0, f), cue:Math.max(0, f), hc:[], loop:null, loopN:0 });
   P.ov = null; draw();
 }
 function lvFromTimeline(d) {   // le morceau de la timeline qui joue (ou arrive) sur cette voie, à l'endroit de la tête de lecture
@@ -2088,6 +2117,7 @@ function lvPlay(d) {
   const ag = ctx.createGain(); ag.gain.value = autoGain(P.c);
   (mt ? src.connect(mt) : src).connect(g).connect(ag).connect(bus.decks[d].lo);
   g.gain.setValueAtTime(0, when); g.gain.linearRampToValueAtTime(1, when + 0.005);
+  if (P.loop) { src.loop = true; src.loopStart = P.loop[0]; src.loopEnd = P.loop[1]; if (f > P.loop[1] || f < P.loop[0]) f = P.loop[0]; }
   src.start(when - (mt ? MT.lat : 0), f);
   src.onended = () => { if (P.src === src) { P.pos = lvPos(P); P.playing = false; P.src = null; lvUI(); } };
   Object.assign(P, { src, g, t0:when, f0:f, playing:true });
@@ -2109,6 +2139,47 @@ function lvHome(d) {   // Q : le morceau revient au début (son premier kick), e
   const P = LV.d[d]; if (!P.buf) return;
   const was = P.playing; lvPause(d); P.pos = Math.max(0, lvF(P, downbeat(P.t).kick)); if (was) lvPlay(d); lvUI(); draw(true);
 }
+// Hot cues (4 par voie) et boucles de 4 / 8 / 16 temps calées sur les temps
+const HCC = ['#ff3b3b', '#22d3a6', '#3aa0ff', '#ffb547'];
+function lvJump(d, f) { const P = LV.d[d], was = P.playing; lvPause(d); P.pos = Math.max(0, f); if (was) lvPlay(d); lvUI(); draw(true); }
+function lvHot(d, i, clear) {
+  const P = LV.d[d]; if (!P.buf) return; P.hc ||= [];
+  if (clear) P.hc[i] = null; else if (P.hc[i] == null) P.hc[i] = lvPos(P); else lvJump(d, P.hc[i]);
+  lvUI();
+}
+function lvLoopSet(d, n) {
+  const P = LV.d[d]; if (!P.buf) return;
+  const was = P.playing, f = lvPos(P); lvPause(d);
+  if (P.loop && P.loopN === n) { P.loop = null; P.loopN = 0; P.pos = f; }   // même bouton : on sort de la boucle, la lecture continue
+  else { const tb = Math.floor(lvTb(P, f) + 1e-6); P.loop = [lvF(P, tb), lvF(P, tb + n)]; P.loopN = n; P.pos = f < P.loop[0] ? P.loop[0] : f; }
+  if (was) lvPlay(d); lvUI();
+}
+document.querySelectorAll('.dpads').forEach(el => el.onclick = e => {
+  const b = e.target.closest('button'); if (!b) return; const d = +el.dataset.d; LV.last = d; liveOn();
+  if (b.dataset.hc != null) lvHot(d, +b.dataset.hc, e.shiftKey); else lvLoopSet(d, +b.dataset.lp);
+});
+// Enregistrement du set (Mix Live) : tout ce qui sort de la table, en PCM 16 bits, puis format + emplacement comme l'export
+const SETREC = { on:false, node:null, parts:[], sr:0, t0:0 };
+function recSetStart() {
+  liveOn(); const bus = lvBus(), sp = ctx.createScriptProcessor(4096, 2, 2), mute = ctx.createGain(); mute.gain.value = 0;
+  SETREC.parts = []; SETREC.sr = ctx.sampleRate; SETREC.t0 = Date.now();
+  sp.onaudioprocess = ev => {
+    const L = ev.inputBuffer.getChannelData(0), Rr = ev.inputBuffer.getChannelData(1), pcm = new Int16Array(L.length * 2);
+    for (let k = 0; k < L.length; k++) { pcm[2 * k] = clamp(L[k], -1, 1) * 32767; pcm[2 * k + 1] = clamp(Rr[k], -1, 1) * 32767; }
+    SETREC.parts.push(pcm);
+  };
+  (bus.out || bus.master).connect(sp); sp.connect(mute).connect(ctx.destination);
+  Object.assign(SETREC, { on:true, node:sp, src:bus.out || bus.master }); $('recSet').classList.add('on');
+  recSetTick();
+}
+function recSetTick() { if (!SETREC.on) return; const s = (Date.now() - SETREC.t0) / 1000; $('recSet').textContent = `⏺ ${fmtTime(s)}`; setTimeout(recSetTick, 500); }
+function recSetStop() {
+  if (!SETREC.on) return; SETREC.on = false; $('recSet').classList.remove('on'); $('recSet').textContent = '⏺ SET';
+  try { SETREC.src.disconnect(SETREC.node); } catch {} SETREC.node.disconnect();
+  const parts = SETREC.parts; SETREC.parts = []; if (!parts.length) return;
+  exportMix({ parts, sr:SETREC.sr, name:`${S.name} - set live`, tl:`${S.name} · set enregistré en direct · ${fmtTime(parts.reduce((a, p) => a + p.length / 2, 0) / SETREC.sr)}\n` });
+}
+$('recSet').onclick = () => SETREC.on ? recSetStop() : recSetStart();
 function lvRespeed() { LV.d.forEach((P, d) => { if (P.playing) { lvPause(d); lvPlay(d); } }); }   // fader de tempo : les voies suivent
 function liveOn() {
   if (LV.on) return;
@@ -2127,6 +2198,9 @@ function lvUI() {
   document.querySelectorAll('.rnd.pp').forEach(b => {
     const on = LV.on ? LV.d[+b.dataset.d].playing : U.playing; b.textContent = on ? '❚❚' : '▶'; b.classList.toggle('on', on);
   });
+  document.querySelectorAll('.dpads').forEach(el => { const P = LV.d[+el.dataset.d];
+    el.querySelectorAll('.hc').forEach(b => { const i = +b.dataset.hc, set = P.hc?.[i] != null; b.classList.toggle('set', set); b.style.setProperty('--hcc', HCC[i]); });
+    el.querySelectorAll('.lp').forEach(b => b.classList.toggle('on', !!P.loop && P.loopN === +b.dataset.lp)); });
 }
 function lvLoop() {   // une seule boucle : seules les platines sont redessinées (la timeline ne bouge pas)
   if (lvLoop.on || !LV.on) return; lvLoop.on = true;
@@ -2154,9 +2228,10 @@ $('click').onclick = e => { U.click = !U.click; e.target.classList.toggle('on', 
 $('undo').onclick = undo;
 $('params').innerHTML = ['none', ...PKEYS].map(k => `<button data-p="${k}">${k === 'none' ? 'Masquer' : PARAMS[k].label}</button>`).join('');
 $('params').onclick = e => { const p = e.target.dataset.p; if (p) { U.param = p; paramsUI(); draw(); } };
+function showLine(kind) { const p = TRP[kind]?.[0]; if (p) { U.param = p; paramsUI(); } }   // une automation choisie : sa ligne rouge s'affiche (réverbe, noise…)
 function paramsUI() {
   document.querySelectorAll('#params button').forEach(b => b.classList.toggle('on', b.dataset.p === U.param));
-  $('hint').textContent = PARAMS[U.param] ? `Ligne rouge ${PARAMS[U.param].label} : clic sur la ligne = point · glisser un point = le déplacer · double-clic / clic droit = supprimer · ailleurs = déplacer le morceau` : 'Glisse un morceau pour le déplacer, tire ses bords pour le couper · Maj = sans aimant';
+  $('hint').textContent = PARAMS[U.param] ? `Ligne rouge ${PARAMS[U.param].label} : clic sur la ligne = point · glisser un point = le déplacer · clic sur un point = l'enlever · ailleurs = déplacer le morceau` : 'Glisse un morceau pour le déplacer, tire ses bords pour le couper · Maj = sans aimant';
 }
 addEventListener('keydown', e => {
   if (e.target.matches('input, select')) return;
@@ -2213,7 +2288,7 @@ function renderInsp() {
       <div class="slider"><span>Volume</span><input type="range" id="fxMa" min="-12" max="6" step="0.5" value="${S.fx.master}"><span>${S.fx.master} dB</span></div>
       <div class="note">Ces réglages valent pour tout le mix. L'écho est toujours calé sur le tempo.</div>
       <h2>Raccourcis</h2>
-      <div class="note">Espace = lecture · ⌘Z = annuler · Suppr = retirer le morceau · ⌘ + molette = zoom · 0 à 7 = outil de dessin · Maj = sans aimant.</div>`;
+      <div class="note">Espace = lecture · ⌘Z = annuler · Suppr = retirer le morceau · ⌘ + molette = zoom · 0 à 8 = ligne d'automation · Maj = sans aimant.</div>`;
     const fx = (id, k, unit) => $(id).oninput = e => { S.fx[k] = +e.target.value; const s = e.target.nextElementSibling; if (s && unit) s.textContent = unit(S.fx[k]); restartIfPlaying(); save(); };
     fx('fxDiv', 'delayDiv'); fx('fxFb', 'delayFb', v => `${Math.round(v * 100)} %`); fx('fxRv', 'reverbSec', v => `${v} s`); fx('fxMa', 'master', v => `${v} dB`);
     return;
@@ -2244,6 +2319,8 @@ function renderInsp() {
         <button class="fxcard" data-fx="dly" style="--k:${TRK.dly[1]}" title="les 2 dernières mesures partent dans un long écho qui continue après la fin"><b>Délai</b><span>long écho qui continue</span></button>
         <button class="fxcard" data-fx="noise" style="--k:${TRK.noise[1]}" title="bruit blanc qui monte sur 8 mesures (riser) et coupe net sur la fin"><b>Noise</b><span>riser de bruit blanc</span></button>
         <button class="fxcard" data-fx="sweep" style="--k:${TRK.sweep[1]}" title="le filtre passe-haut monte sur 8 mesures, les basses s'en vont"><b>Sweep</b><span>filtre qui monte</span></button>
+        <button class="fxcard" data-fx="gate" style="--k:${TRK.gate[1]}" title="les 2 dernières mesures hachées en rythme (croches)"><b>Gate</b><span>son haché en rythme</span></button>
+        <button class="fxcard" data-fx="brake" style="--k:${TRK.brake[1]}" title="arrêt vinyle : la platine freine sur les 2 derniers temps"><b>Brake</b><span>arrêt vinyle</span></button>
         <button class="fxcard" data-fx="reverb" style="--k:${TRK.reverb[1]}" title="la dernière mesure s'envole dans la réverbe, qui continue 4 mesures après la fin"><b>Réverbe</b><span>la dernière mesure s'envole</span></button>
         ${n ? '<button class="fxcard" data-fx="cut" style="--k:#ff5c7a" title="coupe nette pile à l\'entrée"><b>Coupe</b><span>coupe nette pile à l\'entrée</span></button>' : ''}
         <button class="fxcard" data-fx="clear" title="enlève les effets de ce morceau"><b>Effacer</b><span>enlève les effets de ce morceau</span></button>
@@ -2317,8 +2394,9 @@ $('insp').addEventListener('click', e => {
   else if (d.fx) {
     pushUndo(); const i = trSel(c); if (i >= 0) removeTr(c, i);   // une transition sélectionnée : la carte la remplace
     applyFx(c, d.fx); U.tr = i >= 0 ? { id:c.id, kind:d.fx } : null;   // sans sélection, les cartes s'ajoutent (écho + réverbe…)
+    showLine(d.fx);
   }
-  else if (d.trsel) { U.tr = { id:c.id, kind:d.trsel }; }
+  else if (d.trsel) { U.tr = { id:c.id, kind:d.trsel }; showLine(d.trsel); }
   else if (d.trdel != null) { const i = trSel(c); if (i >= 0) { pushUndo(); removeTr(c, i); U.tr = null; } }
   else if (d.trplay != null) { const i = trSel(c); if (i >= 0) { U.pos = secAt(Math.max(0, trZone(c, c.tr[i])[0] - 8)); play(); } return; }
   else if (btn.id === 'rm') { pushUndo(); S.clips = S.clips.filter(x => x !== c); U.sel = null; }
@@ -2337,7 +2415,20 @@ $('insp').addEventListener('change', e => {
 });
 
 // ============ Projets ============
-function save() {}   // plus de sauvegarde automatique : seulement avec le bouton 💾
+function save() { U.dirty = true; }   // sauvegarde automatique toutes les minutes, seulement pour un projet déjà sauvegardé une fois
+setInterval(async () => {
+  if (!U.dirty || !S.clips.length) return;
+  const names = [...$('projOpen').options].map(o => o.value); if (!names.includes(S.name)) return;
+  U.dirty = false;
+  try { await fetch(`/api/project?name=${encodeURIComponent(S.name)}`, { method:'POST', body:projJSON() }); $('autoSave').textContent = `✔ ${new Date().toTimeString().slice(0, 5)}`; $('autoSave').title = 'Sauvegarde automatique'; }
+  catch { U.dirty = true; }
+}, 60000);
+async function showVersions() {   // historique : les 30 dernières versions du projet ouvert
+  const v = await (await fetch(`/api/versions?name=${encodeURIComponent(S.name)}`)).json();
+  modal('Versions précédentes', v.length ? `<div class="dellist">${v.map(t => `<button class="verb" data-v="${t}">🕘 ${t.slice(6, 8)}/${t.slice(4, 6)}/${t.slice(0, 4)} ${t.slice(9, 11)}:${t.slice(11, 13)}:${t.slice(13, 15)}</button>`).join('')}</div>` : 'Pas encore de version précédente (elles se créent à chaque sauvegarde).', [['Fermer', closeModal]]);
+  $('mBar').parentElement.hidden = true;
+  document.querySelectorAll('.verb').forEach(b => b.onclick = async () => { closeModal(); await openProject(S.name, b.dataset.v); U.dirty = true; });
+}
 const projJSON = () => JSON.stringify({ ...S, nextId });
 async function storeProject(json, name) {
   await fetch(`/api/project?name=${encodeURIComponent(name)}`, { method:'POST', body:json });
@@ -2347,7 +2438,7 @@ async function storeProject(json, name) {
 async function saveNow() {
   const json = projJSON(), file = `${S.name.replace(/[\\/:*?"<>|]/g, '-')}.mixauto.json`;
   if (window.showSaveFilePicker) {   // Chrome / Edge : on choisit le dossier et le nom
-    let h; try { h = await showSaveFilePicker({ suggestedName:file, types:[{ description:'Mix Auto', accept:{ 'application/json':['.json'] } }] }); }
+    let h; try { h = await showSaveFilePicker({ suggestedName:file, types:[{ description:'Mix Auto Rec', accept:{ 'application/json':['.json'] } }] }); }
     catch (e) { if (e.name === 'AbortError') return; throw e; }
     const w = await h.createWritable(); await w.write(json); await w.close();
   } else {   // Safari / Firefox : le navigateur demande où l'enregistrer (ou le met dans Téléchargements)
@@ -2359,7 +2450,7 @@ $('saveBtn').onclick = () => saveNow().catch(e => alert(`Sauvegarde impossible :
 addEventListener('keydown', e => { if ((e.metaKey || e.ctrlKey) && e.key === 's') { e.preventDefault(); $('saveBtn').click(); } });
 $('inProj').onchange = async e => {
   const f = e.target.files[0]; e.target.value = ''; if (!f) return;
-  try { const p = JSON.parse(await f.text()); if (!Array.isArray(p.clips)) throw new Error('pas un mix Mix Auto');
+  try { const p = JSON.parse(await f.text()); if (!Array.isArray(p.clips)) throw new Error('pas un mix Mix Auto Rec');
     const name = p.name || f.name.replace(/\.mixauto\.json$|\.json$/, ''); p.name = name;
     await storeProject(JSON.stringify(p), name); await openProject(name);
   } catch (err) { alert(`Fichier illisible : ${err.message}`); }
@@ -2367,11 +2458,11 @@ $('inProj').onchange = async e => {
 function changed() { loadAll(); renderInsp(); renderLib(); draw(); restartIfPlaying(); save(); }
 async function listProjects() {
   const list = await (await fetch('/api/projects')).json();
-  $('projOpen').innerHTML = '<option value="">Ouvrir…</option><option value="__file">📂 Depuis un fichier…</option>' + list.map(n => `<option>${esc(n)}</option>`).join('') + (list.length ? '<option value="__del">🗑 Supprimer des projets…</option>' : '');
+  $('projOpen').innerHTML = '<option value="">Ouvrir…</option><option value="__file">📂 Depuis un fichier…</option>' + list.map(n => `<option>${esc(n)}</option>`).join('') + (list.length ? '<option value="__ver">🕘 Versions précédentes…</option><option value="__del">🗑 Supprimer des projets…</option>' : '');
 }
-$('projOpen').onchange = async e => { if (!e.target.value) return; if (e.target.value === '__file') { e.target.value = ''; return $('inProj').click(); } if (e.target.value === '__del') { e.target.value = ''; return delProjects(); } await openProject(e.target.value); e.target.value = ''; };
-async function openProject(name) {
-  stop(); const p = await (await fetch(`/api/project?name=${encodeURIComponent(name)}`)).json();
+$('projOpen').onchange = async e => { if (!e.target.value) return; if (e.target.value === '__file') { e.target.value = ''; return $('inProj').click(); } if (e.target.value === '__del') { e.target.value = ''; return delProjects(); } if (e.target.value === '__ver') { e.target.value = ''; return showVersions(); } await openProject(e.target.value); e.target.value = ''; };
+async function openProject(name, ver) {   // ver : une version précédente (historique)
+  stop(); const p = await (await fetch(ver ? `/api/version?name=${encodeURIComponent(name)}&v=${ver}` : `/api/project?name=${encodeURIComponent(name)}`)).json();
   nextId = p.nextId || 1; delete p.nextId; S = { ...newProject(), ...p };
   let end = 0;   // un morceau sans position valide est replacé à la suite du précédent
   for (const c of S.clips) { fillAuto(c); if (!Number.isFinite(c.start)) c.start = Math.max(0, end - 32); if (!Number.isFinite(c.len)) c.len = 64; end = Math.max(end, clipEnd(c)); }
@@ -2409,16 +2500,23 @@ $('newProj').onclick = () => {
 
 // ============ Export ============
 const FMTS = { mp3:['MP3', 'audio/mpeg'], wav:['WAV', 'audio/wav'], aiff:['AIFF', 'audio/aiff'], flac:['FLAC', 'audio/flac'], m4a:['M4A', 'audio/mp4'] };
-function exportMix() {   // 1. format  2. emplacement  3. calcul + encodage
-  if (!S.clips.length) return alert('Le mix est vide.');
-  if (S.clips.some(c => !BUF[c.id]?.buffer || BUF[c.id].loading)) return alert('Attends que tous les morceaux soient prêts (« Calage au tempo du mix… »).');
+function exportMix(rec) {   // 1. format (+ niveau, pochette)  2. emplacement  3. calcul + encodage ; rec = un set enregistré en Mix Live
+  if (!rec?.parts) {
+    rec = null;
+    if (!S.clips.length) return alert('Le mix est vide.');
+    if (S.clips.some(c => !BUF[c.id]?.buffer || BUF[c.id].loading)) return alert('Attends que tous les morceaux soient prêts (« Calage au tempo du mix… »).');
+  }
   const fm = Object.keys(FMTS).filter(f => !window.WEB || !['flac', 'm4a'].includes(f));   // FLAC / M4A : encodés par ffmpeg, dans l'app Mac
-  modal('Exporter le mix', `Choisis le format, puis où l'enregistrer.<div class="fmtnote">MP3 ${PREF.mp3} kbit/s : léger, pour partager · WAV / AIFF : qualité CD sans perte${window.WEB ? '' : ' · FLAC : sans perte et compressé · M4A : AAC 256 kbit/s (Apple)'}${window.WEB ? '<br>FLAC et M4A : dans l\'app Mac.' : ''}</div>`,
-    [...fm.map(f => [FMTS[f][0], () => pickDest(f)]), ['Annuler', closeModal]]);
+  const lufs = window.WEB ? '' : `<label class="exopt">Niveau <select id="exLufs"><option value="">D'origine</option><option value="-9">Club : −9 LUFS</option><option value="-14">Streaming : −14 LUFS</option></select></label>`;
+  modal(rec ? 'Enregistrer le set' : 'Exporter le mix', `Choisis le format, puis où l'enregistrer.<div class="exopts">${lufs}<label class="exopt"><input type="checkbox" id="exCover" checked> Pochette (image carrée)</label></div><div class="fmtnote">MP3 ${PREF.mp3} kbit/s : léger, pour partager · WAV / AIFF : qualité CD sans perte${window.WEB ? '' : ' · FLAC : sans perte et compressé · M4A : AAC 256 kbit/s (Apple)'}${window.WEB ? '<br>FLAC et M4A : dans l\'app Mac.' : ''}</div>`,
+    [...fm.map(f => [FMTS[f][0], () => pickDest(f, rec)]), ['Annuler', closeModal]]);
+  if (U.lufs != null && $('exLufs')) $('exLufs').value = U.lufs;
   $('mBar').parentElement.hidden = true; $('mBtns').classList.add('fmts');
 }
-async function pickDest(fmt) {
-  const name = `${S.name} - ${new Date().toLocaleString('fr-FR').replace(/[/:]/g, '-').replace(/,/g, '')}`;
+async function pickDest(fmt, rec) {
+  const opt = { lufs:$('exLufs')?.value || '', cover:$('exCover')?.checked };
+  U.lufs = opt.lufs;
+  const name = `${rec?.name || S.name} - ${new Date().toLocaleString('fr-FR').replace(/[/:]/g, '-').replace(/,/g, '')}`;
   let dest = '', handle = null;
   if (window.WEB) {
     if (window.showSaveFilePicker) try { handle = await showSaveFilePicker({ suggestedName:`${name}.${fmt}`, types:[{ description:FMTS[fmt][0], accept:{ [FMTS[fmt][1]]:[`.${fmt}`] } }] }); } catch (e) { if (e.name === 'AbortError') return; }
@@ -2426,9 +2524,21 @@ async function pickDest(fmt) {
     const r = await (await fetch(`/api/pickpath?name=${encodeURIComponent(`${name}.${fmt}`)}`)).json();
     if (r.cancel) return; dest = r.path || '';
   }
-  renderMix(fmt, name, dest, handle);
+  rec ? sendSet(rec, fmt, name, dest, handle, opt) : renderMix(fmt, name, dest, handle, opt);
 }
-async function renderMix(fmt, name, dest, handle) {
+async function sendSet(rec, fmt, name, dest, handle, opt) {   // set enregistré : envoyé par blocs d'environ 1 Mo
+  const id = Math.random().toString(36).slice(2);
+  modal('Enregistrer le set', 'Envoi de l\'audio…');
+  try {
+    let buf = [], n = 0, i = 0;
+    const flush = async () => { if (!buf.length) return; const all = new Int16Array(n); let o = 0; for (const p of buf) { all.set(p, o); o += p.length; }
+      const r = await fetch(`/api/export/chunk?id=${id}&i=${i++}`, { method:'POST', body:all.buffer }); if (!r.ok) throw new Error('envoi'); buf = []; n = 0; };
+    for (let k = 0; k < rec.parts.length; k++) { buf.push(rec.parts[k]); n += rec.parts[k].length; if (n > 512000) { await flush(); modalProgress(k / rec.parts.length); } }
+    await flush();
+    await finishExport(id, fmt, name, dest, handle, rec.tl, rec.sr, opt, rec.name);
+  } catch (e) { modal('Export impossible', esc(e.message), [['Fermer', closeModal]]); }
+}
+async function renderMix(fmt, name, dest, handle, opt) {
   commitRate(); stop();
   const start = secAt(Math.min(...S.clips.map(c => c.start)));
   const total = secAt(Math.max(...S.clips.map(c => clipEnd(c) + tailOf(c)))) + 6;   // les prolongations d'effets comprises
@@ -2449,19 +2559,38 @@ async function renderMix(fmt, name, dest, handle) {
       const r = await fetch(`/api/export/chunk?id=${id}&i=${i}`, { method:'POST', body:pcm.buffer });
       if (!r.ok) throw new Error('envoi');
     }
-    modalProgress(1, `Encodage ${FMTS[fmt][0]}…`);
     const list = sorted().map(c => `${fmtTime(secAt(c.start) - start)}  ${S.tracks[c.trackId].name}  (${S.tracks[c.trackId].key} / ${S.tracks[c.trackId].camelot})`).join('\n');
-    const tl = `${S.name} · ${+S.tempo.toFixed(2)} BPM · ${fmtTime(total - start)}\n\n${list}\n`;
-    window.webSaveHandle = handle;   // web : le fichier choisi (sinon téléchargement)
-    const r = await fetch(`/api/export/finish?id=${id}&name=${encodeURIComponent(name)}&kbps=${PREF.mp3}&fmt=${fmt}&dest=${encodeURIComponent(dest)}`, { method:'POST', body:tl });
-    const { path, mp3, error } = await r.json(); if (error) throw new Error(error);
-    const file = path || mp3, where = window.WEB ? (handle ? 'enregistré.' : 'téléchargé (dossier Téléchargements).') : `enregistré dans ${esc(path.replace(/\/[^/]*$/, ''))}`;
-    modal('Mix exporté ✔', `<b>${esc(file.split('/').pop())}</b><br>${where}<div class="fmtnote">SoundCloud : la page d'envoi s'ouvre, la tracklist est copiée (à coller dans la description), il ne reste qu'à glisser le fichier.</div>`, [
-      ['☁ Envoyer sur SoundCloud', () => { navigator.clipboard?.writeText(tl).catch(() => {}); window.WEB ? open('https://soundcloud.com/upload', '_blank') : fetch('/api/open?url=' + encodeURIComponent('https://soundcloud.com/upload')); if (!window.WEB) fetch('/api/reveal?path=' + encodeURIComponent(path)); }],
-      [window.WEB ? 'Télécharger encore' : 'Montrer le fichier', () => fetch(`/api/reveal?name=${encodeURIComponent(mp3 || '')}&path=${encodeURIComponent(path || '')}`)],
-      ['Fermer', closeModal]]);
-    modalProgress(1);
+    await finishExport(id, fmt, name, dest, handle, `${S.name} · ${+S.tempo.toFixed(2)} BPM · ${fmtTime(total - start)}\n\n${list}\n`, SR, opt, S.name);
   } catch (e) { modal('Export impossible', esc(e.message), [['Fermer', closeModal]]); }
+}
+async function finishExport(id, fmt, name, dest, handle, tl, sr, opt, title) {
+  modal('Export du mix', `Encodage ${FMTS[fmt][0]}…`); modalProgress(1);
+  window.webSaveHandle = handle;   // web : le fichier choisi (sinon téléchargement)
+  const r = await fetch(`/api/export/finish?id=${id}&name=${encodeURIComponent(name)}&kbps=${PREF.mp3}&fmt=${fmt}&sr=${sr}&lufs=${opt.lufs}&dest=${encodeURIComponent(dest)}`, { method:'POST', body:tl });
+  const { path, mp3, error } = await r.json(); if (error) throw new Error(error);
+  if (opt.cover) {   // pochette carrée : logo + nom du mix, à côté du fichier
+    const png = await makeCover(title, `${+S.tempo.toFixed(0)} BPM · ${new Date().toLocaleDateString('fr-FR')}`);
+    if (window.WEB) dlBlob(png, `${name}.png`); else await fetch(`/api/export/cover?path=${encodeURIComponent(path.replace(/\.[^./]+$/, '.png'))}`, { method:'POST', body:png });
+  }
+  const file = path || mp3, where = window.WEB ? (handle ? 'enregistré.' : 'téléchargé (dossier Téléchargements).') : `enregistré dans ${esc(path.replace(/\/[^/]*$/, ''))}`;
+  modal('Mix exporté ✔', `<b>${esc(file.split('/').pop())}</b><br>${where}<div class="fmtnote">SoundCloud : la page d'envoi s'ouvre, la tracklist est copiée (à coller dans la description), il ne reste qu'à glisser le fichier.</div>`, [
+    ['☁ Envoyer sur SoundCloud', () => { navigator.clipboard?.writeText(tl).catch(() => {}); window.WEB ? open('https://soundcloud.com/upload', '_blank') : fetch('/api/open?url=' + encodeURIComponent('https://soundcloud.com/upload')); if (!window.WEB) fetch('/api/reveal?path=' + encodeURIComponent(path)); }],
+    [window.WEB ? 'Télécharger encore' : 'Montrer le fichier', () => fetch(`/api/reveal?name=${encodeURIComponent(mp3 || '')}&path=${encodeURIComponent(path || '')}`)],
+    ['Fermer', closeModal]]);
+  modalProgress(1);
+}
+const dlBlob = (blob, name) => { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 60000); };
+function makeCover(title, sub) {   // 1400 × 1400 : disque du logo, nom du mix, tempo et date
+  const N = 1400, cv = document.createElement('canvas'); cv.width = cv.height = N; const g = cv.getContext('2d');
+  const bg = g.createRadialGradient(N / 2, N * 0.35, 50, N / 2, N / 2, N * 0.8); bg.addColorStop(0, '#22222e'); bg.addColorStop(1, '#0c0c11'); g.fillStyle = bg; g.fillRect(0, 0, N, N);
+  const cx = N / 2, cy = N * 0.42, R = N * 0.27, cg = g.createConicGradient(200 * Math.PI / 180 - Math.PI / 2, cx, cy);
+  ['#3aa0ff', '#ffffff', '#ff9a2e', '#ff3b3b', '#3aa0ff'].forEach((c, i) => cg.addColorStop(i / 4, c));
+  g.shadowColor = '#ff3b3b88'; g.shadowBlur = 80; g.fillStyle = cg; g.beginPath(); g.arc(cx, cy, R, 0, 2 * Math.PI); g.moveTo(cx + R * 0.15, cy); g.arc(cx, cy, R * 0.15, 0, 2 * Math.PI, true); g.fill('evenodd'); g.shadowBlur = 0;
+  g.textAlign = 'center'; g.fillStyle = '#fff'; let fs = 92; g.font = `800 ${fs}px -apple-system, Helvetica, sans-serif`;
+  while (g.measureText(title).width > N * 0.86 && fs > 40) g.font = `800 ${fs -= 4}px -apple-system, Helvetica, sans-serif`;
+  g.fillText(title, cx, N * 0.82); g.fillStyle = '#ff3b3b'; g.font = '700 44px -apple-system, Helvetica, sans-serif'; g.fillText(sub, cx, N * 0.89);
+  g.fillStyle = '#8b8ba1'; g.font = '600 30px -apple-system, Helvetica, sans-serif'; g.fillText('MIX AUTO REC', cx, N * 0.95);
+  return new Promise(ok => cv.toBlob(ok, 'image/png'));
 }
 $('export').onclick = exportMix;
 
@@ -2501,7 +2630,7 @@ async function delProjects() {   // liste des projets à cocher, confirmation, p
 }
 function startChoice(names, last) {   // à l'ouverture : nouvelle session ou un projet
   const list = [...new Set([last, ...names].filter(n => n && names.includes(n)))].slice(0, 6);
-  modal('Mix Auto', list.length ? 'Nouvelle session, ou ouvrir un projet ?' : 'Commence une nouvelle session, ou ouvre un projet depuis un fichier.', [
+  modal('Mix Auto Rec', list.length ? 'Nouvelle session, ou ouvrir un projet ?' : 'Commence une nouvelle session, ou ouvre un projet depuis un fichier.', [
     ['＋ Nouvelle session', () => { closeModal(); $('newProj').click(); }],
     ...list.map(n => [`📂 ${n}`, () => { closeModal(); openProject(n); }]),
     ['Depuis un fichier…', () => { closeModal(); $('inProj').click(); }],
@@ -2510,6 +2639,378 @@ function startChoice(names, last) {   // à l'ouverture : nouvelle session ou un
   ]);
   $('mBar').parentElement.hidden = true; $('mBtns').classList.add('start');
 }
+</script>
+<script id="i18n">
+// ============ Langues : français, anglais, espagnol, allemand, chinois, arabe ============
+// Source du bloc <script id="i18n"> collé dans index.html par ./langues.sh (à relancer après une modification).
+// Les textes restent écrits en français dans le code ; dans une autre langue, chaque texte affiché est traduit au vol
+// (tableau ci-dessous + formules pour les textes qui contiennent un nombre ou un nom). Choix : Réglages → Langue.
+(() => {
+  const LANGS = ['fr', 'en', 'es', 'de', 'zh', 'ar'];
+  let L = null; try { L = localStorage.getItem('mixauto-lang'); } catch {}
+  if (!LANGS.includes(L)) { const n = (navigator.language || 'fr').slice(0, 2).toLowerCase(); L = LANGS.includes(n) ? n : 'en'; }
+  document.documentElement.lang = L;
+  const sel = document.getElementById('langSel');
+  if (sel) { sel.value = L; sel.onchange = () => { try { localStorage.setItem('mixauto-lang', sel.value); } catch {} location.reload(); }; }
+  window.tr = s => s;
+  if (L === 'fr') return;
+  const C = LANGS.indexOf(L);
+  // [français, English, Español, Deutsch, 中文, العربية]
+  const R = [
+['version bêta','beta version','versión beta','Beta-Version','测试版','نسخة تجريبية'],
+['Nom du projet','Project name','Nombre del proyecto','Projektname','项目名称','اسم المشروع'],
+['Ouvrir…','Open…','Abrir…','Öffnen…','打开…','فتح…'],
+['Ouvrir un projet','Open a project','Abrir un proyecto','Projekt öffnen','打开项目','فتح مشروع'],
+['Nouveau','New','Nuevo','Neu','新建','جديد'],
+['Sauvegarder','Save','Guardar','Speichern','保存','حفظ'],
+['📂 Depuis un fichier…','📂 From a file…','📂 Desde un archivo…','📂 Aus einer Datei…','📂 从文件…','📂 من ملف…'],
+['🗑 Supprimer des projets…','🗑 Delete projects…','🗑 Eliminar proyectos…','🗑 Projekte löschen…','🗑 删除项目…','🗑 حذف مشاريع…'],
+['Depuis un fichier…','From a file…','Desde un archivo…','Aus einer Datei…','从文件…','من ملف…'],
+['＋ Nouvelle session','＋ New session','＋ Nueva sesión','＋ Neue Session','＋ 新会话','＋ جلسة جديدة'],
+['Nouvelle session, ou ouvrir un projet ?','New session, or open a project?','¿Nueva sesión o abrir un proyecto?','Neue Session oder ein Projekt öffnen?','新建会话，还是打开项目？','جلسة جديدة أم فتح مشروع؟'],
+['Commence une nouvelle session, ou ouvre un projet depuis un fichier.','Start a new session, or open a project from a file.','Empieza una nueva sesión o abre un proyecto desde un archivo.','Starte eine neue Session oder öffne ein Projekt aus einer Datei.','开始新会话，或从文件打开项目。','ابدأ جلسة جديدة أو افتح مشروعًا من ملف.'],
+['Mentions légales','Legal notice','Aviso legal','Impressum','法律声明','الإشعار القانوني'],
+['Mentions légales et licences','Legal notice and licenses','Aviso legal y licencias','Impressum und Lizenzen','法律声明与许可证','الإشعار القانوني والتراخيص'],
+['Supprimer des projets','Delete projects','Eliminar proyectos','Projekte löschen','删除项目','حذف مشاريع'],
+['Supprimer la sélection','Delete selected','Eliminar la selección','Auswahl löschen','删除所选','حذف المحدد'],
+['Aucun projet.','No projects.','Ningún proyecto.','Keine Projekte.','没有项目。','لا توجد مشاريع.'],
+['Retour au début','Back to start','Volver al inicio','Zum Anfang','回到开头','العودة إلى البداية'],
+['Lecture / pause (espace)','Play / pause (space)','Reproducir / pausa (espacio)','Wiedergabe / Pause (Leertaste)','播放 / 暂停（空格）','تشغيل / إيقاف مؤقت (مسافة)'],
+['Tape en rythme pour donner le tempo','Tap along to set the tempo','Pulsa al ritmo para marcar el tempo','Im Takt tippen, um das Tempo vorzugeben','跟着节奏点击来设定速度','انقر مع الإيقاع لتحديد السرعة'],
+["Le morceau sélectionné et les suivants prennent son tempo d'origine",'The selected track and the following ones take its original tempo','La pista seleccionada y las siguientes toman su tempo original','Der gewählte Titel und die folgenden übernehmen sein Originaltempo','所选曲目及其后的曲目使用它的原始速度','المقطع المحدد والمقاطع التالية تأخذ سرعته الأصلية'],
+['MASTER TEMPO allumé : le tempo change sans changer la tonalité (les voix et les basses restent naturelles). Éteint : comme un vinyle, ça monte ou descend avec la vitesse','MASTER TEMPO on: the tempo changes without changing the key. Off: like vinyl, the pitch follows the speed','MASTER TEMPO activado: el tempo cambia sin cambiar la tonalidad. Desactivado: como un vinilo, el tono sigue la velocidad','MASTER TEMPO an: Tempo ändert sich ohne Tonartwechsel. Aus: wie Vinyl, die Tonhöhe folgt der Geschwindigkeit','MASTER TEMPO 开启：变速不变调。关闭：像黑胶一样，音高随速度变化','MASTER TEMPO مفعّل: تتغير السرعة دون تغيير المقام. معطّل: مثل الفينيل، تتبع طبقة الصوت السرعة'],
+['Fader de tempo : tout le mix accélère ou ralentit en direct. Double-clic : retour à 0 %','Tempo fader: the whole mix speeds up or slows down live. Double-click: back to 0 %','Fader de tempo: toda la mezcla acelera o frena en directo. Doble clic: vuelta a 0 %','Tempofader: der ganze Mix wird live schneller oder langsamer. Doppelklick: zurück auf 0 %','速度推子：整个混音实时加速或减速。双击：回到 0 %','فيدر السرعة: يتسارع المزيج كله أو يتباطأ مباشرة. نقر مزدوج: العودة إلى 0 %'],
+['Plage du fader (TEMPO RANGE)','Fader range (TEMPO RANGE)','Rango del fader (TEMPO RANGE)','Faderbereich (TEMPO RANGE)','推子范围（TEMPO RANGE）','مدى الفيدر (TEMPO RANGE)'],
+['Aimant','Snap','Imán','Raster','吸附','مغناطيس'],
+['Libre','Free','Libre','Frei','自由','حر'],
+['Mesure','Bar','Compás','Takt','小节','مازورة'],
+['Temps','Beat','Tiempo','Schlag','拍','نبضة'],
+['½ temps','½ beat','½ tiempo','½ Schlag','½ 拍','½ نبضة'],
+['¼ temps','¼ beat','¼ tiempo','¼ Schlag','¼ 拍','¼ نبضة'],
+['Phrase (8 mesures)','Phrase (8 bars)','Frase (8 compases)','Phrase (8 Takte)','乐句（8 小节）','جملة (8 مازورات)'],
+['Clic','Click','Clic','Klick','节拍器','نقرة'],
+['Métronome pour vérifier le calage','Metronome to check the beat-matching','Metrónomo para comprobar la sincronización','Metronom zum Prüfen der Synchronisation','节拍器，用来检查对拍','مترونوم للتحقق من المزامنة'],
+['Zoomer','Zoom in','Acercar','Vergrößern','放大','تكبير'],
+['Dézoomer (⌘ + molette)','Zoom out (⌘ + scroll)','Alejar (⌘ + rueda)','Verkleinern (⌘ + Mausrad)','缩小（⌘ + 滚轮）','تصغير (⌘ + العجلة)'],
+['Voir tout le mix (touche F)','Show the whole mix (F key)','Ver toda la mezcla (tecla F)','Ganzen Mix zeigen (Taste F)','显示整个混音（F 键）','عرض المزيج كاملًا (مفتاح F)'],
+['Annuler (⌘Z)','Undo (⌘Z)','Deshacer (⌘Z)','Rückgängig (⌘Z)','撤销（⌘Z）','تراجع (⌘Z)'],
+['⚡ Mix 1 h','⚡ 1 h mix','⚡ Mezcla 1 h','⚡ 1-Std-Mix','⚡ 1 小时混音','⚡ مزيج ساعة'],
+['Ordre auto','Auto order','Orden auto','Auto-Reihenfolge','自动排序','ترتيب تلقائي'],
+['⇪ Exporter / Transférer','⇪ Export / Share','⇪ Exportar / Compartir','⇪ Exportieren / Teilen','⇪ 导出 / 分享','⇪ تصدير / مشاركة'],
+['⚙ Réglages','⚙ Settings','⚙ Ajustes','⚙ Einstellungen','⚙ 设置','⚙ الإعدادات'],
+['Réglages','Settings','Ajustes','Einstellungen','设置','الإعدادات'],
+["Ajoute les morceaux de la liste affichée (tempo à ±6 %) jusqu'à 1 h de mix, les range et pose les transitions",'Adds tracks from the list shown (tempo within ±6 %) up to a 1 h mix, orders them and sets transitions','Añade pistas de la lista (tempo ±6 %) hasta 1 h de mezcla, las ordena y pone transiciones','Fügt Titel der Liste (Tempo ±6 %) bis zu 1 Std. Mix hinzu, ordnet sie und setzt Übergänge','从列表中添加曲目（速度 ±6 %）直到 1 小时混音，排序并设置过渡','يضيف مقاطع من القائمة (سرعة ±6 %) حتى مزيج ساعة، يرتبها ويضع الانتقالات'],
+['Range les morceaux du mix dans le meilleur ordre et pose des transitions','Puts the mix tracks in the best order and sets transitions','Ordena las pistas de la mezcla y pone transiciones','Ordnet die Mix-Titel optimal und setzt Übergänge','将混音曲目按最佳顺序排列并设置过渡','يرتب مقاطع المزيج بأفضل ترتيب ويضع الانتقالات'],
+['Réglages : carte son, entrée micro, échantillonnage, options','Settings: sound card, mic input, sample rate, options','Ajustes: tarjeta de sonido, micrófono, muestreo, opciones','Einstellungen: Soundkarte, Mikrofon, Abtastrate, Optionen','设置：声卡、麦克风输入、采样率、选项','الإعدادات: بطاقة الصوت، الميكروفون، معدل العينة، خيارات'],
+['Sauvegarder le mix (⌘S) : tu choisis où ranger le fichier. Sans sauvegarde, la console repart vide quand tu actualises.','Save the mix (⌘S). Without saving, the console starts empty when you reload.','Guardar la mezcla (⌘S). Sin guardar, la consola empieza vacía al recargar.','Mix speichern (⌘S). Ohne Speichern startet die Konsole beim Neuladen leer.','保存混音（⌘S）。不保存的话，刷新后控制台为空。','حفظ المزيج (⌘S). بدون حفظ تبدأ الواجهة فارغة عند إعادة التحميل.'],
+['en lecture','playing','reproduciendo','läuft','播放中','قيد التشغيل'],
+['Glisse un morceau ici','Drop a track here','Suelta una pista aquí','Titel hier ablegen','把曲目拖到这里','أفلت مقطعًا هنا'],
+['Remettre à zéro','Reset','Poner a cero','Zurücksetzen','归零','إعادة الضبط'],
+['Tous les boutons à zéro','All knobs to zero','Todos los botones a cero','Alle Regler auf null','所有旋钮归零','كل المقابض على الصفر'],
+['FILTRE','FILTER','FILTRO','FILTER','滤波','فلتر'],
+['ÉCHO','ECHO','ECO','ECHO','回声','صدى'],
+['RÉV','REV','REV','HALL','混响','ريفيرب'],
+['Crossfader (double-clic : centre)','Crossfader (double-click: center)','Crossfader (doble clic: centro)','Crossfader (Doppelklick: Mitte)','交叉推子（双击：居中）','كروس فيدر (نقر مزدوج: الوسط)'],
+['Pré-écoute','Preview','Preescucha','Vorhören','试听','استماع مسبق'],
+["Pendant la lecture, tes gestes sur la table s'écrivent en lignes rouges sur les morceaux (comme l'automation d'Ableton)",'During playback, your moves on the mixer are written as red automation lines','Durante la reproducción, tus gestos en el mezclador se escriben como líneas rojas de automatización','Während der Wiedergabe werden deine Mixer-Bewegungen als rote Automationslinien geschrieben','播放时，你在调音台上的操作会写成红色自动化线','أثناء التشغيل تُكتب حركاتك على الخلاط كخطوط أتمتة حمراء'],
+['Mix Live : les platines A et B jouent chacune de leur côté (▶ et CUE par voie), tu mixes en direct à la table. Glisse un morceau de la bibliothèque sur une platine pour le charger.','Mix Live: decks A and B play independently (▶ and CUE per deck). Drag a track onto a deck to load it.','Mix Live: los platos A y B suenan por separado (▶ y CUE por plato). Arrastra una pista a un plato para cargarla.','Mix Live: Decks A und B spielen unabhängig (▶ und CUE pro Deck). Titel auf ein Deck ziehen, um ihn zu laden.','现场混音：A、B 两台独立播放（各自 ▶ 和 CUE）。把曲目拖到唱盘上即可加载。','مزج مباشر: المشغلان A وB يعملان بشكل مستقل (▶ وCUE لكل منهما). اسحب مقطعًا إلى مشغل لتحميله.'],
+['Tous les morceaux','All tracks','Todas las pistas','Alle Titel','全部曲目','كل المقاطع'],
+['Par tonalité','By key','Por tonalidad','Nach Tonart','按调性','حسب المقام'],
+['Par dossier','By folder','Por carpeta','Nach Ordner','按文件夹','حسب المجلد'],
+['Suggestions','Suggestions','Sugerencias','Vorschläge','推荐','اقتراحات'],
+['⇣ Importer','⇣ Import','⇣ Importar','⇣ Importieren','⇣ 导入','⇣ استيراد'],
+['Rechercher un titre, un artiste…','Search a title, an artist…','Buscar un título, un artista…','Titel, Künstler suchen…','搜索曲名、艺人…','ابحث عن عنوان أو فنان…'],
+['+ Morceaux','+ Tracks','+ Pistas','+ Titel','+ 曲目','+ مقاطع'],
+['+ Dossier','+ Folder','+ Carpeta','+ Ordner','+ 文件夹','+ مجلد'],
+['🗑 Tout supprimer','🗑 Delete all','🗑 Borrar todo','🗑 Alle löschen','🗑 全部删除','🗑 حذف الكل'],
+['Supprime de la bibliothèque tous les morceaux de la liste affichée','Removes every track of the list shown from the library','Quita de la biblioteca todas las pistas de la lista','Entfernt alle Titel der Liste aus der Bibliothek','从曲库中删除列表中的所有曲目','يحذف كل مقاطع القائمة من المكتبة'],
+['Tracks à mixer','Tracks to mix','Pistas para mezclar','Titel zum Mixen','待混曲目','مقاطع للمزج'],
+['Tonalité','Key','Tonalidad','Tonart','调性','المقام'],
+['Énergie','Energy','Energía','Energie','能量','الطاقة'],
+['Durée','Length','Duración','Dauer','时长','المدة'],
+['Dossier','Folder','Carpeta','Ordner','文件夹','المجلد'],
+['Dossiers','Folders','Carpetas','Ordner','文件夹','المجلدات'],
+['Tous','All','Todos','Alle','全部','الكل'],
+['Ajouter à la fin du mix','Add at the end of the mix','Añadir al final de la mezcla','Ans Ende des Mixes','添加到混音末尾','إضافة إلى نهاية المزيج'],
+['Retirer de la bibliothèque','Remove from library','Quitar de la biblioteca','Aus Bibliothek entfernen','从曲库移除','إزالة من المكتبة'],
+['Retirer du mix','Remove from mix','Quitar de la mezcla','Aus dem Mix entfernen','从混音移除','إزالة من المزيج'],
+['Tempo éloigné du mix : il sera fortement étiré','Tempo far from the mix: it will be stretched a lot','Tempo lejano: se estirará mucho','Tempo weit weg: wird stark gestreckt','速度相差较大：会被大幅拉伸','سرعة بعيدة عن المزيج: سيُمدّ كثيرًا'],
+['Glisse tes morceaux ou un dossier ici','Drop your tracks or a folder here','Suelta tus pistas o una carpeta aquí','Titel oder Ordner hier ablegen','把曲目或文件夹拖到这里','أفلت مقاطعك أو مجلدًا هنا'],
+["Ils s'ajoutent à ta liste « Tracks à mixer », analysés (BPM, tonalité, énergie).",'They are added to your “Tracks to mix” list and analysed (BPM, key, energy).','Se añaden a tu lista «Pistas para mezclar», analizadas (BPM, tonalidad, energía).','Sie kommen in deine Liste „Titel zum Mixen“ und werden analysiert (BPM, Tonart, Energie).','它们会加入“待混曲目”列表并被分析（BPM、调性、能量）。','تُضاف إلى قائمة «مقاطع للمزج» وتُحلَّل (BPM، المقام، الطاقة).'],
+['Choisir des morceaux','Choose tracks','Elegir pistas','Titel wählen','选择曲目','اختيار مقاطع'],
+['Choisir un dossier','Choose a folder','Elegir una carpeta','Ordner wählen','选择文件夹','اختيار مجلد'],
+["Afficher / masquer la zone d'import à droite",'Show / hide the import area','Mostrar / ocultar la zona de importación','Importbereich ein- / ausblenden','显示 / 隐藏导入区','إظهار / إخفاء منطقة الاستيراد'],
+['▶ Morceaux de démo','▶ Demo tracks','▶ Pistas de demo','▶ Demo-Titel','▶ 演示曲目','▶ مقاطع تجريبية'],
+['Roue des tonalités','Key wheel','Rueda de tonalidades','Tonartenrad','调性轮','عجلة المقامات'],
+['Inclure les tonalités compatibles','Include compatible keys','Incluir tonalidades compatibles','Kompatible Tonarten einschließen','包括兼容调性','تضمين المقامات المتوافقة'],
+['Tout afficher','Show all','Mostrar todo','Alle zeigen','全部显示','عرض الكل'],
+['Supprimer ce dossier et ses morceaux','Delete this folder and its tracks','Borrar esta carpeta y sus pistas','Ordner und Titel löschen','删除此文件夹及其曲目','حذف هذا المجلد ومقاطعه'],
+['Clique une ou plusieurs cases. Compatible = même chiffre (A↔B) ou chiffre voisin.','Click one or more cells. Compatible = same number (A↔B) or neighbouring number.','Haz clic en una o varias casillas. Compatible = mismo número (A↔B) o vecino.','Ein oder mehrere Felder anklicken. Kompatibel = gleiche Zahl (A↔B) oder Nachbarzahl.','点击一个或多个格子。兼容 = 相同数字（A↔B）或相邻数字。','انقر خانة أو أكثر. متوافق = نفس الرقم (A↔B) أو الرقم المجاور.'],
+["Le dossier d'où vient chaque morceau. Pour en ajouter un : « + Dossier » ou glisse-le dans la bibliothèque.",'The folder each track comes from. To add one: “+ Folder” or drop it into the library.','La carpeta de cada pista. Para añadir una: «+ Carpeta» o suéltala en la biblioteca.','Der Ordner jedes Titels. Hinzufügen: „+ Ordner“ oder in die Bibliothek ziehen.','每首曲目来自的文件夹。添加：“+ 文件夹”或拖入曲库。','المجلد الذي جاء منه كل مقطع. للإضافة: «+ مجلد» أو اسحبه إلى المكتبة.'],
+['Aucun morceau ne correspond.','No matching track.','Ninguna pista coincide.','Kein passender Titel.','没有匹配的曲目。','لا يوجد مقطع مطابق.'],
+['Aucun morceau compatible (tonalité voisine et tempo à ±6 %).','No compatible track (neighbouring key, tempo ±6 %).','Ninguna pista compatible (tonalidad vecina, tempo ±6 %).','Kein kompatibler Titel (Nachbartonart, Tempo ±6 %).','没有兼容曲目（相邻调性，速度 ±6 %）。','لا يوجد مقطع متوافق (مقام مجاور، سرعة ±6 %).'],
+["Ajoute un morceau au mix (ou sélectionne-en un) pour voir ce qui s'enchaîne bien.",'Add a track to the mix (or select one) to see what follows well.','Añade una pista (o selecciona una) para ver qué encaja después.','Füge einen Titel hinzu (oder wähle einen), um passende Nachfolger zu sehen.','添加（或选择）一首曲目，查看适合接上的曲目。','أضف مقطعًا (أو اختر واحدًا) لترى ما يناسب بعده.'],
+['Ajoute ou sélectionne un morceau du mix.','Add or select a track of the mix.','Añade o selecciona una pista de la mezcla.','Füge einen Mix-Titel hinzu oder wähle ihn.','添加或选择混音中的曲目。','أضف أو اختر مقطعًا من المزيج.'],
+["Glisse un morceau de la bibliothèque jusqu'ici",'Drag a track from the library here','Arrastra una pista de la biblioteca aquí','Ziehe einen Titel aus der Bibliothek hierher','把曲库中的曲目拖到这里','اسحب مقطعًا من المكتبة إلى هنا'],
+['(ou double-clic dessus) pour commencer ton mix.','(or double-click it) to start your mix.','(o haz doble clic) para empezar tu mezcla.','(oder doppelklicken), um deinen Mix zu starten.','（或双击它）开始你的混音。','(أو انقر عليه مرتين) لبدء مزيجك.'],
+['Faire défiler le mix','Scroll the mix','Desplazar la mezcla','Mix scrollen','滚动混音','تمرير المزيج'],
+['Ligne rouge :','Red line:','Línea roja:','Rote Linie:','红线：','الخط الأحمر:'],
+['Masquer','Hide','Ocultar','Ausblenden','隐藏','إخفاء'],
+['Volume','Volume','Volumen','Lautstärke','音量','الصوت'],
+['Basses','Low','Graves','Bässe','低音','الجهير'],
+['Médiums','Mid','Medios','Mitten','中音','المتوسط'],
+['Aigus','High','Agudos','Höhen','高音','الحاد'],
+['Filtre','Filter','Filtro','Filter','滤波','فلتر'],
+['Réverbe','Reverb','Reverb','Hall','混响','ريفيرب'],
+['Écho','Echo','Eco','Echo','回声','صدى'],
+['Noise','Noise','Ruido','Rauschen','噪音','ضوضاء'],
+['Glisse un morceau pour le déplacer, tire ses bords pour le couper · Maj = sans aimant','Drag a track to move it, pull its edges to trim it · Shift = no snap','Arrastra una pista para moverla, tira de los bordes para recortarla · Mayús = sin imán','Titel ziehen zum Verschieben, Ränder ziehen zum Kürzen · Umschalt = ohne Raster','拖动曲目以移动，拖动边缘以裁剪 · Shift = 不吸附','اسحب المقطع لتحريكه، اسحب حوافه لقصّه · Shift = بدون مغناطيس'],
+['Point enlevé (⌘Z pour le remettre)','Point removed (⌘Z to undo)','Punto eliminado (⌘Z para deshacer)','Punkt entfernt (⌘Z zum Rückgängigmachen)','点已删除（⌘Z 撤销）','تمت إزالة النقطة (⌘Z للتراجع)'],
+['Clic : aller à cet endroit','Click: go to this position','Clic: ir a esta posición','Klick: zu dieser Stelle','点击：跳到这里','نقرة: الانتقال إلى هنا'],
+["Glisser pour agrandir les platines A / B et la table · double-clic : taille d'origine",'Drag to resize decks A / B and the mixer · double-click: original size','Arrastra para agrandar los platos y el mezclador · doble clic: tamaño original','Ziehen zum Vergrößern von Decks und Mixer · Doppelklick: Originalgröße','拖动以调整 A / B 唱盘和调音台大小 · 双击：原始大小','اسحب لتكبير المشغلين والخلاط · نقر مزدوج: الحجم الأصلي'],
+["Glisser pour agrandir · double-clic : taille d'origine",'Drag to resize · double-click: original size','Arrastra para agrandar · doble clic: tamaño original','Ziehen zum Vergrößern · Doppelklick: Originalgröße','拖动以调整大小 · 双击：原始大小','اسحب للتكبير · نقر مزدوج: الحجم الأصلي'],
+["Glisser vers le haut pour agrandir les platines A / B et la table · double-clic : taille d'origine",'Drag up to enlarge decks A / B and the mixer · double-click: original size','Arrastra hacia arriba para agrandar los platos · doble clic: tamaño original','Nach oben ziehen zum Vergrößern · Doppelklick: Originalgröße','向上拖动以放大唱盘和调音台 · 双击：原始大小','اسحب للأعلى لتكبير المشغلين والخلاط · نقر مزدوج: الحجم الأصلي'],
+['Automation','Automation','Automatización','Automation','自动化','الأتمتة'],
+['Morceau','Track','Pista','Titel','曲目','المقطع'],
+['Effets','Effects','Efectos','Effekte','效果','المؤثرات'],
+['Automations posées','Automations set','Automatizaciones puestas','Gesetzte Automationen','已设置的自动化','الأتمتة المضافة'],
+['Supprimer cette automation','Remove this automation','Quitar esta automatización','Diese Automation entfernen','删除此自动化','حذف هذه الأتمتة'],
+['1 · Le suivant entre','1 · The next track starts','1 · La siguiente entra','1 · Der nächste Titel startet','1 · 下一首进入','1 · يدخل المقطع التالي'],
+['2 · Comment ça passe','2 · How it transitions','2 · Cómo pasa','2 · Wie der Übergang klingt','2 · 如何过渡','2 · كيف يتم الانتقال'],
+['Sortie du mix','Mix ending','Final de la mezcla','Mix-Ende','混音结尾','نهاية المزيج'],
+['Remplacer par','Replace with','Reemplazar por','Ersetzen durch','替换为','استبدال بـ'],
+['fin du mix','end of mix','fin de la mezcla','Mix-Ende','混音结束','نهاية المزيج'],
+['16 mes.','16 bars','16 comp.','16 Takte','16 小节','16 مازورة'],
+['8 mes.','8 bars','8 comp.','8 Takte','8 小节','8 مازورات'],
+['4 mes.','4 bars','4 comp.','4 Takte','4 小节','4 مازورات'],
+['1 mes.','1 bar','1 comp.','1 Takt','1 小节','مازورة'],
+['1 temps','1 beat','1 tiempo','1 Schlag','1 拍','نبضة'],
+['Fin','End','Fin','Ende','结尾','النهاية'],
+['À la fin','At the end','Al final','Am Ende','在结尾','في النهاية'],
+['16 mesures avant la fin','16 bars before the end','16 compases antes del final','16 Takte vor dem Ende','结束前 16 小节','16 مازورة قبل النهاية'],
+['8 mesures avant la fin','8 bars before the end','8 compases antes del final','8 Takte vor dem Ende','结束前 8 小节','8 مازورات قبل النهاية'],
+['4 mesures avant la fin','4 bars before the end','4 compases antes del final','4 Takte vor dem Ende','结束前 4 小节','4 مازورات قبل النهاية'],
+['Sur la dernière mesure','On the last bar','En el último compás','Im letzten Takt','在最后一小节','على آخر مازورة'],
+['Sur le dernier temps','On the last beat','En el último tiempo','Auf dem letzten Schlag','在最后一拍','على آخر نبضة'],
+['Fondu','Fade','Fundido','Blende','淡变','تلاشي'],
+['Délai','Delay','Delay','Delay','延迟','تأخير'],
+['Sweep','Sweep','Sweep','Sweep','扫频','مسح'],
+['Coupe','Cut','Corte','Schnitt','切断','قطع'],
+['Effacer','Clear','Borrar','Löschen','清除','مسح الكل'],
+['volume croisé + échange des basses','crossfade + bass swap','volumen cruzado + cambio de graves','Überblendung + Bass-Tausch','交叉音量 + 低音交换','تبادل الصوت + تبديل الجهير'],
+["l'un se ferme, l'autre s'ouvre",'one closes, the other opens','uno se cierra, el otro se abre','einer schließt, der andere öffnet','一个关闭，另一个打开','واحد يُغلق والآخر يُفتح'],
+['le dernier temps répète','the last beat repeats','el último tiempo se repite','der letzte Schlag wiederholt sich','最后一拍重复','تتكرر آخر نبضة'],
+['long écho qui continue','long echo that keeps going','eco largo que continúa','langes Echo, das weiterläuft','持续的长回声','صدى طويل يستمر'],
+['riser de bruit blanc','white-noise riser','riser de ruido blanco','White-Noise-Riser','白噪音上升','صعود ضوضاء بيضاء'],
+['filtre qui monte','rising filter','filtro que sube','steigender Filter','上升滤波','فلتر صاعد'],
+["la dernière mesure s'envole",'the last bar takes off','el último compás despega','der letzte Takt hebt ab','最后一小节飞起来','آخر مازورة تحلّق'],
+["coupe nette pile à l'entrée",'clean cut right on the entry','corte limpio justo en la entrada','sauberer Schnitt genau beim Einstieg','在进入时干净切断','قطع نظيف عند الدخول تمامًا'],
+['enlève les effets de ce morceau',"removes this track's effects",'quita los efectos de esta pista','entfernt die Effekte dieses Titels','移除此曲目的效果','يزيل مؤثرات هذا المقطع'],
+['volume croisé + échange des basses','crossfade + bass swap','volumen cruzado + cambio de graves','Überblendung + Bass-Tausch','交叉音量 + 低音交换','تبادل الصوت + تبديل الجهير'],
+['les 2 dernières mesures partent dans un long écho qui continue après la fin','the last 2 bars go into a long echo that continues after the end','los 2 últimos compases van a un eco largo que sigue tras el final','die letzten 2 Takte gehen in ein langes Echo, das nach dem Ende weiterläuft','最后 2 小节进入长回声，结束后继续','آخر مازورتين تدخلان في صدى طويل يستمر بعد النهاية'],
+['bruit blanc qui monte sur 8 mesures (riser) et coupe net sur la fin','white noise rising over 8 bars, cut right at the end','ruido blanco que sube 8 compases y corta en el final','Rauschen steigt 8 Takte lang und endet abrupt','白噪音在 8 小节内上升，在结尾切断','ضوضاء بيضاء تصعد 8 مازورات وتنقطع عند النهاية'],
+["le filtre passe-haut monte sur 8 mesures, les basses s'en vont",'the high-pass filter rises over 8 bars, the bass goes away','el filtro paso alto sube 8 compases, los graves se van','der Hochpass steigt 8 Takte lang, der Bass verschwindet','高通滤波在 8 小节内上升，低音消失','فلتر الترددات العالية يصعد 8 مازورات ويختفي الجهير'],
+['la dernière mesure s\'envole dans la réverbe, qui continue 4 mesures après la fin','the last bar flies into the reverb, which continues 4 bars after the end','el último compás vuela a la reverb, que sigue 4 compases tras el final','der letzte Takt fliegt in den Hall, der 4 Takte nach dem Ende weiterläuft','最后一小节进入混响，结束后持续 4 小节','آخر مازورة تحلّق في الريفيرب الذي يستمر 4 مازورات بعد النهاية'],
+['▶ Écouter','▶ Listen','▶ Escuchar','▶ Anhören','▶ 试听','▶ استماع'],
+['✕ Supprimer','✕ Remove','✕ Quitar','✕ Entfernen','✕ 删除','✕ حذف'],
+['✓ Tonalités compatibles','✓ Compatible keys','✓ Tonalidades compatibles','✓ Kompatible Tonarten','✓ 调性兼容','✓ مقامات متوافقة'],
+['⚠ Tonalités éloignées','⚠ Distant keys','⚠ Tonalidades lejanas','⚠ Entfernte Tonarten','⚠ 调性相差较远','⚠ مقامات متباعدة'],
+['Transpose un des deux (onglet Morceau) ou préfère une coupe / un écho','Transpose one of them (Track tab) or use a cut / an echo','Transpón una (pestaña Pista) o usa un corte / un eco','Einen transponieren (Reiter Titel) oder Schnitt / Echo nutzen','移调其中一首（曲目标签）或使用切断 / 回声','غيّر مقام أحدهما (تبويب المقطع) أو استخدم قطعًا / صدى'],
+['enchaîné pile','back to back','encadenado justo','direkt anschließend','紧接','متتالي مباشرة'],
+['Clique un morceau dans la timeline pour régler sa transition.','Click a track in the timeline to set its transition.','Haz clic en una pista de la línea de tiempo para ajustar su transición.','Klicke einen Titel in der Timeline an, um seinen Übergang einzustellen.','在时间线上点击曲目以设置其过渡。','انقر مقطعًا في الخط الزمني لضبط انتقاله.'],
+['Une autre carte ci-dessous la remplace · Suppr la supprime · ses points restent retouchables avec la ligne rouge.','Another card below replaces it · Delete removes it · its points stay editable on the red line.','Otra tarjeta la reemplaza · Supr la quita · sus puntos siguen editables en la línea roja.','Eine andere Karte ersetzt sie · Entf löscht sie · Punkte bleiben auf der roten Linie bearbeitbar.','下方另一张卡片可替换它 · Delete 删除 · 其点仍可在红线上编辑。','بطاقة أخرى تستبدلها · Delete تحذفها · تبقى نقاطها قابلة للتعديل على الخط الأحمر.'],
+['Commencer le morceau à','Start the track at','Empezar la pista en','Titel beginnen bei','曲目开始于','بدء المقطع عند'],
+['Début','Start','Inicio','Anfang','开头','البداية'],
+['+ 8 mesures','+ 8 bars','+ 8 compases','+ 8 Takte','+ 8 小节','+ 8 مازورات'],
+['+ 16 mesures','+ 16 bars','+ 16 compases','+ 16 Takte','+ 16 小节','+ 16 مازورة'],
+['+ 32 mesures','+ 32 bars','+ 32 compases','+ 32 Takte','+ 32 小节','+ 32 مازورة'],
+["Saute l'intro sans bouger le morceau sur le mix.",'Skips the intro without moving the track in the mix.','Salta la intro sin mover la pista en la mezcla.','Überspringt das Intro, ohne den Titel im Mix zu verschieben.','跳过前奏，不移动曲目位置。','يتخطى المقدمة دون تحريك المقطع في المزيج.'],
+['Tempo et calage','Tempo and beat-matching','Tempo y sincronización','Tempo und Synchronisation','速度与对拍','السرعة والمزامنة'],
+['◀ 1 temps','◀ 1 beat','◀ 1 tiempo','◀ 1 Schlag','◀ 1 拍','◀ نبضة'],
+['1 temps ▶','1 beat ▶','1 tiempo ▶','1 Schlag ▶','1 拍 ▶','نبضة ▶'],
+['◀ ½ temps','◀ ½ beat','◀ ½ tiempo','◀ ½ Schlag','◀ ½ 拍','◀ ½ نبضة'],
+['½ temps ▶','½ beat ▶','½ tiempo ▶','½ Schlag ▶','½ 拍 ▶','½ نبضة ▶'],
+['🥁 Kick sur les temps','🥁 Kick on the beats','🥁 Kick en los tiempos','🥁 Kick auf die Schläge','🥁 底鼓对齐节拍','🥁 الكيك على النبضات'],
+["↺ Calage d'origine",'↺ Original alignment','↺ Alineación original','↺ Originalausrichtung','↺ 原始对齐','↺ المحاذاة الأصلية'],
+['Les kicks ne tombent pas sur les traits ? Active','Kicks not on the lines? Turn on','¿Los kicks no caen en las líneas? Activa','Kicks nicht auf den Linien? Aktiviere','底鼓没对齐线？启用','الكيك ليس على الخطوط؟ فعّل'],
+['et décale (les suivants suivent, Alt : ce morceau seul) :','and shift (the next tracks follow, Alt: this one only):','y desplaza (las siguientes siguen, Alt: solo esta):','und verschiebe (folgende folgen, Alt: nur dieser):','并移动（后续曲目跟随，Alt：仅此曲目）：','وأزِح (تتبعه المقاطع التالية، Alt: هذا فقط):'],
+['Transpose sans changer le tempo, pour rendre deux morceaux compatibles.','Transposes without changing the tempo, to make two tracks compatible.','Transpone sin cambiar el tempo, para hacer compatibles dos pistas.','Transponiert ohne Tempoänderung, um zwei Titel kompatibel zu machen.','不改变速度地移调，使两首曲目兼容。','يغيّر المقام دون تغيير السرعة لجعل مقطعين متوافقين.'],
+['+ ½ ton','+ ½ tone','+ ½ tono','+ ½ Ton','+ ½ 音','+ ½ نغمة'],
+['− ½ ton','− ½ tone','− ½ tono','− ½ Ton','− ½ 音','− ½ نغمة'],
+['Réglages du morceau','Track settings','Ajustes de la pista','Titeleinstellungen','曲目设置','إعدادات المقطع'],
+["Valeurs quand il n'y a pas d'automation dessinée.",'Values when no automation is drawn.','Valores cuando no hay automatización dibujada.','Werte, wenn keine Automation gezeichnet ist.','未绘制自动化时的数值。','القيم عند عدم وجود أتمتة مرسومة.'],
+['Raccourcis','Shortcuts','Atajos','Tastenkürzel','快捷键','الاختصارات'],
+["Espace = lecture · ⌘Z = annuler · Suppr = retirer le morceau · ⌘ + molette = zoom · 0 à 8 = ligne d'automation · Maj = sans aimant.",'Space = play · ⌘Z = undo · Delete = remove track · ⌘ + scroll = zoom · 0 to 8 = automation line · Shift = no snap.','Espacio = reproducir · ⌘Z = deshacer · Supr = quitar pista · ⌘ + rueda = zoom · 0 a 8 = línea de automatización · Mayús = sin imán.','Leertaste = Wiedergabe · ⌘Z = rückgängig · Entf = Titel entfernen · ⌘ + Mausrad = Zoom · 0 bis 8 = Automationslinie · Umschalt = ohne Raster.','空格 = 播放 · ⌘Z = 撤销 · Delete = 删除曲目 · ⌘ + 滚轮 = 缩放 · 0 到 8 = 自动化线 · Shift = 不吸附。','مسافة = تشغيل · ⌘Z = تراجع · Delete = حذف المقطع · ⌘ + العجلة = تكبير · 0 إلى 8 = خط الأتمتة · Shift = بدون مغناطيس.'],
+['Sortie','Output','Salida','Ausgang','输出','الإخراج'],
+['Répétitions','Repeats','Repeticiones','Wiederholungen','重复','التكرارات'],
+["Ces réglages valent pour tout le mix. L'écho est toujours calé sur le tempo.",'These settings apply to the whole mix. The echo is always synced to the tempo.','Estos ajustes valen para toda la mezcla. El eco siempre va al tempo.','Diese Einstellungen gelten für den ganzen Mix. Das Echo ist immer tempo-synchron.','这些设置适用于整个混音。回声始终与速度同步。','هذه الإعدادات تنطبق على المزيج كله. الصدى دائمًا متزامن مع السرعة.'],
+['1/4 (un temps)','1/4 (one beat)','1/4 (un tiempo)','1/4 (ein Schlag)','1/4（一拍）','1/4 (نبضة)'],
+['3/16 (pointé)','3/16 (dotted)','3/16 (con puntillo)','3/16 (punktiert)','3/16（附点）','3/16 (منقوطة)'],
+['Exporter le mix','Export the mix','Exportar la mezcla','Mix exportieren','导出混音','تصدير المزيج'],
+["Choisis le format, puis où l'enregistrer.",'Choose the format, then where to save it.','Elige el formato y dónde guardarlo.','Wähle das Format und den Speicherort.','选择格式，然后选择保存位置。','اختر الصيغة ثم مكان الحفظ.'],
+['Annuler','Cancel','Cancelar','Abbrechen','取消','إلغاء'],
+['Export du mix','Exporting the mix','Exportando la mezcla','Mix wird exportiert','正在导出混音','جارٍ تصدير المزيج'],
+["Calcul de l'audio avec tous les effets…",'Rendering the audio with all effects…','Calculando el audio con todos los efectos…','Audio wird mit allen Effekten berechnet…','正在渲染含全部效果的音频…','جارٍ معالجة الصوت مع كل المؤثرات…'],
+['Mix exporté ✔','Mix exported ✔','Mezcla exportada ✔','Mix exportiert ✔','混音已导出 ✔','تم تصدير المزيج ✔'],
+['Export impossible','Export failed','Exportación imposible','Export fehlgeschlagen','导出失败','فشل التصدير'],
+['Montrer le fichier','Show the file','Mostrar el archivo','Datei zeigen','显示文件','إظهار الملف'],
+['Télécharger encore','Download again','Descargar otra vez','Erneut herunterladen','再次下载','تنزيل مرة أخرى'],
+['☁ Envoyer sur SoundCloud','☁ Send to SoundCloud','☁ Enviar a SoundCloud','☁ An SoundCloud senden','☁ 发送到 SoundCloud','☁ إرسال إلى SoundCloud'],
+['Fermer','Close','Cerrar','Schließen','关闭','إغلاق'],
+['Annuler / fermer','Cancel / close','Cancelar / cerrar','Abbrechen / schließen','取消 / 关闭','إلغاء / إغلاق'],
+["SoundCloud : la page d'envoi s'ouvre, la tracklist est copiée (à coller dans la description), il ne reste qu'à glisser le fichier.",'SoundCloud: the upload page opens and the tracklist is copied (paste it in the description); just drop the file in.','SoundCloud: se abre la página de subida y se copia la tracklist (pégala en la descripción); solo queda soltar el archivo.','SoundCloud: Die Upload-Seite öffnet sich, die Trackliste ist kopiert (in die Beschreibung einfügen); nur noch die Datei hineinziehen.','SoundCloud：上传页面会打开，曲目列表已复制（粘贴到描述中），只需拖入文件。','SoundCloud: تُفتح صفحة الرفع وتُنسخ قائمة المقاطع (الصقها في الوصف)، لم يبقَ إلا سحب الملف.'],
+['téléchargé (dossier Téléchargements).','downloaded (Downloads folder).','descargado (carpeta Descargas).','heruntergeladen (Ordner Downloads).','已下载（下载文件夹）。','تم التنزيل (مجلد التنزيلات).'],
+['enregistré.','saved.','guardado.','gespeichert.','已保存。','تم الحفظ.'],
+['Le mix est vide.','The mix is empty.','La mezcla está vacía.','Der Mix ist leer.','混音是空的。','المزيج فارغ.'],
+['Attends que tous les morceaux soient prêts (« Calage au tempo du mix… »).','Wait until every track is ready.','Espera a que todas las pistas estén listas.','Warte, bis alle Titel bereit sind.','请等待所有曲目准备就绪。','انتظر حتى تصبح كل المقاطع جاهزة.'],
+['Ajoute au moins 2 morceaux au mix.','Add at least 2 tracks to the mix.','Añade al menos 2 pistas a la mezcla.','Füge mindestens 2 Titel hinzu.','请至少添加 2 首曲目。','أضف مقطعين على الأقل إلى المزيج.'],
+['Calage au tempo du mix…','Matching the mix tempo…','Ajustando al tempo de la mezcla…','Anpassung an das Mix-Tempo…','正在匹配混音速度…','جارٍ المطابقة مع سرعة المزيج…'],
+['Analyse du tempo, du premier temps et de la tonalité…','Analysing tempo, first beat and key…','Analizando tempo, primer tiempo y tonalidad…','Analyse von Tempo, erstem Schlag und Tonart…','正在分析速度、第一拍和调性…','جارٍ تحليل السرعة وأول نبضة والمقام…'],
+['Aucun morceau disponible dans la liste affichée (tempo à ±6 % du mix).','No track available in the list shown (tempo within ±6 %).','Ninguna pista disponible en la lista (tempo ±6 %).','Kein Titel in der Liste verfügbar (Tempo ±6 %).','列表中没有可用曲目（速度 ±6 %）。','لا يوجد مقطع متاح في القائمة (سرعة ±6 %).'],
+['Ces morceaux sont déjà dans la bibliothèque (ou ne sont pas des fichiers audio).','These tracks are already in the library (or are not audio files).','Estas pistas ya están en la biblioteca (o no son audio).','Diese Titel sind schon in der Bibliothek (oder keine Audiodateien).','这些曲目已在曲库中（或不是音频文件）。','هذه المقاطع موجودة في المكتبة (أو ليست ملفات صوتية).'],
+['Pas encore de morceau ? Double-clic sur un titre de la bibliothèque, ou fais-le glisser en bas.','No track yet? Double-click a title in the library, or drag it down.','¿Aún sin pistas? Doble clic en un título de la biblioteca o arrástralo abajo.','Noch kein Titel? Doppelklick auf einen Titel oder nach unten ziehen.','还没有曲目？双击曲库中的标题，或把它拖到下方。','لا توجد مقاطع بعد؟ انقر مرتين على عنوان في المكتبة أو اسحبه للأسفل.'],
+['Carte son','Sound card','Tarjeta de sonido','Soundkarte','声卡','بطاقة الصوت'],
+['Sortie audio','Audio output','Salida de audio','Audioausgang','音频输出','مخرج الصوت'],
+['Échantillonnage','Sample rate','Muestreo','Abtastrate','采样率','معدل العينة'],
+['Latence','Latency','Latencia','Latenz','延迟','زمن الاستجابة'],
+['Faible (réactif)','Low (responsive)','Baja (reactiva)','Niedrig (reaktiv)','低（灵敏）','منخفض (سريع)'],
+['Normale','Normal','Normal','Normal','普通','عادي'],
+['Sûre (aucune coupure)','Safe (no dropouts)','Segura (sin cortes)','Sicher (keine Aussetzer)','安全（无断音）','آمن (بدون انقطاع)'],
+["Les noms des cartes son et micros n'apparaissent qu'après autorisation.",'Sound card and mic names only appear after permission.','Los nombres de tarjetas y micrófonos aparecen tras autorizar.','Namen von Soundkarten und Mikros erscheinen erst nach Erlaubnis.','声卡和麦克风名称需授权后才显示。','أسماء بطاقات الصوت والميكروفونات تظهر بعد الإذن فقط.'],
+["Autoriser l'accès",'Allow access','Permitir acceso','Zugriff erlauben','允许访问','السماح بالوصول'],
+['Entrée (micro / ligne)','Input (mic / line)','Entrada (micro / línea)','Eingang (Mikro / Line)','输入（麦克风 / 线路）','الإدخال (ميكروفون / خط)'],
+['Entrée audio','Audio input','Entrada de audio','Audioeingang','音频输入','مدخل الصوت'],
+['Entrée par défaut','Default input','Entrada por defecto','Standardeingang','默认输入','المدخل الافتراضي'],
+["Entrée ouverte (on l'entend dans la sortie)",'Input open (heard in the output)','Entrada abierta (se oye en la salida)','Eingang offen (im Ausgang hörbar)','输入开启（在输出中可听到）','المدخل مفتوح (يُسمع في المخرج)'],
+["Niveau de l'entrée",'Input level','Nivel de entrada','Eingangspegel','输入电平','مستوى الإدخال'],
+["Talkover : la musique baisse de 10 dB quand l'entrée est ouverte",'Talkover: the music drops 10 dB when the input is open','Talkover: la música baja 10 dB con la entrada abierta','Talkover: Musik sinkt um 10 dB bei offenem Eingang','Talkover：输入开启时音乐降低 10 dB','Talkover: تنخفض الموسيقى 10 dB عند فتح المدخل'],
+['Table de mixage','Mixer','Mezclador','Mischpult','调音台','الخلاط'],
+['Courbe du crossfader','Crossfader curve','Curva del crossfader','Crossfader-Kurve','交叉推子曲线','منحنى الكروس فيدر'],
+['Douce (mix long)','Smooth (long mix)','Suave (mezcla larga)','Weich (langer Mix)','平滑（长混音）','ناعم (مزج طويل)'],
+['Linéaire','Linear','Lineal','Linear','线性','خطي'],
+['Coupure nette (scratch)','Sharp cut (scratch)','Corte seco (scratch)','Harter Schnitt (Scratch)','硬切（搓碟）','قطع حاد (سكراتش)'],
+['Auto-gain : tous les morceaux au même volume','Auto-gain: all tracks at the same level','Auto-gain: todas las pistas al mismo nivel','Auto-Gain: alle Titel gleich laut','自动增益：所有曲目同一音量','كسب تلقائي: كل المقاطع بنفس المستوى'],
+['Limiteur sur la sortie master (évite la saturation)','Limiter on the master output (prevents clipping)','Limitador en la salida master (evita saturación)','Limiter am Master (verhindert Übersteuerung)','主输出限幅器（防止削波）','محدد على المخرج الرئيسي (يمنع التشبع)'],
+['Affichage et export','Display and export','Pantalla y exportación','Anzeige und Export','显示与导出','العرض والتصدير'],
+['Notation des tonalités','Key notation','Notación de tonalidades','Tonart-Notation','调性记法','تدوين المقامات'],
+['Classique (Am)','Classic (Am)','Clásica (Am)','Klassisch (Am)','经典（Am）','كلاسيكي (Am)'],
+['Qualité MP3','MP3 quality','Calidad MP3','MP3-Qualität','MP3 质量','جودة MP3'],
+['Sortie du système','System output','Salida del sistema','Systemausgang','系统输出','مخرج النظام'],
+['Sortie du système (choix non géré par ce navigateur)','System output (not selectable here)','Salida del sistema (no seleccionable aquí)','Systemausgang (hier nicht wählbar)','系统输出（此处无法选择）','مخرج النظام (غير قابل للاختيار هنا)'],
+['Démo · version web','Demo · web version','Demo · versión web','Demo · Web-Version','演示 · 网页版','تجريبي · نسخة الويب'],
+['Master Tempo en direct indisponible','Live Master Tempo unavailable','Master Tempo en directo no disponible','Live-Master-Tempo nicht verfügbar','实时 Master Tempo 不可用','Master Tempo المباشر غير متاح'],
+["Pour changer l'échantillonnage ou la latence, la page doit se recharger (le projet est enregistré). Recharger maintenant ?",'The page must reload to change sample rate or latency (the project is saved). Reload now?','Hay que recargar para cambiar muestreo o latencia (el proyecto está guardado). ¿Recargar ahora?','Zum Ändern von Abtastrate oder Latenz muss neu geladen werden (Projekt gespeichert). Jetzt neu laden?','更改采样率或延迟需要重新加载（项目已保存）。现在重新加载？','لتغيير معدل العينة أو زمن الاستجابة يجب إعادة التحميل (المشروع محفوظ). إعادة التحميل الآن؟'],
+["Tout tourne dans ce navigateur : tes morceaux ne sont envoyés nulle part et restent ici pour la prochaine fois. Différence avec le logiciel Mac / PC : le tempo est calé en changeant la vitesse (la tonalité bouge un peu) et la transposition ½ ton n'existe pas.",'Everything runs in this browser: your tracks are sent nowhere and stay here for next time. Unlike the Mac / PC app, tempo is matched by changing speed and ½-tone transposition is not available.','Todo funciona en este navegador: tus pistas no se envían a ningún sitio. A diferencia de la app Mac / PC, el tempo cambia la velocidad y no hay transposición de ½ tono.','Alles läuft in diesem Browser: deine Titel werden nirgendwohin gesendet. Anders als in der Mac-/PC-App ändert das Tempo die Geschwindigkeit, ½-Ton-Transposition gibt es nicht.','一切都在此浏览器中运行：曲目不会被上传。与 Mac / PC 版不同，变速会改变音高，且没有 ½ 音移调。','كل شيء يعمل في هذا المتصفح: لا تُرسل مقاطعك إلى أي مكان. بخلاف تطبيق Mac / PC، تغيير السرعة يغيّر الطبقة ولا يتوفر تغيير ½ نغمة.'],
+['Tempo du morceau sélectionné, appliqué aussi aux suivants (sans sélection : tout le mix). Entre deux tempos, il glisse pendant la transition','Tempo of the selected track, also applied to the next ones (no selection: whole mix). It glides during transitions','Tempo de la pista seleccionada, aplicado también a las siguientes (sin selección: toda la mezcla)','Tempo des gewählten Titels, auch für folgende (ohne Auswahl: ganzer Mix)','所选曲目的速度，也应用于后续曲目（未选择：整个混音）','سرعة المقطع المحدد، تُطبق أيضًا على التالية (بدون تحديد: المزيج كله)'],
+['Bienvenue dans Mix Auto Rec','Welcome to Mix Auto Rec','Bienvenido a Mix Auto Rec','Willkommen bei Mix Auto Rec','欢迎使用 Mix Auto Rec','مرحبًا بك في Mix Auto Rec'],
+["Préparation d'un mix de démo : 3 morceaux fabriqués ici, libres de droits…",'Preparing a demo mix: 3 royalty-free tracks made right here…','Preparando una mezcla demo: 3 pistas libres de derechos hechas aquí…','Demo-Mix wird vorbereitet: 3 lizenzfreie Titel, hier erzeugt…','正在准备演示混音：3 首在此生成的免版税曲目…','جارٍ تحضير مزيج تجريبي: 3 مقاطع خالية من الحقوق صُنعت هنا…'],
+['Mix de démo prêt ✔','Demo mix ready ✔','Mezcla demo lista ✔','Demo-Mix bereit ✔','演示混音已就绪 ✔','المزيج التجريبي جاهز ✔'],
+["C'est parti","Let's go",'¡Vamos!','Los geht’s','开始吧','لنبدأ'],
+['PROLONGATION','EXTENSION','EXTENSIÓN','VERLÄNGERUNG','延长','تمديد'],
+['Lecture / pause de la voie A seule (Mix Live)','Play / pause deck A only (Mix Live)','Reproducir / pausa solo plato A (Mix Live)','Wiedergabe / Pause nur Deck A (Mix Live)','仅播放 / 暂停 A 台（现场混音）','تشغيل / إيقاف المشغل A فقط (مزج مباشر)'],
+['Lecture / pause de la voie B seule (Mix Live)','Play / pause deck B only (Mix Live)','Reproducir / pausa solo plato B (Mix Live)','Wiedergabe / Pause nur Deck B (Mix Live)','仅播放 / 暂停 B 台（现场混音）','تشغيل / إيقاف المشغل B فقط (مزج مباشر)'],
+['Volume de la voie A (repères en dB)','Deck A volume (dB marks)','Volumen del plato A (marcas en dB)','Lautstärke Deck A (dB-Marken)','A 台音量（dB 刻度）','صوت المشغل A (علامات dB)'],
+['Volume de la voie B (repères en dB)','Deck B volume (dB marks)','Volumen del plato B (marcas en dB)','Lautstärke Deck B (dB-Marken)','B 台音量（dB 刻度）','صوت المشغل B (علامات dB)'],
+["CUE A · à l'arrêt : pose le point de départ ici · en lecture : revient au point et s'arrête",'CUE A · stopped: sets the cue point here · playing: returns to the point and stops','CUE A · parado: fija el punto · reproduciendo: vuelve al punto y para','CUE A · gestoppt: setzt den Cue-Punkt · läuft: zurück zum Punkt und Stopp','CUE A · 停止时：设置起点 · 播放时：返回起点并停止','CUE A · عند التوقف: يضع نقطة البداية · أثناء التشغيل: يعود إليها ويتوقف'],
+["CUE B · à l'arrêt : pose le point de départ ici · en lecture : revient au point et s'arrête",'CUE B · stopped: sets the cue point here · playing: returns to the point and stops','CUE B · parado: fija el punto · reproduciendo: vuelve al punto y para','CUE B · gestoppt: setzt den Cue-Punkt · läuft: zurück zum Punkt und Stopp','CUE B · 停止时：设置起点 · 播放时：返回起点并停止','CUE B · عند التوقف: يضع نقطة البداية · أثناء التشغيل: يعود إليها ويتوقف'],
+// Mentions légales
+['Éditeur','Publisher','Editor','Herausgeber','发布者','الناشر'],
+['Mix Auto Rec est édité par Aziz Bena, à titre personnel (France).','Mix Auto Rec is published by Aziz Bena as an individual (France).','Mix Auto Rec es publicado por Aziz Bena a título personal (Francia).','Mix Auto Rec wird von Aziz Bena als Privatperson herausgegeben (Frankreich).','Mix Auto Rec 由 Aziz Bena 以个人名义发布（法国）。','يصدر Mix Auto Rec عن عزيز بن بصفة شخصية (فرنسا).'],
+['Contact :','Contact:','Contacto:','Kontakt:','联系方式：','للتواصل:'],
+['[adresse e-mail de contact à compléter]','[contact e-mail address to be completed]','[dirección de correo de contacto por completar]','[Kontakt-E-Mail ergänzen]','[待填写联系邮箱]','[عنوان البريد الإلكتروني للتواصل - يُستكمل]'],
+['Hébergement (version web)','Hosting (web version)','Alojamiento (versión web)','Hosting (Web-Version)','托管（网页版）','الاستضافة (نسخة الويب)'],
+["GitHub Pages — GitHub, Inc., 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, États-Unis — github.com. L'app Mac fonctionne entièrement sur l'ordinateur, sans serveur distant.",'GitHub Pages — GitHub, Inc., 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, USA — github.com. The Mac app runs entirely on the computer, with no remote server.','GitHub Pages — GitHub, Inc., 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, EE. UU. — github.com. La app Mac funciona por completo en el ordenador, sin servidor remoto.','GitHub Pages — GitHub, Inc., 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, USA — github.com. Die Mac-App läuft vollständig auf dem Computer, ohne entfernten Server.','GitHub Pages — GitHub, Inc., 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, 美国 — github.com。Mac 应用完全在电脑上运行，没有远程服务器。','GitHub Pages — GitHub, Inc., 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107، الولايات المتحدة — github.com. يعمل تطبيق Mac بالكامل على الحاسوب دون خادم بعيد.'],
+['Version bêta, propriété et garantie','Beta version, ownership and warranty','Versión beta, propiedad y garantía','Beta-Version, Eigentum und Gewährleistung','测试版、所有权与担保','نسخة تجريبية، الملكية والضمان'],
+["© 2026 Aziz Bena. Tous droits réservés. Le logiciel, son code et son interface ne peuvent être copiés, revendus ou redistribués sans autorisation écrite. Mix Auto Rec est une version bêta fournie « en l'état », sans garantie d'aucune sorte : l'auteur ne peut être tenu responsable d'une perte de données, d'un défaut d'export ou d'un usage non conforme. Pense à garder une copie de tes morceaux et de tes projets.",'© 2026 Aziz Bena. All rights reserved. The software, its code and its interface may not be copied, resold or redistributed without written permission. Mix Auto Rec is a beta provided “as is”, without warranty of any kind: the author cannot be held liable for data loss, export defects or improper use. Keep a copy of your tracks and projects.','© 2026 Aziz Bena. Todos los derechos reservados. El software, su código y su interfaz no pueden copiarse, revenderse ni redistribuirse sin autorización escrita. Mix Auto Rec es una beta proporcionada «tal cual», sin garantía: el autor no responde de pérdidas de datos, fallos de exportación o usos indebidos. Guarda una copia de tus pistas y proyectos.','© 2026 Aziz Bena. Alle Rechte vorbehalten. Software, Code und Oberfläche dürfen ohne schriftliche Genehmigung nicht kopiert, weiterverkauft oder verbreitet werden. Mix Auto Rec ist eine Beta „wie besehen“, ohne Gewährleistung: Der Autor haftet nicht für Datenverlust, Exportfehler oder unsachgemäße Nutzung. Bewahre Kopien deiner Titel und Projekte auf.','© 2026 Aziz Bena。保留所有权利。未经书面许可，不得复制、转售或再分发本软件、代码及界面。Mix Auto Rec 为“按现状”提供的测试版，不作任何担保：作者不对数据丢失、导出缺陷或不当使用负责。请保留曲目和项目的副本。','© 2026 عزيز بن. جميع الحقوق محفوظة. لا يجوز نسخ البرنامج أو شيفرته أو واجهته أو إعادة بيعها أو توزيعها دون إذن كتابي. Mix Auto Rec نسخة تجريبية تُقدَّم «كما هي» دون أي ضمان: لا يتحمل المؤلف مسؤولية فقدان البيانات أو أخطاء التصدير أو سوء الاستخدام. احتفظ بنسخة من مقاطعك ومشاريعك.'],
+['Données personnelles (RGPD)','Personal data (GDPR)','Datos personales (RGPD)','Personenbezogene Daten (DSGVO)','个人数据（GDPR）','البيانات الشخصية (GDPR)'],
+["Mix Auto Rec ne collecte aucune donnée personnelle : pas de compte, pas de publicité, pas de mesure d'audience, pas de cookie de suivi. Tes morceaux, projets et réglages restent sur ton appareil (dossier Musique/Mix Auto sur Mac ; stockage local du navigateur sur la version web, effaçable à tout moment depuis les réglages du navigateur). La version web charge l'encodeur MP3 depuis cdnjs (Cloudflare), qui reçoit ton adresse IP comme pour toute page web ; l'hébergeur GitHub peut tenir des journaux techniques. Le bouton SoundCloud ouvre simplement soundcloud.com : l'envoi se fait par toi, sous les conditions de SoundCloud.",'Mix Auto Rec collects no personal data: no account, no ads, no analytics, no tracking cookies. Your tracks, projects and settings stay on your device (Music/Mix Auto folder on Mac; browser local storage on the web version, erasable at any time). The web version loads the MP3 encoder from cdnjs (Cloudflare), which receives your IP address like any web page; the host GitHub may keep technical logs. The SoundCloud button simply opens soundcloud.com: you upload yourself, under SoundCloud’s terms.','Mix Auto Rec no recoge datos personales: sin cuenta, sin publicidad, sin analítica, sin cookies de seguimiento. Tus pistas, proyectos y ajustes se quedan en tu dispositivo (carpeta Música/Mix Auto en Mac; almacenamiento local del navegador en la web, borrable en cualquier momento). La versión web carga el codificador MP3 desde cdnjs (Cloudflare), que recibe tu IP como cualquier web; GitHub puede guardar registros técnicos. El botón SoundCloud solo abre soundcloud.com: la subida la haces tú, según las condiciones de SoundCloud.','Mix Auto Rec erhebt keine personenbezogenen Daten: kein Konto, keine Werbung, keine Analyse, keine Tracking-Cookies. Titel, Projekte und Einstellungen bleiben auf deinem Gerät (Ordner Musik/Mix Auto auf dem Mac; lokaler Browserspeicher in der Web-Version, jederzeit löschbar). Die Web-Version lädt den MP3-Encoder von cdnjs (Cloudflare), das wie jede Website deine IP erhält; der Hoster GitHub kann technische Logs führen. Der SoundCloud-Knopf öffnet nur soundcloud.com: Du lädst selbst hoch, nach den Bedingungen von SoundCloud.','Mix Auto Rec 不收集任何个人数据：无账号、无广告、无统计、无跟踪 Cookie。你的曲目、项目和设置都保留在你的设备上（Mac 上为 音乐/Mix Auto 文件夹；网页版为浏览器本地存储，可随时清除）。网页版从 cdnjs（Cloudflare）加载 MP3 编码器，它会像任何网页一样收到你的 IP 地址；托管方 GitHub 可能保留技术日志。SoundCloud 按钮只是打开 soundcloud.com：由你本人按 SoundCloud 条款上传。','لا يجمع Mix Auto Rec أي بيانات شخصية: لا حساب ولا إعلانات ولا إحصاءات ولا ملفات تتبع. تبقى مقاطعك ومشاريعك وإعداداتك على جهازك (مجلد Music/Mix Auto على Mac؛ التخزين المحلي للمتصفح في نسخة الويب، ويمكن مسحه في أي وقت). تحمّل نسخة الويب مُرمِّز MP3 من cdnjs (Cloudflare) الذي يتلقى عنوان IP كأي صفحة ويب؛ وقد يحتفظ المستضيف GitHub بسجلات تقنية. زر SoundCloud يفتح soundcloud.com فقط: الرفع يتم بواسطتك وفق شروط SoundCloud.'],
+['Droits sur la musique','Music rights','Derechos musicales','Musikrechte','音乐版权','حقوق الموسيقى'],
+["Tu es seul responsable des morceaux que tu importes, mixes et publies. Publier ou diffuser un mix contenant des œuvres d'autrui demande les droits correspondants (auteurs, producteurs ; en France SACEM / SDRM pour les diffusions publiques ; règles propres à chaque plateforme, comme SoundCloud ou Mixcloud). Mix Auto Rec ne fournit aucune musique.",'You alone are responsible for the tracks you import, mix and publish. Publishing or broadcasting a mix containing other people’s works requires the corresponding rights (authors, producers; collecting societies such as SACEM, PRS, GEMA, SGAE…; each platform’s rules, e.g. SoundCloud or Mixcloud). Mix Auto Rec provides no music.','Eres el único responsable de las pistas que importas, mezclas y publicas. Publicar o difundir una mezcla con obras ajenas requiere los derechos correspondientes (autores, productores; entidades como SGAE; reglas de cada plataforma, como SoundCloud o Mixcloud). Mix Auto Rec no proporciona música.','Du allein bist für die Titel verantwortlich, die du importierst, mixt und veröffentlichst. Einen Mix mit fremden Werken zu veröffentlichen erfordert die entsprechenden Rechte (Urheber, Produzenten; Verwertungsgesellschaften wie GEMA; Regeln der Plattformen wie SoundCloud oder Mixcloud). Mix Auto Rec liefert keine Musik.','你需对导入、混音和发布的曲目独自负责。发布或传播包含他人作品的混音需要获得相应权利（作者、制作人；著作权集体管理组织；SoundCloud、Mixcloud 等平台的规则）。Mix Auto Rec 不提供任何音乐。','أنت وحدك المسؤول عن المقاطع التي تستوردها وتمزجها وتنشرها. نشر مزيج يحتوي على أعمال الآخرين يتطلب الحقوق المقابلة (المؤلفون، المنتجون؛ جمعيات إدارة الحقوق؛ قواعد كل منصة مثل SoundCloud أو Mixcloud). لا يوفر Mix Auto Rec أي موسيقى.'],
+['Logiciels tiers et licences','Third-party software and licenses','Software de terceros y licencias','Software von Drittanbietern und Lizenzen','第三方软件与许可证','برامج الطرف الثالث والتراخيص'],
+['— GPL v3 (version compilée avec Rubber Band). Sources : ffmpeg.org. Copie de la licence : gnu.org/licenses.','— GPL v3 (build with Rubber Band). Sources: ffmpeg.org. License: gnu.org/licenses.','— GPL v3 (compilado con Rubber Band). Fuentes: ffmpeg.org. Licencia: gnu.org/licenses.','— GPL v3 (mit Rubber Band kompiliert). Quellen: ffmpeg.org. Lizenz: gnu.org/licenses.','— GPL v3（与 Rubber Band 一起编译）。源码：ffmpeg.org。许可证：gnu.org/licenses。','— GPL v3 (مُجمّع مع Rubber Band). المصدر: ffmpeg.org. الترخيص: gnu.org/licenses.'],
+['(étirement du tempo) — GPL v2+. Sources : breakfastquay.com/rubberband.','(time-stretching) — GPL v2+. Sources: breakfastquay.com/rubberband.','(estiramiento del tempo) — GPL v2+. Fuentes: breakfastquay.com/rubberband.','(Time-Stretching) — GPL v2+. Quellen: breakfastquay.com/rubberband.','（时间拉伸）— GPL v2+。源码：breakfastquay.com/rubberband。','(تمديد الزمن) — GPL v2+. المصدر: breakfastquay.com/rubberband.'],
+['(MP3, version web) — LGPL v2+. github.com/zhuker/lamejs.','(MP3, web version) — LGPL v2+. github.com/zhuker/lamejs.','(MP3, versión web) — LGPL v2+. github.com/zhuker/lamejs.','(MP3, Web-Version) — LGPL v2+. github.com/zhuker/lamejs.','（MP3，网页版）— LGPL v2+。github.com/zhuker/lamejs。','(MP3، نسخة الويب) — LGPL v2+. github.com/zhuker/lamejs.'],
+['— licence BSD.','— BSD license.','— licencia BSD.','— BSD-Lizenz.','— BSD 许可证。','— ترخيص BSD.'],
+["— GPL v2 avec exception de distribution (le programme empaqueté n'est pas concerné).",'— GPL v2 with a bootloader exception (the packaged program is not affected).','— GPL v2 con excepción de distribución (el programa empaquetado no se ve afectado).','— GPL v2 mit Ausnahme für die Verteilung (das gepackte Programm ist nicht betroffen).','— GPL v2，附分发例外（打包后的程序不受影响）。','— GPL v2 مع استثناء التوزيع (البرنامج المُحزّم غير معني).'],
+["Les sources de ces composants libres sont disponibles aux adresses ci-dessus ; sur simple demande, l'éditeur fournit la version exacte utilisée.",'The sources of these free components are available at the addresses above; on request, the publisher provides the exact version used.','Las fuentes de estos componentes libres están en las direcciones indicadas; bajo petición, el editor facilita la versión exacta utilizada.','Die Quellen dieser freien Komponenten sind unter den genannten Adressen verfügbar; auf Anfrage liefert der Herausgeber die exakt verwendete Version.','这些自由组件的源码可在上述地址获取；如有需要，发布者可提供所用的确切版本。','مصادر هذه المكونات الحرة متاحة على العناوين أعلاه؛ وعند الطلب يقدّم الناشر النسخة المستخدمة بالضبط.'],
+['· Mix Auto Rec version bêta · © 2026 Aziz Bena','· Mix Auto Rec beta · © 2026 Aziz Bena','· Mix Auto Rec beta · © 2026 Aziz Bena','· Mix Auto Rec Beta · © 2026 Aziz Bena','· Mix Auto Rec 测试版 · © 2026 Aziz Bena','· Mix Auto Rec تجريبي · © 2026 Aziz Bena'],
+['Enregistre le son de ton set Mix Live (tout ce qui sort), puis tu choisis le format et l\'emplacement','Records the sound of your Mix Live set (everything that comes out), then you choose format and location','Graba el sonido de tu set Mix Live (todo lo que sale) y luego eliges formato y ubicación','Nimmt den Klang deines Mix-Live-Sets auf (alles, was rauskommt), dann wählst du Format und Ort','录制你的现场混音（所有输出），然后选择格式和位置','يسجّل صوت مجموعتك في المزج المباشر (كل ما يخرج)، ثم تختار الصيغة والمكان'],
+['Enregistrer le set','Save the set','Guardar el set','Set speichern','保存现场录音','حفظ المجموعة'],
+["Envoi de l'audio…",'Sending the audio…','Enviando el audio…','Audio wird gesendet…','正在发送音频…','جارٍ إرسال الصوت…'],
+['Niveau','Level','Nivel','Pegel','响度','المستوى'],
+["D'origine",'Original','Original','Original','原始','الأصلي'],
+['Club : −9 LUFS','Club: −9 LUFS','Club: −9 LUFS','Club: −9 LUFS','俱乐部：−9 LUFS','نادي: −9 LUFS'],
+['Streaming : −14 LUFS','Streaming: −14 LUFS','Streaming: −14 LUFS','Streaming: −14 LUFS','流媒体：−14 LUFS','بث: −14 LUFS'],
+['Pochette (image carrée)','Cover (square image)','Portada (imagen cuadrada)','Cover (quadratisches Bild)','封面（方形图片）','غلاف (صورة مربعة)'],
+['Gate','Gate','Gate','Gate','门限','بوابة'],
+['Brake','Brake','Freno','Brake','刹车','فرملة'],
+['son haché en rythme','rhythmically chopped sound','sonido cortado a ritmo','rhythmisch zerhackter Klang','有节奏的切音','صوت مقطّع بإيقاع'],
+['arrêt vinyle','vinyl stop','parada de vinilo','Vinyl-Stopp','黑胶刹停','توقف الفينيل'],
+['les 2 dernières mesures hachées en rythme (croches)','the last 2 bars chopped in rhythm (eighth notes)','los 2 últimos compases cortados a ritmo (corcheas)','die letzten 2 Takte rhythmisch zerhackt (Achtel)','最后 2 小节按八分音符切音','آخر مازورتين مقطعتان بإيقاع (ثُمنيات)'],
+['arrêt vinyle : la platine freine sur les 2 derniers temps','vinyl stop: the deck brakes over the last 2 beats','parada de vinilo: el plato frena en los 2 últimos tiempos','Vinyl-Stopp: das Deck bremst auf den letzten 2 Schlägen','黑胶刹停：唱盘在最后 2 拍减速停止','توقف الفينيل: يفرمل المشغل في آخر نبضتين'],
+['Versions précédentes','Previous versions','Versiones anteriores','Frühere Versionen','历史版本','الإصدارات السابقة'],
+['🕘 Versions précédentes…','🕘 Previous versions…','🕘 Versiones anteriores…','🕘 Frühere Versionen…','🕘 历史版本…','🕘 الإصدارات السابقة…'],
+['Pas encore de version précédente (elles se créent à chaque sauvegarde).','No previous version yet (one is created at each save).','Aún no hay versiones anteriores (se crean al guardar).','Noch keine frühere Version (bei jedem Speichern wird eine angelegt).','还没有历史版本（每次保存时创建）。','لا توجد إصدارات سابقة بعد (تُنشأ عند كل حفظ).'],
+['Sauvegarde automatique','Auto-save','Guardado automático','Automatisches Speichern','自动保存','حفظ تلقائي'],
+['Langue / Language / 语言 / اللغة','Langue / Language / 语言 / اللغة','Idioma / Language','Sprache / Language','语言 / Language','اللغة / Language'],
+  ];
+  const D = {}; for (const r of R) D[r[0]] = r[C];
+  const T = k => D[k] ?? k;
+  // Textes avec un nombre ou un nom : [formule, (morceaux trouvés) => [en, es, de, zh, ar]]
+  const F = [
+    [/^(\d+) \/ (\d+) morceaux$/, (a, b) => [`${a} / ${b} tracks`, `${a} / ${b} pistas`, `${a} / ${b} Titel`, `${a} / ${b} 首曲目`, `${a} / ${b} مقطع`]],
+    [/^(.+) · (\d+) morceau\(x\)$/, (a, b) => [`${a} · ${b} track(s)`, `${a} · ${b} pista(s)`, `${a} · ${b} Titel`, `${a} · ${b} 首`, `${a} · ${b} مقطع`]],
+    [/^Décalage : (-?\d+) ms$/, a => [`Offset: ${a} ms`, `Desfase: ${a} ms`, `Versatz: ${a} ms`, `偏移：${a} ms`, `الإزاحة: ${a} ms`]],
+    [/^Compatibles avec (.+)$/, a => [`Compatible with ${a}`, `Compatibles con ${a}`, `Kompatibel mit ${a}`, `与 ${a} 兼容`, `متوافقة مع ${a}`]],
+    [/^(.+) · compatible avec (.+)$/, (a, b) => [`${a} · compatible with ${b}`, `${a} · compatible con ${b}`, `${a} · kompatibel mit ${b}`, `${a} · 与 ${b} 兼容`, `${a} · متوافق مع ${b}`]],
+    [/^(.+) BPM d'origine · entre à (.+) · joué à (.+) BPM$/, (a, b, c) => [`${a} original BPM · starts at ${b} · played at ${c} BPM`, `${a} BPM original · entra en ${b} · a ${c} BPM`, `${a} Original-BPM · Start ${b} · gespielt mit ${c} BPM`, `原始 ${a} BPM · ${b} 进入 · 以 ${c} BPM 播放`, `${a} BPM أصلي · يدخل عند ${b} · يُعزف بـ ${c} BPM`]],
+    [/^mesure (\d+) → (\d+) · (.*)$/, (a, b, c) => [`bar ${a} → ${b} · ${c}`, `compás ${a} → ${b} · ${c}`, `Takt ${a} → ${b} · ${c}`, `第 ${a} → ${b} 小节 · ${c}`, `مازورة ${a} → ${b} · ${c}`]],
+    [/^· ensemble (\d+) mes\.$/, a => [`· together ${a} bars`, `· juntas ${a} comp.`, `· zusammen ${a} Takte`, `· 同时 ${a} 小节`, `· معًا ${a} مازورة`]],
+    [/^entre dans (.+)$/, a => [`starts in ${a}`, `entra en ${a}`, `startet in ${a}`, `${a} 后进入`, `يدخل بعد ${a}`]],
+    [/^Énergie (\d+)\/10$/, a => [`Energy ${a}/10`, `Energía ${a}/10`, `Energie ${a}/10`, `能量 ${a}/10`, `الطاقة ${a}/10`]],
+    [/^Dans le mix, position (.+)$/, a => [`In the mix, position ${a}`, `En la mezcla, posición ${a}`, `Im Mix, Position ${a}`, `在混音中，第 ${a} 位`, `في المزيج، الموضع ${a}`]],
+    [/^Import de (\d+) morceau\(x\)$/, a => [`Importing ${a} track(s)`, `Importando ${a} pista(s)`, `Import von ${a} Titel(n)`, `正在导入 ${a} 首曲目`, `استيراد ${a} مقطع`]],
+    [/^Erreur : (.+)$/, a => [`Error: ${a}`, `Error: ${a}`, `Fehler: ${a}`, `错误：${a}`, `خطأ: ${a}`]],
+    [/^Sauvegarde impossible : (.+)$/, a => [`Save failed: ${a}`, `No se pudo guardar: ${a}`, `Speichern fehlgeschlagen: ${a}`, `保存失败：${a}`, `فشل الحفظ: ${a}`]],
+    [/^Fichier illisible : (.+)$/, a => [`Unreadable file: ${a}`, `Archivo ilegible: ${a}`, `Datei unlesbar: ${a}`, `文件无法读取：${a}`, `ملف غير مقروء: ${a}`]],
+    [/^Entrée audio indisponible : (.+)$/, a => [`Audio input unavailable: ${a}`, `Entrada de audio no disponible: ${a}`, `Audioeingang nicht verfügbar: ${a}`, `音频输入不可用：${a}`, `مدخل الصوت غير متاح: ${a}`]],
+    [/^(.+) · calage…$/, a => [`${a} · matching…`, `${a} · ajustando…`, `${a} · Anpassung…`, `${a} · 匹配中…`, `${a} · جارٍ المطابقة…`]],
+    [/^enregistré dans (.+)$/, a => [`saved in ${a}`, `guardado en ${a}`, `gespeichert in ${a}`, `已保存到 ${a}`, `حُفظ في ${a}`]],
+    [/^Encodage (.+)…$/, a => [`Encoding ${a}…`, `Codificando ${a}…`, `Kodierung ${a}…`, `正在编码 ${a}…`, `جارٍ ترميز ${a}…`]],
+    [/^(Aigus|Médiums|Basses|Filtre|Écho|Réverbe) ([AB]) : (.+) \(tourner : glisser haut \/ bas ou gauche \/ droite · simple clic : zéro\)$/, (a, b, c) => { a = T(a); c = c === 'ouvert' ? T('ouvert') : c; return [`${a} ${b}: ${c} (turn: drag up / down or left / right · click: zero)`, `${a} ${b}: ${c} (girar: arrastra arriba / abajo · clic: cero)`, `${a} ${b}: ${c} (drehen: hoch / runter ziehen · Klick: null)`, `${a} ${b}：${c}（旋转：上下或左右拖动 · 单击：归零）`, `${a} ${b}: ${c} (للتدوير: اسحب للأعلى / للأسفل · نقرة: صفر)`]; }],
+    [/^Ligne rouge (.+) : clic sur la ligne = point · glisser un point = le déplacer · clic sur un point = l'enlever · ailleurs = déplacer le morceau$/, a => [`${a} red line: click the line = add a point · drag a point = move it · click a point = remove it · elsewhere = move the track`, `Línea roja ${a}: clic en la línea = punto · arrastrar = mover · clic en un punto = quitarlo · fuera = mover la pista`, `Rote Linie ${a}: Klick auf die Linie = Punkt · Punkt ziehen = verschieben · Klick auf Punkt = entfernen · sonst = Titel verschieben`, `${a} 红线：点击线 = 加点 · 拖动点 = 移动 · 点击点 = 删除 · 其他位置 = 移动曲目`, `خط ${a} الأحمر: انقر الخط = نقطة · اسحب نقطة = حرّكها · انقر نقطة = احذفها · في مكان آخر = حرّك المقطع`]],
+    [/^(.+) : (.+)$/, (a, b) => D[a] ? [`${D[a]}: ${b}`, `${D[a]}: ${b}`, `${D[a]}: ${b}`, `${D[a]}：${b}`, `${D[a]}: ${b}`] : null],
+    [/^Supprimer (\d+) projets? \?\n([\s\S]*)\n\n(Ils iront dans la Corbeille du Mac\.|Ils seront effacés de ce navigateur \(définitif\)\.)$/, (a, b, c) => { const t = c.startsWith('Ils iront'); return [`Delete ${a} project(s)?\n${b}\n\n${t ? 'They will go to the Mac Trash.' : 'They will be erased from this browser (permanent).'}`, `¿Eliminar ${a} proyecto(s)?\n${b}\n\n${t ? 'Irán a la Papelera del Mac.' : 'Se borrarán de este navegador (definitivo).'}`, `${a} Projekt(e) löschen?\n${b}\n\n${t ? 'Sie kommen in den Papierkorb.' : 'Sie werden aus diesem Browser gelöscht (endgültig).'}`, `删除 ${a} 个项目？\n${b}\n\n${t ? '它们会进入 Mac 废纸篓。' : '它们将从此浏览器中永久删除。'}`, `حذف ${a} مشروع؟\n${b}\n\n${t ? 'ستذهب إلى سلة المهملات في Mac.' : 'ستُمسح من هذا المتصفح نهائيًا.'}`]; }],
+    [/^Mix de (\d+) min : il n'y a pas assez de morceaux au même tempo pour atteindre 1 h\.$/, a => [`${a} min mix: not enough tracks at the same tempo to reach 1 h.`, `Mezcla de ${a} min: no hay pistas suficientes al mismo tempo para 1 h.`, `${a}-Min-Mix: nicht genug Titel im gleichen Tempo für 1 Std.`, `${a} 分钟混音：同速度曲目不足以达到 1 小时。`, `مزيج ${a} دقيقة: لا توجد مقاطع كافية بنفس السرعة للوصول إلى ساعة.`]],
+    [/^Lecture à (.+) kHz, latence (\d+) ms\. Le MP3 exporté est toujours en 44,1 kHz\.$/, (a, b) => [`Playing at ${a} kHz, latency ${b} ms. Exported MP3 is always 44.1 kHz.`, `Reproducción a ${a} kHz, latencia ${b} ms. El MP3 exportado siempre es 44,1 kHz.`, `Wiedergabe mit ${a} kHz, Latenz ${b} ms. Exportiertes MP3 immer 44,1 kHz.`, `以 ${a} kHz 播放，延迟 ${b} ms。导出的 MP3 始终为 44.1 kHz。`, `التشغيل بـ ${a} kHz، زمن الاستجابة ${b} ms. ملف MP3 المُصدَّر دائمًا 44.1 kHz.`]],
+    [/^MP3 (\d+) kbit\/s : léger, pour partager · WAV \/ AIFF : qualité CD sans perte([\s\S]*)$/, (a, rest) => { const mac = rest.includes('FLAC : sans'); const web = rest.includes('dans l\'app Mac'); return [
+      `MP3 ${a} kbit/s: light, for sharing · WAV / AIFF: lossless CD quality${mac ? ' · FLAC: lossless and compressed · M4A: AAC 256 kbit/s (Apple)' : ''}${web ? ' · FLAC and M4A: in the Mac app.' : ''}`,
+      `MP3 ${a} kbit/s: ligero, para compartir · WAV / AIFF: calidad CD sin pérdida${mac ? ' · FLAC: sin pérdida y comprimido · M4A: AAC 256 kbit/s (Apple)' : ''}${web ? ' · FLAC y M4A: en la app Mac.' : ''}`,
+      `MP3 ${a} kbit/s: leicht, zum Teilen · WAV / AIFF: verlustfreie CD-Qualität${mac ? ' · FLAC: verlustfrei und komprimiert · M4A: AAC 256 kbit/s (Apple)' : ''}${web ? ' · FLAC und M4A: in der Mac-App.' : ''}`,
+      `MP3 ${a} kbit/s：体积小，便于分享 · WAV / AIFF：CD 无损音质${mac ? ' · FLAC：无损压缩 · M4A：AAC 256 kbit/s（Apple）' : ''}${web ? ' · FLAC 和 M4A：在 Mac 应用中。' : ''}`,
+      `MP3 ${a} kbit/s: خفيف للمشاركة · WAV / AIFF: جودة CD بلا فقدان${mac ? ' · FLAC: بلا فقدان ومضغوط · M4A: AAC 256 kbit/s (Apple)' : ''}${web ? ' · FLAC وM4A: في تطبيق Mac.' : ''}`]; }],
+    [/^Hot cue (\d) : clic = poser \/ y aller · Maj \+ clic = effacer$/, a => [`Hot cue ${a}: click = set / jump · Shift + click = clear`, `Hot cue ${a}: clic = poner / ir · Mayús + clic = borrar`, `Hot Cue ${a}: Klick = setzen / springen · Umschalt + Klick = löschen`, `热点 ${a}：点击 = 设置 / 跳转 · Shift + 点击 = 清除`, `نقطة سريعة ${a}: نقرة = وضع / انتقال · Shift + نقرة = مسح`]],
+    [/^Boucle de (\d+) temps \(clic à nouveau : sortir\)$/, a => [`${a}-beat loop (click again: exit)`, `Bucle de ${a} tiempos (clic otra vez: salir)`, `Loop über ${a} Schläge (nochmal klicken: beenden)`, `${a} 拍循环（再次点击：退出）`, `حلقة من ${a} نبضات (انقر مجددًا: خروج)`]],
+    [/^grave (\d+)$/, a => [`low ${a}`, `grave ${a}`, `tief ${a}`, `低 ${a}`, `منخفض ${a}`]], [/^aigu (\d+)$/, a => [`high ${a}`, `agudo ${a}`, `hoch ${a}`, `高 ${a}`, `مرتفع ${a}`]],
+  ];
+  D['ouvert'] = ['open', 'abierto', 'offen', '开', 'مفتوح'][C - 1];
+  const xl = k => { if (D[k] != null) return D[k]; for (const [r, f] of F) { const m = k.match(r); if (m) { const v = f(...m.slice(1)); if (v) return v[C - 1]; } } return null; };
+  window.tr = s => { if (typeof s !== 'string') return s; const k = s.trim(); if (!k) return s; const v = xl(k); return v == null ? s : s.replace(k, v); };
+  for (const k in PARAMS) PARAMS[k].label = tr(PARAMS[k].label);   // libellés dessinés dans la timeline
+  for (const k in TRK) TRK[k][0] = tr(TRK[k][0]);
+  if (L === 'ar') document.body.classList.add('ar');   // arabe : textes alignés à droite, mise en page de la console inchangée (comme sur le matériel DJ)
+  const A = ['title', 'placeholder'];
+  const doNode = n => {
+    if (n.nodeType === 3) { const p = n.parentNode?.nodeName; if (p !== 'SCRIPT' && p !== 'STYLE') { const v = tr(n.nodeValue); if (v !== n.nodeValue) n.nodeValue = v; } return; }
+    if (n.nodeType !== 1 || n.id === 'langSel') return;
+    for (const a of A) { const o = n.getAttribute(a); if (o) { const v = tr(o); if (v !== o) n.setAttribute(a, v); } }
+    for (const c of n.childNodes) doNode(c);
+  };
+  doNode(document.body); document.title = 'Mix Auto Rec';
+  new MutationObserver(ms => { for (const m of ms) m.type === 'childList' ? m.addedNodes.forEach(doNode) : doNode(m.target); })
+    .observe(document.body, { childList:true, subtree:true, characterData:true, attributes:true, attributeFilter:A });
+  const al = window.alert, cf = window.confirm; window.alert = s => al(tr(String(s))); window.confirm = s => cf(tr(String(s)));
+})();
 </script>
 </body>
 </html>

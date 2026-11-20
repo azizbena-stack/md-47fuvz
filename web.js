@@ -231,9 +231,9 @@ const loadLame = () => window.lamejs ? Promise.resolve() : new Promise((ok, ko) 
   const s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.min.js'; s.onload = ok; s.onerror = () => ko(new Error('encodeur MP3 introuvable (connexion ?)'));
   document.head.append(s);
 });
-async function toMp3(parts, kbps = 320) {
+async function toMp3(parts, kbps = 320, sr = SR) {
   await loadLame();
-  const enc = new lamejs.Mp3Encoder(2, SR, kbps), out = [], B = 1152;
+  const enc = new lamejs.Mp3Encoder(2, sr, kbps), out = [], B = 1152;
   for (const p of parts) {
     const n = p.length / 2, l = new Int16Array(n), r = new Int16Array(n);
     for (let i = 0; i < n; i++) { l[i] = p[2 * i]; r[i] = p[2 * i + 1]; }
@@ -243,7 +243,7 @@ async function toMp3(parts, kbps = 320) {
   out.push(enc.flush());
   return new Blob(out, { type: 'audio/mpeg' });
 }
-function toPcm(parts, aiff) {   // WAV (petit-boutiste) ou AIFF (grand-boutiste), 16 bits stéréo 44,1 kHz
+function toPcm(parts, aiff, SR = 44100) {   // WAV (petit-boutiste) ou AIFF (grand-boutiste), 16 bits stéréo 44,1 kHz
   const n = parts.reduce((a, p) => a + p.length, 0) * 2, H = aiff ? 54 : 44, v = new DataView(new ArrayBuffer(H)), str = (o, t) => [...t].forEach((c, i) => v.setUint8(o + i, c.charCodeAt(0)));
   if (!aiff) {
     str(0, 'RIFF'); v.setUint32(4, 36 + n, true); str(8, 'WAVEfmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 2, true);
@@ -251,7 +251,7 @@ function toPcm(parts, aiff) {   // WAV (petit-boutiste) ou AIFF (grand-boutiste)
     return new Blob([v, ...parts], { type:'audio/wav' });
   }
   str(0, 'FORM'); v.setUint32(4, 46 + n); str(8, 'AIFFCOMM'); v.setUint32(16, 18); v.setUint16(20, 2); v.setUint32(22, n / 4); v.setUint16(26, 16);
-  v.setUint16(28, 0x400E); v.setUint32(30, (SR << 16) >>> 0); v.setUint32(34, 0);   // 44100 en flottant 80 bits
+  const e = Math.floor(Math.log2(SR)); v.setUint16(28, 16383 + e); v.setUint32(30, Math.round(SR * 2 ** (31 - e)) >>> 0); v.setUint32(34, 0);   // fréquence en flottant 80 bits
   str(38, 'SSND'); v.setUint32(42, n + 8); v.setUint32(46, 0); v.setUint32(50, 0);
   return new Blob([v, ...parts.map(p => { const b = new Int16Array(p.length); const d = new DataView(b.buffer); p.forEach((x, i) => d.setInt16(2 * i, x)); return b; })], { type:'audio/aiff' });
 }
@@ -276,15 +276,26 @@ async function route(p, q, raw, body) {
       return J({ profs: profiles(buf, q.beats.split(',').map(Number), +q.seg || 0) });
     }
     case '/api/order': { const t = JSON.parse(body); return J(order(t).map(x => x.id)); }
-    case '/api/projects': return J((await all('proj')).sort((a, b) => b.t - a.t).map(x => x.name));
+    case '/api/projects': return J((await all('proj')).filter(x => !x.name.includes('\u0001')).sort((a, b) => b.t - a.t).map(x => x.name));
+    case '/api/versions': return J((await all('proj')).filter(x => x.name.startsWith(q.name + '\u0001')).map(x => x.name.split('\u0001')[1]).sort().reverse());
+    case '/api/version': { const r = await get('proj', q.name + '\u0001' + q.v); return r ? new Response(r.data, { headers: { 'Content-Type': 'application/json' } }) : J({ error: 'introuvable' }, 404); }
     case '/api/project':
-      if (body != null) { await put('proj', q.name, { name: q.name, data: body, t: Date.now() }); return J({ ok: true }); }
+      if (body != null) {
+        const old = await get('proj', q.name), d = new Date(), z = n => String(n).padStart(2, '0');
+        if (old) {   // historique : 30 versions au plus
+          const v = `${d.getFullYear()}${z(d.getMonth() + 1)}${z(d.getDate())}-${z(d.getHours())}${z(d.getMinutes())}${z(d.getSeconds())}`;
+          await put('proj', q.name + '\u0001' + v, { ...old, name: q.name + '\u0001' + v });
+          const vs = (await all('proj')).filter(x => x.name.startsWith(q.name + '\u0001')).map(x => x.name).sort();
+          for (const k of vs.slice(0, -30)) await del('proj', k);
+        }
+        await put('proj', q.name, { name: q.name, data: body, t: Date.now() }); return J({ ok: true });
+      }
       { const r = await get('proj', q.name); return r ? new Response(r.data, { headers: { 'Content-Type': 'application/json' } }) : J({ error: 'introuvable' }, 404); }
-    case '/api/project/delete': await del('proj', q.name); return J({ ok: true });
+    case '/api/project/delete': { await del('proj', q.name); for (const x of await all('proj')) if (x.name.startsWith(q.name + '\u0001')) await del('proj', x.name); return J({ ok: true }); }
     case '/api/export/chunk': { if (q.i === '0') CHUNKS.set(q.id, []); CHUNKS.get(q.id).push(new Int16Array(body)); return J({ ok: true }); }
     case '/api/export/finish': {
       const f = q.fmt || 'mp3', parts = CHUNKS.get(q.id); CHUNKS.delete(q.id);
-      const blob = f === 'mp3' ? await toMp3(parts, +q.kbps || 320) : toPcm(parts, f === 'aiff'), h = window.webSaveHandle;
+      const sr = +q.sr || 44100, blob = f === 'mp3' ? await toMp3(parts, +q.kbps || 320, sr) : toPcm(parts, f === 'aiff', sr), h = window.webSaveHandle;
       let name = `${q.name}.${f}`; window.webSaveHandle = null;
       if (h) { const w = await h.createWritable(); await w.write(blob); await w.close(); name = h.name; } else download(blob, name);
       MIXES.set(name, blob); return J({ mp3: name });
@@ -358,7 +369,7 @@ function wavFile(buf, name) {
 async function demo(force) {   // force : bouton « Morceaux de démo » (refait les 3 morceaux même si déjà vus)
   if (!force) { try { if (localStorage.getItem('mixauto-demo')) return; } catch {}
   if ((await all('lib')).length || S.clips.length) return; }
-  modal('Bienvenue dans Mix Auto', 'Préparation d\'un mix de démo : 3 morceaux fabriqués ici, libres de droits…');
+  modal('Bienvenue dans Mix Auto Rec', 'Préparation d\'un mix de démo : 3 morceaux fabriqués ici, libres de droits…');
   const items = [];
   try { localStorage.setItem('mixauto-demo', '1'); } catch {}   // une seule fois, même si on annule (✕)
   const names = DEMOS.map(d => d.name);
