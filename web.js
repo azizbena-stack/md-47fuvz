@@ -360,6 +360,7 @@ async function demo(force) {   // force : bouton « Morceaux de démo » (refait
 window.demo = demo;   // bouton « Morceaux de démo » de la zone d'import
 addEventListener('load', () => setTimeout(() => demo().catch(e => { console.error(e); closeModal(); }), 1200));
 window.webFileURL = async id => URL.createObjectURL(await get('files', id));   // pré-écoute
+window.webFile = id => get('files', id);   // fichier d'origine (pochette)
 // le navigateur peut vider ce stockage s'il manque de place : on lui demande de le garder
 navigator.storage?.persist?.();
 })();

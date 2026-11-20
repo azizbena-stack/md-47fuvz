@@ -73,6 +73,8 @@
   .deckrow { display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); gap:8px; padding:6px 8px; }
   .deck { display:grid; grid-template-columns:minmax(0,1fr); grid-template-rows:auto auto 1fr; overflow:hidden; gap:3px; min-width:0; background:var(--card); border:1px solid var(--line); border-radius:10px; padding:6px 10px; border-top:3px solid var(--dc); }
   .deck .dh { display:flex; align-items:center; gap:8px; min-width:0; }
+  .deck .dcov { width:38px; height:38px; flex:none; border-radius:5px; object-fit:cover; border:1px solid #ffffff40; box-shadow:0 0 6px #0008; }
+  .deck .dcov[hidden] { display:none; }
   .deck .dl { font:800 20px ui-monospace, Menlo, monospace; color:var(--dc); }
   .deck .dt { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:600; }
   .deck .dn { display:flex; flex-wrap:wrap; gap:2px 14px; white-space:nowrap; align-items:baseline; color:var(--dim); font:600 11px ui-monospace, Menlo, monospace; }
@@ -304,7 +306,7 @@
     <select id="tfr" title="Plage du fader (TEMPO RANGE)"><option value="6">±6</option><option value="10" selected>±10</option><option value="16">±16</option></select>
   </div>
   <div class="sep"></div>
-  <label class="inl">Aimant <select id="snap"><option value="32">Phrase (8 mesures)</option><option value="4">Mesure</option><option value="1">Temps</option><option value="0">Libre</option></select></label>
+  <label class="inl">Aimant <select id="snap"><option value="4" selected>Mesure</option><option value="32">Phrase (8 mesures)</option><option value="1">Temps</option><option value="0">Libre</option></select></label>
   <button id="click" title="Métronome pour vérifier le calage">Clic</button>
   <button id="zoomOut" title="Dézoomer (⌘ + molette)">−</button><button id="zoomIn" title="Zoomer">+</button><button id="zoomFit" title="Voir tout le mix (touche F)">↔</button>
   <button id="undo" title="Annuler (⌘Z)">↶</button>
@@ -321,9 +323,9 @@
     <canvas id="deckC" title="Clic : aller à cet endroit"></canvas>
     <div class="vsplit" id="splitR" title="Glisser vers le haut pour agrandir les platines A / B et la table · double-clic : taille d'origine"></div>
     <div class="deckrow" id="rack">
-      <div class="deck" id="deck0" style="--dc:#3aa0ff"><div class="dh"><span class="dl">A</span><span class="dt">—</span><span class="key"></span></div><div class="dn"><span><b class="dbpm">—</b> BPM</span><span class="dtime"></span><span class="dst"></span></div><canvas></canvas></div>
+      <div class="deck" id="deck0" style="--dc:#3aa0ff"><div class="dh"><img class="dcov" hidden alt=""><span class="dl">A</span><span class="dt">—</span><span class="key"></span></div><div class="dn"><span><b class="dbpm">—</b> BPM</span><span class="dtime"></span><span class="dst"></span></div><canvas></canvas></div>
       <div class="mixer" id="mixer"></div>
-      <div class="deck" id="deck1" style="--dc:#ff9a2e"><div class="dh"><span class="dl">B</span><span class="dt">—</span><span class="key"></span></div><div class="dn"><span><b class="dbpm">—</b> BPM</span><span class="dtime"></span><span class="dst"></span></div><canvas></canvas></div>
+      <div class="deck" id="deck1" style="--dc:#ff9a2e"><div class="dh"><img class="dcov" hidden alt=""><span class="dl">B</span><span class="dt">—</span><span class="key"></span></div><div class="dn"><span><b class="dbpm">—</b> BPM</span><span class="dtime"></span><span class="dst"></span></div><canvas></canvas></div>
     </div>
     <div class="vsplit" id="splitD" title="Glisser pour agrandir les platines A / B et la table · double-clic : taille d'origine"></div>
   </section>
@@ -420,7 +422,7 @@
 </dialog>
 <div id="modal" hidden><div class="box"><button id="mClose" title="Annuler / fermer">✕</button><b id="mTitle"></b><div class="bar"><div id="mBar"></div></div><div id="mText" class="note"></div><div class="row" id="mBtns"></div></div></div>
 
-<script src="web.js?v=d5e7773c"></script>
+<script src="web.js?v=3628d29b"></script>
 <script>
 // ============ Modèle ============
 // Tout est en TEMPS (beats) : début sur la timeline, position dans le morceau, automations.
@@ -446,7 +448,7 @@ let LIB = [];                       // morceaux analysés (serveur)
 const BUF = {};                     // id morceau -> { key, buffer, peaks } ou { key, loading }
 const PHRASE = 32;   // 8 mesures de 4 temps : les morceaux entrent et sortent sur ces repères
 const MIXIN = 64;    // le suivant entre 16 mesures avant la fin du précédent
-const U = { rate:1, pxb:8, scrollX:-2, userScroll:0, sel:null, param:'vol', snap:PHRASE, pos:0, playing:false, click:false, undo:[],
+const U = { rate:1, pxb:8, scrollX:-2, userScroll:0, sel:null, param:'vol', snap:4, pos:0, playing:false, click:false, undo:[],
             libTab:'all', keys:new Set(), compat:true, folder:null, sort:'name', up:true, inspTab:'trans' };
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -1365,6 +1367,9 @@ function drawNow() {
     g.fillStyle = '#4b4b6b'; g.fillRect(Math.round(x), 0, 1, H);
   }
   TRR.length = 0; R.forEach(c => drawClip(g, c, LN.of(c), W));
+  for (let b = Math.floor(U.scrollX / 4) * 4, st = Math.max(4, step); b <= b1; b += st) {   // marqueur rouge à chaque mesure (4 temps), sur toutes les pistes
+    g.fillStyle = b % PHRASE ? '#ff3b3b66' : '#ff3b3bcc'; g.fillRect(Math.round((b - U.scrollX) * U.pxb), 0, b % PHRASE ? 1 : 1.5, H);
+  }
   // repères d'entrée (vert) et de fin (rouge) de chaque morceau, sur toute la hauteur et sur la règle
   for (const c of R) for (const [b, col] of [[c.start, '#22d3a6'], [clipEnd(c), '#ff5c7a']]) {
     const x = Math.round((b - U.scrollX) * U.pxb) + 0.5;
@@ -1728,6 +1733,40 @@ function drawDecks(LN) {
   g.fillStyle = '#fff'; g.fillRect(W / 2 - 1, 0, 2, DECKH);
   for (let d = 0; d < 2; d++) deckInfo(d, pb, LN);
 }
+// Pochette du morceau (image dans les tags ID3 du MP3), lue une fois par morceau
+const COVER = new Map();
+function coverOf(id) {
+  if (!COVER.has(id)) COVER.set(id, (async () => {
+    const blob = window.webFile ? new Blob([await window.webFile(id)]) : await (await fetch(`/api/file?id=${id}`)).blob();
+    const img = id3Cover(new Uint8Array(await blob.slice(0, 4e6).arrayBuffer()));
+    return img ? URL.createObjectURL(new Blob([img.data], { type:img.mime })) : null;
+  })().catch(() => null));
+  return COVER.get(id);
+}
+function id3Cover(b) {   // image APIC (ID3 v2.3 / 2.4) ou PIC (v2.2) ; ponytail: ni M4A (covr) ni FLAC, à ajouter si besoin
+  if (b[0] !== 73 || b[1] !== 68 || b[2] !== 51) return null;
+  const v = b[3], ss = i => (b[i] & 127) << 21 | (b[i + 1] & 127) << 14 | (b[i + 2] & 127) << 7 | (b[i + 3] & 127);
+  const end = Math.min(b.length, 10 + ss(6)); let i = 10;
+  if (b[5] & 0x40) i += v === 4 ? ss(10) : (b[10] << 24 | b[11] << 16 | b[12] << 8 | b[13]) + 4;   // en-tête étendu
+  const str = (a, z) => String.fromCharCode(...b.subarray(a, z));
+  while (i + (v === 2 ? 6 : 10) < end) {
+    const id = str(i, i + (v === 2 ? 3 : 4));
+    if (!/^[A-Z0-9]+$/.test(id)) break;
+    const n = v === 2 ? b[i + 3] << 16 | b[i + 4] << 8 | b[i + 5] : v === 4 ? ss(i + 4) : (b[i + 4] << 24 | b[i + 5] << 16 | b[i + 6] << 8 | b[i + 7]) >>> 0;
+    const s0 = i + (v === 2 ? 6 : 10);
+    if (id === 'APIC' || id === 'PIC') {
+      const enc = b[s0]; let k = s0 + 1, mime;
+      if (v === 2) { const f = str(k, k + 3).toLowerCase(); mime = f === 'png' ? 'image/png' : 'image/jpeg'; k += 3; }
+      else { const z = b.indexOf(0, k); mime = str(k, z) || 'image/jpeg'; k = z + 1; }
+      k++;   // type d'image
+      if (enc === 1 || enc === 2) { while (k + 1 < s0 + n && (b[k] || b[k + 1])) k += 2; k += 2; } else { while (k < s0 + n && b[k]) k++; k++; }
+      if (!mime.includes('/')) mime = 'image/' + mime.toLowerCase().replace('jpg', 'jpeg');
+      return { mime, data:b.slice(k, s0 + n) };
+    }
+    i = s0 + n;
+  }
+  return null;
+}
 function overview(el, b, d, W, H) {   // vue d'ensemble d'un morceau, dessinée une fois (grise et en couleur) puis recopiée
   const r = devicePixelRatio || 1, key = [b.buffer, W, H, r].join();
   if (el.ov?.key === key) return el.ov;
@@ -1751,6 +1790,8 @@ function deckInfo(d, pb, LN) {   // morceau en lecture sur la voie, sinon le pro
     el.querySelector('.dt').textContent = t ? t.name : LV.on ? 'Glisse un morceau ici' : '—';
     const k = el.querySelector('.key'); k.textContent = t ? KL(camOf(t)) : ''; k.style.color = t ? keyColor(camOf(t)) : '';
     el.querySelector('.dbpm').textContent = bpm;
+    const im = el.querySelector('.dcov'), id = t?.id; im.hidden = true;
+    if (id) coverOf(id).then(u => { if (el.cid === (c?.id ?? null) && u) { im.src = u; im.hidden = false; } });
   }
   const b = c && (LV.on ? BUF[c.id] || (P.buf && { buffer:P.buf }) : BUF[c.id]);
   const dur = b?.buffer?.duration || 0, pos = !c ? 0 : LV.on ? lvPos(P) : on ? fileT(c, tlToTb(c, pb)) : fileT(c, c.in);
@@ -1978,9 +2019,9 @@ addEventListener('keydown', e => {
   else if (e.key >= '0' && e.key <= '7') { U.param = ['none', ...PKEYS][+e.key]; paramsUI(); draw(); }
   else if (e.key === 'Home') $('toStart').click();
   else if (e.key === 'f' || e.key === 'F') zoomFit();
-  else if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && selClip()) {   // ← → : d'une phrase (Maj : d'un temps)
+  else if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && selClip()) {   // ← → : d'une mesure (Maj : d'un temps)
     e.preventDefault(); pushUndo(); const c = selClip(), s = c.start, next = following(c);
-    c.start = Math.max(0, c.start + (e.key === 'ArrowLeft' ? -1 : 1) * (e.shiftKey ? 1 : PHRASE));
+    c.start = Math.max(0, c.start + (e.key === 'ArrowLeft' ? -1 : 1) * (e.shiftKey ? 1 : 4));
     shiftAll(next, e.altKey ? 0 : c.start - s); changed();   // les suivants suivent (Alt : lui seul)
   }
 });
