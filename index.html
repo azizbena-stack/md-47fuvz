@@ -102,6 +102,13 @@
   .chan.rev .fwrap .tick { text-align:right; } .chan.rev .fwrap .tick::after { left:4px; right:11px; }
   .hticks { position:relative; height:7px; margin-top:-4px; background:repeating-linear-gradient(90deg, #5a5a70 0 1px, transparent 1px 10%); background-size:calc(100% - 15px) 100%; background-position:7.5px 0; background-repeat:no-repeat; }
   .hticks.c::after { content:''; position:absolute; left:50%; top:-2px; width:2px; height:9px; margin-left:-1px; background:#fff; }
+  .mixer { position:relative; }
+  .deck .maxb { opacity:.75; } .deck .maxb:hover { opacity:1; }
+  .transp { display:flex; align-items:center; gap:8px; }
+  .rnd { width:40px; height:40px; padding:0; border-radius:50%; background:transparent; border:1.5px solid #ffffff4d; font-weight:800; font-size:11px; letter-spacing:.5px; }
+  #mCue { color:#ffae3d; border-color:#ffae3d88; } #mCue:active, #mCue.on { background:#ffae3d; color:#0c0c11; box-shadow:0 0 10px #ffae3d99; }
+  #mPlay { color:#ff3b3b; border-color:#ff3b3b88; font-size:15px; } #mPlay.on { background:linear-gradient(180deg,#ff4d4d,#c81e1e); color:#fff; border-color:#ff7a7a; box-shadow:0 0 12px #ff3b3b88; }
+  #rack.maxed { align-items:stretch; padding:10px 14px; }
   .mixmid { display:flex; flex-direction:column; align-items:center; gap:5px; }
   #xf { width:150px; }
   .xfl { display:flex; justify-content:space-between; width:150px; font:700 10px ui-monospace, monospace; color:var(--dim); }
@@ -121,7 +128,7 @@
   #search { width:200px; }
   .libbody { display:grid; grid-template-columns:auto minmax(0,1fr) auto; min-height:0; }
   #libSide { grid-column:1; } .libbody > .tablewrap { grid-column:2; } #impPane { grid-column:3; }   /* zone d'import toujours calée à droite */
-  #impPane { width:min(340px, 30vw); padding:8px; border-left:1px solid var(--line); background:var(--panel); min-height:0; display:flex; }
+  #impPane { width:min(480px, 36vw); padding:8px; border-left:1px solid var(--line); background:var(--panel); min-height:0; display:flex; }
   #impPane[hidden] { display:none; }
   #impDrop { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:safe center; gap:5px; text-align:center; border:2px dashed #3a3a4e; border-radius:12px; padding:8px; overflow:auto; color:var(--txt); cursor:pointer; transition:border-color .15s, background .15s; }
   #impDrop:hover, body.dragover #impDrop { border-color:#ff3b3b; background:#ff3b3b10; }
@@ -307,10 +314,10 @@
     <button class="maxb" data-max="decks" title="Pleine page (Échap pour revenir)">⛶ Pleine page</button>
     <canvas id="deckC" title="Clic : aller à cet endroit"></canvas>
     <div class="vsplit" id="splitR" title="Glisser pour agrandir les formes d'onde · double-clic : taille d'origine"></div>
-    <div class="deckrow">
+    <div class="deckrow" id="rack">
       <div class="deck" id="deck0" style="--dc:#3aa0ff"><div class="dh"><span class="dl">A</span><span class="dt">—</span><span class="key"></span></div><div class="dn"><span><b class="dbpm">—</b> BPM</span><span class="dtime"></span><span class="dst"></span></div><canvas></canvas></div>
       <div class="mixer" id="mixer"></div>
-      <div class="deck" id="deck1" style="--dc:#ff9a2e"><div class="dh"><span class="dl">B</span><span class="dt">—</span><span class="key"></span></div><div class="dn"><span><b class="dbpm">—</b> BPM</span><span class="dtime"></span><span class="dst"></span></div><canvas></canvas></div>
+      <div class="deck" id="deck1" style="--dc:#ff9a2e"><div class="dh"><span class="dl">B</span><span class="dt">—</span><span class="key"></span><button class="maxb" data-max="rack" title="Pleine page (Échap pour revenir)">⛶ Pleine page</button></div><div class="dn"><span><b class="dbpm">—</b> BPM</span><span class="dtime"></span><span class="dst"></span></div><canvas></canvas></div>
     </div>
     <div class="vsplit" id="splitD" title="Glisser pour agrandir les platines A / B et la table · double-clic : taille d'origine"></div>
   </section>
@@ -742,7 +749,7 @@ function play(from = U.pos, seamless = false) {
       o.connect(g).connect(ctx.destination); o.start(at); o.stop(at + 0.05); nodes.push(o);
     }
   }
-  U.playing = true; $('play').textContent = '❚❚'; $('play').classList.add('on');
+  U.playing = true; for (const b of [$('play'), $('mPlay')]) if (b) { b.textContent = '❚❚'; b.classList.add('on'); }
   const id = tick.n = (tick.n || 0) + 1; requestAnimationFrame(() => tick(id));
 }
 function stop(keepPos = true) {
@@ -753,7 +760,7 @@ function stop(keepPos = true) {
     const m = live.bus.master; setTimeout(() => m.disconnect(), 50);
     live = null;
   }
-  U.playing = false; $('play').textContent = '▶'; $('play').classList.remove('on');
+  U.playing = false; for (const b of [$('play'), $('mPlay')]) if (b) { b.textContent = '▶'; b.classList.remove('on'); }
   recEnd(); draw();
 }
 const livePos = () => live ? (live.seam ? x => x : x => Math.max(live.from, x))(live.from + (ctx.currentTime - live.base) * live.k) : U.pos;   // relance sans trou : l'ancien son joue encore, la tête ne se fige pas
@@ -1654,7 +1661,7 @@ function deckInfo(d, pb, LN) {   // morceau en lecture sur la voie, sinon le pro
   const st = el.querySelector('.dst');
   st.className = 'dst ' + (on ? 'air' : 'nxt'); st.textContent = on ? '● en lecture' : c ? `entre dans ${fmtTime(secAt(c.start) - U.pos)}` : '';
   const cv = el.querySelector('canvas'), b = c && BUF[c.id];   // vue d'ensemble du morceau, partie jouée en couleur
-  const H = LAY.rackH && innerWidth > 760 ? Math.max(28, el.clientHeight - el.querySelector('.dh').offsetHeight - el.querySelector('.dn').offsetHeight - 22) : 28;   // rack agrandi : la forme d'onde grandit
+  const H = (LAY.rackH || $('rack').classList.contains('maxed')) && innerWidth > 760 ? Math.max(28, el.clientHeight - el.querySelector('.dh').offsetHeight - el.querySelector('.dn').offsetHeight - 22) : 28;   // rack agrandi : la forme d'onde grandit
   const [g, W] = setupCanvas(cv, H); g.clearRect(0, 0, W, H); g.fillStyle = '#0f0f15'; g.fillRect(0, 0, W, H);
   if (!b?.peaks) return;
   const dur = b.buffer.duration, pos = on ? fileT(c, tlToTb(c, pb)) : fileT(c, c.in), per = b.peaks.length / W;
@@ -1684,7 +1691,7 @@ $('mixer').innerHTML = `<div class="chan" style="--dc:${DECKCOL[0]}">${chanHTML(
     <button id="rec" title="Pendant la lecture, tes gestes sur la table s'écrivent en lignes rouges sur les morceaux (comme l'automation d'Ableton)">● REC</button>
     <div><input type="range" id="xf" class="cfad" min="-1" max="1" step="0.01" value="0" title="Crossfader (double-clic : centre)"><div class="hticks c"></div></div>
     <div class="xfl"><span>A</span><span>CROSSFADER</span><span>B</span></div>
-    <button id="mixReset" title="Tous les boutons à zéro">Remettre à zéro</button>
+    <div class="transp"><button id="mCue" class="rnd" title="CUE · à l'arrêt : pose le point de départ ici · en lecture : revient au point de départ et s'arrête">CUE</button><button id="mixReset" title="Tous les boutons à zéro">Remettre à zéro</button><button id="mPlay" class="rnd" title="Lecture / pause (Espace)">▶</button></div>
   </div>
   <div class="chan rev" style="--dc:${DECKCOL[1]}">${chanHTML(1)}</div>`;
 function mixUI() {
@@ -1741,6 +1748,11 @@ mixUI();
 
 // ============ Barre d'outils ============
 $('play').onclick = () => U.playing ? stop() : play();
+$('mPlay').onclick = () => $('play').click();
+$('mCue').onclick = () => {   // façon CDJ : à l'arrêt on pose le point CUE, en lecture on y revient et on s'arrête
+  if (U.playing) { stop(); U.pos = U.cue || 0; } else U.cue = U.pos;
+  $('mCue').classList.add('on'); setTimeout(() => $('mCue').classList.remove('on'), 180); draw();
+};
 $('toStart').onclick = () => { U.pos = 0; U.scrollX = -2; U.playing ? play(0) : draw(); };
 $('snap').onchange = e => U.snap = +e.target.value;
 $('click').onclick = e => { U.click = !U.click; e.target.classList.toggle('on', U.click); restartIfPlaying(); };
