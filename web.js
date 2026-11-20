@@ -243,6 +243,18 @@ async function toMp3(parts, kbps = 320) {
   out.push(enc.flush());
   return new Blob(out, { type: 'audio/mpeg' });
 }
+function toPcm(parts, aiff) {   // WAV (petit-boutiste) ou AIFF (grand-boutiste), 16 bits stéréo 44,1 kHz
+  const n = parts.reduce((a, p) => a + p.length, 0) * 2, H = aiff ? 54 : 44, v = new DataView(new ArrayBuffer(H)), str = (o, t) => [...t].forEach((c, i) => v.setUint8(o + i, c.charCodeAt(0)));
+  if (!aiff) {
+    str(0, 'RIFF'); v.setUint32(4, 36 + n, true); str(8, 'WAVEfmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 2, true);
+    v.setUint32(24, SR, true); v.setUint32(28, SR * 4, true); v.setUint16(32, 4, true); v.setUint16(34, 16, true); str(36, 'data'); v.setUint32(40, n, true);
+    return new Blob([v, ...parts], { type:'audio/wav' });
+  }
+  str(0, 'FORM'); v.setUint32(4, 46 + n); str(8, 'AIFFCOMM'); v.setUint32(16, 18); v.setUint16(20, 2); v.setUint32(22, n / 4); v.setUint16(26, 16);
+  v.setUint16(28, 0x400E); v.setUint32(30, (SR << 16) >>> 0); v.setUint32(34, 0);   // 44100 en flottant 80 bits
+  str(38, 'SSND'); v.setUint32(42, n + 8); v.setUint32(46, 0); v.setUint32(50, 0);
+  return new Blob([v, ...parts.map(p => { const b = new Int16Array(p.length); const d = new DataView(b.buffer); p.forEach((x, i) => d.setInt16(2 * i, x)); return b; })], { type:'audio/aiff' });
+}
 const download = (blob, name) => { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 60000); };
 
 // ---------- Les adresses /api/… du serveur, servies ici ----------
@@ -268,10 +280,14 @@ async function route(p, q, raw, body) {
     case '/api/project':
       if (body != null) { await put('proj', q.name, { name: q.name, data: body, t: Date.now() }); return J({ ok: true }); }
       { const r = await get('proj', q.name); return r ? new Response(r.data, { headers: { 'Content-Type': 'application/json' } }) : J({ error: 'introuvable' }, 404); }
+    case '/api/project/delete': await del('proj', q.name); return J({ ok: true });
     case '/api/export/chunk': { if (q.i === '0') CHUNKS.set(q.id, []); CHUNKS.get(q.id).push(new Int16Array(body)); return J({ ok: true }); }
     case '/api/export/finish': {
-      const blob = await toMp3(CHUNKS.get(q.id), +q.kbps || 320), name = `${q.name}.mp3`; CHUNKS.delete(q.id);
-      MIXES.set(name, blob); download(blob, name); return J({ mp3: name });
+      const f = q.fmt || 'mp3', parts = CHUNKS.get(q.id); CHUNKS.delete(q.id);
+      const blob = f === 'mp3' ? await toMp3(parts, +q.kbps || 320) : toPcm(parts, f === 'aiff'), h = window.webSaveHandle;
+      let name = `${q.name}.${f}`; window.webSaveHandle = null;
+      if (h) { const w = await h.createWritable(); await w.write(blob); await w.close(); name = h.name; } else download(blob, name);
+      MIXES.set(name, blob); return J({ mp3: name });
     }
     case '/api/reveal': { const b = MIXES.get(q.name); if (b) download(b, q.name); return J({ ok: true }); }
   }

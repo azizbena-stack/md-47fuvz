@@ -30,7 +30,9 @@
   header { display:flex; align-items:center; gap:10px; padding:8px 14px; background:linear-gradient(180deg, #1a1a26, #111119); border-bottom:1px solid #2c2c40; box-shadow:0 4px 18px #0007; flex-wrap:wrap; position:relative; z-index:30; }
   header h1 { font-size:19px; margin:0 4px 0 0; letter-spacing:-.5px; font-weight:800; display:flex; align-items:center; gap:7px; }
   header h1::before { content:''; width:22px; height:22px; border-radius:50%; background:conic-gradient(from 200deg, #3aa0ff, #ffffff, #ff9a2e, #ff3b3b, #3aa0ff); box-shadow:0 0 12px #ff3b3b66; mask:radial-gradient(circle, transparent 3px, #000 4px); }
-  header h1 span { background:linear-gradient(90deg, #ff5c5c, #ff2a2a); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .ico { width:15px; height:15px; vertical-align:-3px; margin-right:3px; }
+  header h1 .brand { display:flex; flex-direction:column; line-height:1; } header h1 small { font-size:9px; font-weight:700; letter-spacing:1.6px; text-transform:uppercase; color:var(--acc); margin-top:2px; opacity:.85; }
+  header h1 .bt span { background:linear-gradient(90deg, #ff5c5c, #ff2a2a); -webkit-background-clip:text; background-clip:text; color:transparent; }
   #play, #toStart { border-radius:50%; width:38px; height:38px; padding:0; font-size:14px; }
   #play { width:44px; height:44px; font-size:17px; color:#ff3b3b; }
   #play.on, #sync.on { background:linear-gradient(180deg, #ff4d4d, #c81e1e); border-color:#ff7a7a; color:#fff; box-shadow:0 0 12px #ff3b3b88; }   /* allumé en rouge */
@@ -89,7 +91,7 @@
   .knob .kt { position:absolute; left:50%; top:50%; width:1.5px; height:4px; margin:-2px 0 0 -.75px; background:#6a6a82; border-radius:1px; transform:rotate(var(--r)) translateY(-17px); }
   .knob .kt.z { height:6px; margin-top:-3px; width:2px; margin-left:-1px; background:#fff; }
   .knob .kt.e { background:#9a9ab0; }
-  .knob i { position:absolute; left:7px; top:7px; width:26px; height:26px; margin:0; border-radius:50%; background:radial-gradient(circle at 40% 35%, #4a4a5e, #18181f); border:1px solid #4a4a62; position:relative; transform:rotate(calc(var(--a, 0) * 1deg)); }
+  .knob i { position:absolute; left:7px; top:7px; width:26px; height:26px; margin:0; border-radius:50%; background:radial-gradient(circle at 40% 35%, #4a4a5e, #18181f); border:1px solid #4a4a62; transition:transform .06s linear; }
   .knob i::after { content:''; position:absolute; left:50%; top:2px; width:2px; height:9px; margin-left:-1px; background:#fff; border-radius:1px; }
   .knob.mod i { box-shadow:0 0 0 2px var(--dc); }
   input.cfad { -webkit-appearance:none; appearance:none; background:transparent; height:30px; margin:0; cursor:grab; accent-color:auto; }
@@ -182,6 +184,13 @@
   .trchips { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px; }
   .trchip { border-radius:999px; padding:3px 11px; font-size:12px; font-weight:700; border-color:var(--k); color:var(--k); background:color-mix(in srgb, var(--k) 12%, #1e1e2a); }
   .trchip.on { background:var(--k); color:#0c0c11; }
+  #mBtns.fmts { display:grid; grid-template-columns:repeat(auto-fill, minmax(70px, 1fr)); gap:6px; } #mBtns.fmts button { font-weight:800; padding:12px 0; }
+  .fmtnote { margin-top:8px; font-size:11px; color:var(--dim); line-height:1.5; }
+  #legal { width:min(640px, 94vw); overflow:auto; } .legal p, .legal li { font-size:12px; line-height:1.55; color:#c9c9d6; margin:4px 0 8px; } .legal ul { padding-left:18px; margin:4px 0; } .legal h4 { margin:14px 0 2px; }
+  .dellist { display:flex; flex-direction:column; gap:6px; max-height:300px; overflow:auto; margin-top:10px; text-align:left; }
+  .dellist label { display:flex; gap:8px; align-items:center; padding:7px 10px; border:1px solid var(--line); border-radius:8px; cursor:pointer; }
+  .dellist label:has(input:checked) { border-color:#ff5c5c; background:#ff5c5c14; }
+  .trchip .trx { margin-left:7px; font-size:10px; opacity:.6; padding:0 2px; border-radius:50%; } .trchip .trx:hover { opacity:1; color:#ff5c5c; }
   .trcard { background:color-mix(in srgb, var(--k) 10%, var(--card)); border:1px solid color-mix(in srgb, var(--k) 55%, transparent); border-radius:12px; padding:10px; margin-bottom:6px; }
   .trhead { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:4px; }
   .trhead .sub { margin:0; }
@@ -238,10 +247,10 @@
   .pair { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:9px; display:grid; grid-template-columns:1fr auto 1fr; gap:8px; align-items:center; }
   .pair div { overflow:hidden; } .pair b { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px; margin-top:3px; }
 
-  #prefs { background:var(--card); color:var(--txt); border:1px solid var(--line); border-radius:12px; padding:0; width:min(440px, 94vw); max-height:88vh; box-shadow:0 20px 60px #000c; }
-  #prefs::backdrop { background:#000a; }
-  #prefs form { padding:14px 16px; display:grid; gap:7px; }
-  #prefs .phead { display:flex; justify-content:space-between; align-items:center; font-size:16px; }
+  #prefs, #legal { background:var(--card); color:var(--txt); border:1px solid var(--line); border-radius:12px; padding:0; width:min(440px, 94vw); max-height:88vh; box-shadow:0 20px 60px #000c; }
+  #prefs::backdrop, #legal::backdrop { background:#000a; }
+  #prefs form, #legal form { padding:14px 16px; display:grid; gap:7px; }
+  #prefs .phead, #legal .phead { display:flex; justify-content:space-between; align-items:center; font-size:16px; }
   #prefs h4 { margin:8px 0 0; font-size:11px; letter-spacing:1px; text-transform:uppercase; color:#ff5c5c; }
   #prefs label { display:grid; grid-template-columns:150px 1fr; align-items:center; gap:8px; color:var(--dim); }
   #prefs label.chk { display:flex; color:var(--txt); }
@@ -285,16 +294,31 @@
     .lower aside { border-left:0; border-top:1px solid var(--line); }
     #decks > .maxb { top:4px; right:4px; }
   }
+
+  /* ===== Animations ===== */
+  @keyframes spin { to { transform:rotate(360deg); } }
+  @keyframes pop { from { opacity:0; transform:translateY(10px) scale(.96); } to { opacity:1; transform:none; } }
+  @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+  @keyframes glow { 50% { box-shadow:0 0 20px #ff3b3bcc; } }
+  @keyframes rise { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:none; } }
+  body:has(#play.on, .rnd.pp.on) header h1::before { animation:spin 1.8s linear infinite; }   /* le logo tourne comme un disque pendant la lecture */
+  #modal:not([hidden]) { animation:fadeIn .18s ease-out; } #modal:not([hidden]) .box { animation:pop .24s cubic-bezier(.2,.9,.3,1.2); }
+  dialog[open] { animation:pop .24s cubic-bezier(.2,.9,.3,1.2); }
+  button { transition:transform .08s, background-color .15s, border-color .15s, box-shadow .2s, color .15s; } button:active { transform:scale(.94); }
+  #play.on, .rnd.pp.on { animation:glow 1.6s ease-in-out infinite; } #liveBtn.on { animation:glow 2s ease-in-out infinite; }
+  .trchip, .fxcard { transition:transform .12s, box-shadow .2s, border-color .2s; } .fxcard:hover { transform:translateY(-1px); }
+  .dellist label { transition:background-color .15s, border-color .15s; }
+  @media (prefers-reduced-motion:reduce) { *, *::before { animation:none !important; transition:none !important; } }
 </style>
 </head>
 <body>
 <header>
-  <h1>Mix <span>Auto</span></h1>
+  <h1><span class="brand"><span class="bt">Mix <span>Auto</span></span><small>version bêta</small></span></h1>
   <span id="webBadge" hidden style="font-size:11px;color:var(--warn);border:1px solid var(--warn);border-radius:6px;padding:2px 6px" title="Tout tourne dans ce navigateur : tes morceaux ne sont envoyés nulle part et restent ici pour la prochaine fois. Différence avec le logiciel Mac / PC : le tempo est calé en changeant la vitesse (la tonalité bouge un peu) et la transposition ½ ton n'existe pas.">Démo · version web</span>
   <input type="text" id="projName" value="Mon mix" title="Nom du projet" style="width:140px">
   <select id="projOpen" title="Ouvrir un projet"><option value="">Ouvrir…</option></select>
   <button id="newProj">Nouveau</button>
-  <button id="saveBtn" title="Sauvegarder le mix (⌘S) : tu choisis où ranger le fichier. Sans sauvegarde, la console repart vide quand tu actualises.">💾 Sauvegarder</button>
+  <button id="saveBtn" title="Sauvegarder le mix (⌘S) : tu choisis où ranger le fichier. Sans sauvegarde, la console repart vide quand tu actualises."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h11l4 4v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a1 1 0 0 1 1-2z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M8 3v5h7V3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 11v6m-3-3 3 3 3-3" fill="none" stroke="#ff3b3b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> Sauvegarder</button>
   <input type="file" id="inProj" accept=".json,.mixauto,application/json" hidden>
   <div class="sep"></div>
   <button id="toStart" title="Retour au début">⏮</button>
@@ -321,13 +345,12 @@
   <div class="grow"></div>
   <button id="fillHour" title="Ajoute les morceaux de la liste affichée (tempo à ±6 %) jusqu'à 1 h de mix, les range et pose les transitions">⚡ Mix 1 h</button>
   <button id="autoMix" title="Range les morceaux du mix dans le meilleur ordre et pose des transitions">Ordre auto</button>
-  <button id="export" class="big">Exporter en MP3</button>
+  <button id="export" class="big">⇪ Exporter / Transférer</button>
   <button id="prefsBtn" title="Réglages : carte son, entrée micro, échantillonnage, options">⚙ Réglages</button>
 </header>
 
 <div class="app">
   <section id="decks">
-    <button class="maxb" data-max="decks" title="Pleine page (Échap pour revenir)">⛶ Pleine page</button>
     <canvas id="deckC" title="Clic : aller à cet endroit"></canvas>
     <div class="vsplit" id="splitR" title="Glisser vers le haut pour agrandir les platines A / B et la table · double-clic : taille d'origine"></div>
     <div class="deckrow" id="rack">
@@ -351,7 +374,6 @@
       <span class="note" id="libCount"></span>
       <button id="impFiles">+ Morceaux</button>
       <button id="impDir">+ Dossier</button>
-      <button class="maxb" data-max="libPane" title="Pleine page (Échap pour revenir)">⛶ Pleine page</button>
       <button id="delAll" title="Supprime de la bibliothèque tous les morceaux de la liste affichée">🗑 Tout supprimer</button>
     </div>
     <div class="libbody">
@@ -391,7 +413,6 @@
         <span class="params" id="params"></span>
         <div class="grow"></div>
         <span class="hint" id="hint"></span>
-        <button class="maxb" data-max="lower" title="Pleine page (Échap pour revenir)">⛶ Pleine page</button>
       </div>
     </div>
     <aside>
@@ -426,11 +447,38 @@
     <label>Notation des tonalités<select data-p="keys"><option value="camelot">Camelot (8A)</option><option value="open">Open Key (1m)</option><option value="classic">Classique (Am)</option></select></label>
     <label>Qualité MP3<select data-p="mp3"><option value="320">320 kbit/s</option><option value="256">256 kbit/s</option><option value="192">192 kbit/s</option></select></label>
     <p class="note" id="pNote"></p>
+    <p class="note"><button type="button" onclick="$('legal').showModal()">Mentions légales et licences</button> · Mix Auto version bêta · © 2026 Aziz Bena</p>
+  </form>
+</dialog>
+<dialog id="legal">
+  <form method="dialog" class="legal">
+    <div class="phead"><b>Mentions légales et licences</b><button value="close" title="Fermer">✕</button></div>
+    <h4>Éditeur</h4>
+    <p>Mix Auto est édité par Aziz Bena, à titre personnel (France).<br>Contact : <i>[adresse e-mail de contact à compléter]</i></p>
+    <h4>Hébergement (version web)</h4>
+    <p>GitHub Pages — GitHub, Inc., 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, États-Unis — github.com. L'app Mac fonctionne entièrement sur l'ordinateur, sans serveur distant.</p>
+    <h4>Version bêta, propriété et garantie</h4>
+    <p>© 2026 Aziz Bena. Tous droits réservés. Le logiciel, son code et son interface ne peuvent être copiés, revendus ou redistribués sans autorisation écrite. Mix Auto est une version bêta fournie « en l'état », sans garantie d'aucune sorte : l'auteur ne peut être tenu responsable d'une perte de données, d'un défaut d'export ou d'un usage non conforme. Pense à garder une copie de tes morceaux et de tes projets.</p>
+    <h4>Données personnelles (RGPD)</h4>
+    <p>Mix Auto ne collecte aucune donnée personnelle : pas de compte, pas de publicité, pas de mesure d'audience, pas de cookie de suivi. Tes morceaux, projets et réglages restent sur ton appareil (dossier Musique/Mix Auto sur Mac ; stockage local du navigateur sur la version web, effaçable à tout moment depuis les réglages du navigateur). La version web charge l'encodeur MP3 depuis cdnjs (Cloudflare), qui reçoit ton adresse IP comme pour toute page web ; l'hébergeur GitHub peut tenir des journaux techniques. Le bouton SoundCloud ouvre simplement soundcloud.com : l'envoi se fait par toi, sous les conditions de SoundCloud.</p>
+    <h4>Droits sur la musique</h4>
+    <p>Tu es seul responsable des morceaux que tu importes, mixes et publies. Publier ou diffuser un mix contenant des œuvres d'autrui demande les droits correspondants (auteurs, producteurs ; en France SACEM / SDRM pour les diffusions publiques ; règles propres à chaque plateforme, comme SoundCloud ou Mixcloud). Mix Auto ne fournit aucune musique.</p>
+    <h4>Logiciels tiers et licences</h4>
+    <ul>
+      <li><b>FFmpeg</b> — LGPL / GPL v2+ (version compilée avec Rubber Band, donc sous GPL). Sources : ffmpeg.org. Copie de la licence : gnu.org/licenses.</li>
+      <li><b>Rubber Band Library</b> (étirement du tempo) — GPL v2+. Sources : breakfastquay.com/rubberband.</li>
+      <li><b>LAME / lamejs</b> (MP3, version web) — LGPL v2+. github.com/zhuker/lamejs.</li>
+      <li><b>Python</b> — Python Software Foundation License.</li>
+      <li><b>NumPy</b> — licence BSD.</li>
+      <li><b>pywebview</b> — licence BSD.</li>
+      <li><b>PyInstaller</b> — GPL v2 avec exception de distribution (le programme empaqueté n'est pas concerné).</li>
+    </ul>
+    <p class="note">Les sources de ces composants libres sont disponibles aux adresses ci-dessus ; sur simple demande, l'éditeur fournit la version exacte utilisée.</p>
   </form>
 </dialog>
 <div id="modal" hidden><div class="box"><button id="mClose" title="Annuler / fermer">✕</button><b id="mTitle"></b><div class="bar"><div id="mBar"></div></div><div id="mText" class="note"></div><div class="row" id="mBtns"></div></div></div>
 
-<script src="web.js?v=3628d29b"></script>
+<script src="web.js?v=d50c2c25"></script>
 <script>
 // ============ Modèle ============
 // Tout est en TEMPS (beats) : début sur la timeline, position dans le morceau, automations.
@@ -443,10 +491,16 @@ const PARAMS = {
   filter: { label:'Filtre',  min:-1,  max:1, def:0, fmt:v => Math.abs(v) < .01 ? 'ouvert' : v < 0 ? `grave ${Math.round(-v * 100)}` : `aigu ${Math.round(v * 100)}` },
   reverb: { label:'Réverbe', min:0,   max:1, def:0, fmt:v => `${Math.round(v * 100)} %` },
   delay:  { label:'Écho',    min:0,   max:1, def:0, fmt:v => `${Math.round(v * 100)} %` },
+  noise:  { label:'Noise',   min:0,   max:1, def:0, fmt:v => `${Math.round(v * 100)} %` },   // bruit blanc qui monte (riser), filtré de plus en plus aigu
 };
 const PKEYS = Object.keys(PARAMS);
 const blankAuto = () => Object.fromEntries(PKEYS.map(k => [k, []]));
 const blankBase = () => Object.fromEntries(PKEYS.map(k => [k, PARAMS[k].def]));
+const fillAuto = c => { for (const k of PKEYS) { (c.auto ||= {})[k] ||= []; (c.base ||= {})[k] ??= PARAMS[k].def; } };   // anciens projets : réglages ajoutés depuis (Noise)
+// Prolongation : les points posés après la fin du morceau continuent l'automation (réverbe, écho, noise… qui ne s'arrêtent pas net)
+const tailOf = c => { let m = 0; for (const k of PKEYS) for (const p of c.auto[k] || []) m = Math.max(m, c.start + p.b - c.in - clipEnd(c)); return clamp(m, 0, 64); };
+const TAILVIS = 16;   // zone de prolongation affichée sur le morceau sélectionné (on y pose des points)
+const tailVis = c => Math.max(tailOf(c), c.id === U.sel && PARAMS[U.param] ? TAILVIS : 0);
 
 let S = newProject();
 function newProject() {
@@ -592,7 +646,7 @@ function pushUndo() {
 function undo() {
   const s = U.undo.pop(); if (!s) return;
   const o = JSON.parse(s);
-  S.clips = o.clips; S.tracks = o.tracks; S.tempo = o.tempo;
+  S.clips = o.clips; S.tracks = o.tracks; S.tempo = o.tempo; S.clips.forEach(fillAuto);
   changed();
 }
 
@@ -696,14 +750,14 @@ const toParam = {
 function scheduleClip(ac, bus, c, from, base, rate = ac === ctx ? U.rate : 1) {
   const b = BUF[c.id];
   if (!b?.buffer) return [];
-  const cs = secAt(c.start), ce = secAt(clipEnd(c));
-  if (ce <= from) return [];
+  const cs = secAt(c.start), ce = secAt(clipEnd(c)), te = secAt(clipEnd(c) + tailOf(c));
+  if (te <= from) return [];
   // rate : fader de tempo en direct ; b.k : fichier encore rendu à l'ancien tempo (en attendant le nouveau rendu)
   const k = b.k || 1, speed = rate * k;
   let t0 = Math.max(cs, from);
   let off = fileT(c, tlToTb(c, beatAt(t0)));
   if (off < 0) t0 -= off / k, off = 0;
-  const dur = Math.min(ce - t0, (b.buffer.duration - off) / k);
+  const dur = Math.min(te - t0, (b.buffer.duration - off) / k);
   if (dur <= 0.005) return [];
   const when = base + (t0 - from) / rate, at = s => when + (s - t0) / rate;   // secondes du mix -> horloge audio
   const src = ac.createBufferSource(); src.buffer = b.buffer; src.playbackRate.value = speed;
@@ -718,10 +772,17 @@ function scheduleClip(ac, bus, c, from, base, rate = ac === ctx ? U.rate : 1) {
   hp.type = 'highpass'; hp.Q.value = 0.9; lp.type = 'lowpass'; lp.Q.value = 0.9;
   const edge = ac.createGain();   // anti-clic aux bords du morceau
   const ag = ac.createGain(); ag.gain.value = autoGain(c);
-  (mt ? src.connect(mt) : src).connect(lo).connect(mi).connect(hi).connect(hp).connect(lp).connect(edge).connect(ag).connect(g).connect(bus.decks[deckOf(c)].lo);
-  g.connect(sr).connect(bus.reverb); g.connect(sd).connect(bus.delay);
-  if (t0 - cs < 0.008) { edge.gain.setValueAtTime(0, when); edge.gain.linearRampToValueAtTime(1, when + 0.008); }
-  if (ce - (t0 + dur) < 0.008) { edge.gain.setValueAtTime(1, at(t0 + dur) - 0.008); edge.gain.linearRampToValueAtTime(0, at(t0 + dur)); }
+  const sg = ac.createGain();   // envois (réverbe, écho) : continuent après la fin du morceau s'il y a une prolongation
+  (mt ? src.connect(mt) : src).connect(lo).connect(mi).connect(hi).connect(hp).connect(lp).connect(ag).connect(g);
+  g.connect(edge).connect(bus.decks[deckOf(c)].lo);   // le son du morceau (coupé à sa fin)
+  g.connect(sg); sg.connect(sr).connect(bus.reverb); sg.connect(sd).connect(bus.delay);
+  const de = Math.min(ce, t0 + dur);
+  if (t0 >= ce - 0.008) edge.gain.value = 0;   // lecture lancée dans la prolongation : seulement les effets
+  else {
+    if (t0 - cs < 0.008) { edge.gain.setValueAtTime(0, when); edge.gain.linearRampToValueAtTime(1, when + 0.008); }
+    if (ce - de < 0.008) { edge.gain.setValueAtTime(1, at(de) - 0.008); edge.gain.linearRampToValueAtTime(0, at(de)); }
+  }
+  if (t0 + dur - t0 > 0.02) { sg.gain.setValueAtTime(1, at(t0 + dur) - 0.01); sg.gain.linearRampToValueAtTime(0, at(t0 + dur)); }
   // courbes seulement là où l'automation bouge (entre deux points de valeurs différentes) : la relance reste instantanée
   const curve = (param, key, f) => {
     const pts = c.auto[key], sec = b => secAt(c.start + b - c.in);
@@ -744,11 +805,24 @@ function scheduleClip(ac, bus, c, from, base, rate = ac === ctx ? U.rate : 1) {
   const id = v => v;
   curve(g.gain, 'vol', toParam.vol); curve(lo.gain, 'low', id); curve(mi.gain, 'mid', id); curve(hi.gain, 'high', id);
   curve(lp.frequency, 'filter', toParam.lp); curve(hp.frequency, 'filter', toParam.hp); curve(sr.gain, 'reverb', id); curve(sd.gain, 'delay', id);
+  const out = [src];
+  if (c.auto.noise?.some(p => p.v > 0)) {   // Noise : bruit blanc en boucle, filtre qui monte avec le réglage, un peu de réverbe
+    const ns = ac.createBufferSource(), nf = ac.createBiquadFilter(), ng = ac.createGain(), nr = ac.createGain();
+    ns.buffer = noiseBuf(ac); ns.loop = true; nf.type = 'highpass'; nf.Q.value = 0.7; nr.gain.value = 0.35;
+    ns.connect(nf).connect(ng); ng.connect(bus.decks[deckOf(c)].lo); ng.connect(nr).connect(bus.reverb);
+    curve(ng.gain, 'noise', v => v * 0.28); curve(nf.frequency, 'noise', v => 150 * 60 ** v);
+    ns.start(when); ns.stop(at(t0 + dur)); out.push(ns);
+  }
   const lat = mt ? MT.lat : 0;   // le décaleur de tonalité retarde le son : on part un peu plus tôt
   src.start(when - lat, off); src.stop(at(t0 + dur));
-  return [src];
+  return out;
 }
 
+const NOISE = new WeakMap();
+function noiseBuf(ac) {   // 2 s de bruit blanc, même graine : identique à l'écoute et à l'export
+  if (!NOISE.has(ac)) { const b = new AudioBuffer({ numberOfChannels:2, length:ac.sampleRate * 2, sampleRate:ac.sampleRate }), r = rng(11); for (let ch = 0; ch < 2; ch++) { const d = b.getChannelData(ch); for (let i = 0; i < d.length; i++) d[i] = r() * 2 - 1; } NOISE.set(ac, b); }
+  return NOISE.get(ac);
+}
 function autoGain(c) {   // auto-gain : chaque morceau ramené au volume moyen du mix (±9 dB)
   if (!PREF.autogain) return 1;
   const v = Object.values(S.tracks).map(t => t.rms_db).filter(isFinite), t = S.tracks[c.trackId];
@@ -1281,8 +1355,8 @@ function bassSwap(a, b, o0, o1) {   // un seul morceau dans les basses à la foi
 }
 // Transitions posées par les cartes : gardées sur le morceau qui sort (a.tr), affichées et nommées sur sa piste,
 // sélectionnables (clic sur l'étiquette) pour les écouter, les remplacer ou les supprimer.
-const TRK = { fade:['Fondu', '#f2f2f7'], filter:['Filtre', '#22d3a6'], echo:['Écho', '#ffb547'], reverb:['Réverbe', '#3aa0ff'], cut:['Coupe', '#ff5c7a'] };
-const TRP = { fade:['vol', 'high', 'low'], filter:['filter', 'low'], echo:['delay', 'vol'], reverb:['reverb', 'filter'], cut:[] };   // réglages écrits par chaque carte
+const TRK = { fade:['Fondu', '#f2f2f7'], filter:['Filtre', '#22d3a6'], echo:['Écho', '#ffb547'], reverb:['Réverbe', '#3aa0ff'], dly:['Délai', '#c084fc'], noise:['Noise', '#a3e635'], sweep:['Sweep', '#f472b6'], cut:['Coupe', '#ff5c7a'] };
+const TRP = { fade:['vol', 'high', 'low'], filter:['filter', 'low'], echo:['delay', 'vol'], reverb:['reverb', 'filter'], dly:['delay', 'vol'], noise:['noise'], sweep:['filter', 'reverb', 'low'], cut:[] };   // réglages écrits par chaque carte
 const trZone = (a, r) => [a.start + r.t0 - a.in, a.start + r.t1 - a.in];   // en temps du mix
 function removeTr(a, i) {   // efface les points que la carte a écrits dans sa zone (sur les deux morceaux), remet la longueur après une coupe
   const r = a.tr[i], [m0, m1] = trZone(a, r), b = S.clips.find(o => o.id === r.partner);
@@ -1293,7 +1367,8 @@ function removeTr(a, i) {   // efface les points que la carte a écrits dans sa 
 function applyFx(a, kind, b = nextOf(a)) {
   const e = clipEnd(a);
   const ov = b && b.start < e ? [b.start, e] : null;     // zone où les deux morceaux jouent ensemble
-  const [z0, z1] = kind === 'echo' ? [e - 1.02, e] : kind === 'reverb' ? [e - 4, e] : kind === 'cut' ? [b ? b.start : e, e] : ov || [e - 16, e];
+  const [z0, z1] = kind === 'echo' ? [e - 1.02, e] : kind === 'reverb' ? [e - 4, e + 16] : kind === 'dly' ? [e - 8, e + 8] : kind === 'noise' ? [e - 32, e + 0.25]
+    : kind === 'sweep' ? [e - 32, e + 8] : kind === 'cut' ? [b ? b.start : e, e] : ov || [e - 16, e];
   a.tr = (a.tr || []).filter(r => r.kind !== kind);   // une seule transition de chaque sorte par morceau
   a.tr.push({ kind, t0:tlToTb(a, z0), t1:tlToTb(a, z1), partner:b?.id ?? null, len:a.len });
   setPts.kind = kind; try { fxPoints(a, kind, b, e, ov); } finally { setPts.kind = null; }
@@ -1321,9 +1396,21 @@ function fxPoints(a, kind, b, e, ov) {
     setPts(a, 'delay', [[e - 1.02, 0], [e - 1, 0.9]]);
     setPts(a, 'vol', [[e - 1, 0]]);
   }
-  if (kind === 'reverb') {    // la dernière mesure monte dans la réverbe, filtre qui s'ouvre vers l'aigu
-    setPts(a, 'reverb', [[e - 4, 0], [e, 1]]);
+  if (kind === 'reverb') {    // la dernière mesure monte dans la réverbe, qui continue 2 mesures après la fin puis s'éteint ; filtre qui s'ouvre vers l'aigu
+    setPts(a, 'reverb', [[e - 4, 0], [e, 1], [e + 8, 1], [e + 16, 0]]);
     setPts(a, 'filter', [[e - 4, 0], [e, 0.35]]);
+  }
+  if (kind === 'dly') {       // délai : les 2 dernières mesures partent de plus en plus dans l'écho, qui se prolonge 2 mesures après la fin
+    setPts(a, 'delay', [[e - 8, 0], [e, 0.75], [e + 8, 0]]);
+    setPts(a, 'vol', [[e - 4, 0], [e, -18]]);
+  }
+  if (kind === 'noise') {     // riser : bruit blanc qui monte sur 8 mesures et s'arrête net sur la fin
+    setPts(a, 'noise', [[e - 32, 0], [e, 0.85], [e + 0.25, 0]]);
+  }
+  if (kind === 'sweep') {     // sweep : le filtre passe-haut monte sur 8 mesures (les basses disparaissent), un peu de réverbe qui traîne après
+    setPts(a, 'filter', [[e - 32, 0], [e, 0.85]]);
+    setPts(a, 'low', [[e - 16, 0], [e, -26]]);
+    setPts(a, 'reverb', [[e - 8, 0], [e, 0.5], [e + 8, 0]]);
   }
   if (kind === 'cut' && b) a.len = Math.max(1, b.start - a.start);
 }
@@ -1431,8 +1518,14 @@ const TRR = [];   // étiquettes de transition dessinées (pour le clic)
 const trSel = c => U.tr?.id === c.id ? (c.tr || []).findIndex(r => r.kind === U.tr.kind) : -1;
 function drawClip(g, c, i, W) {
   const t = S.tracks[c.trackId], b = BUF[c.id];
-  const x0 = (c.start - U.scrollX) * U.pxb, x1 = (clipEnd(c) - U.scrollX) * U.pxb;
-  if (x1 < 0 || x0 > W) return;
+  const x0 = (c.start - U.scrollX) * U.pxb, x1 = (clipEnd(c) - U.scrollX) * U.pxb, xt = x1 + tailVis(c) * U.pxb;
+  if (xt < 0 || x0 > W) return;
+  if (xt > x1 + 1) {   // prolongation : les effets continuent après la fin du morceau
+    const y = i * ROW + 5 + TITLE, h = ROW - 10 - TITLE;
+    g.fillStyle = '#ff3b3b0d'; g.fillRect(x1, y, xt - x1, h);
+    g.strokeStyle = '#ff3b3b55'; g.setLineDash([3, 3]); g.strokeRect(x1 + 0.5, y + 0.5, xt - x1 - 1, h - 1); g.setLineDash([]);
+    if (xt - x1 > 70) { g.fillStyle = '#ff3b3b99'; g.font = '600 9px -apple-system, sans-serif'; g.fillText('PROLONGATION', x1 + 5, y + 11); }
+  }
   const y = i * ROW + 5, h = ROW - 10, h2 = hue(t.id), sel = c.id === U.sel;
   g.fillStyle = `hsla(${h2},60%,50%,.13)`; g.fillRect(x0, y, x1 - x0, h);
   g.fillStyle = `hsla(${h2},60%,50%,.38)`; g.fillRect(x0, y, x1 - x0, TITLE);
@@ -1483,7 +1576,7 @@ function drawClip(g, c, i, W) {
     g.strokeStyle = '#ff3b3b'; g.lineWidth = c.auto[U.param].length ? 2 : 1.2; g.setLineDash(c.auto[U.param].length ? [] : [4, 4]);   // ligne rouge comme Ableton
     g.beginPath();
     const xs = Math.max(0, Math.floor(x0));
-    for (let x = xs; x <= Math.min(W, x1); x += 2) {
+    for (let x = xs; x <= Math.min(W, xt); x += 2) {
       const v = autoValue(c, U.param, tlToTb(c, U.scrollX + x / U.pxb));
       x === xs ? g.moveTo(x, vy(v)) : g.lineTo(x, vy(v));
     }
@@ -1491,7 +1584,7 @@ function drawClip(g, c, i, W) {
     g.fillStyle = '#ff3b3b'; g.strokeStyle = '#fff'; g.lineWidth = 1.2;
     for (const p of c.auto[U.param]) {
       const px = (c.start + p.b - c.in - U.scrollX) * U.pxb;
-      if (px >= x0 - 1 && px <= x1 + 1) { g.beginPath(); g.arc(px, vy(p.v), 4, 0, 7); g.fill(); g.stroke(); }
+      if (px >= x0 - 1 && px <= xt + 1) { g.beginPath(); g.arc(px, vy(p.v), 4, 0, 7); g.fill(); g.stroke(); }
     }
   } else {   // rappel discret des effets posés
     const tags = ['reverb', 'delay', 'filter'].filter(k => c.auto[k].length).map(k => PARAMS[k].label);
@@ -1506,12 +1599,12 @@ const rowsC = $('rowsC');
 function hit(e) {
   const r = rowsC.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
   const LN = lanes(), i = Math.floor(y / ROW), beat = U.scrollX + x / U.pxb;
-  const here = S.clips.filter(o => LN.of(o) === i && beat >= o.start - 4 / U.pxb && beat <= clipEnd(o) + 4 / U.pxb);
+  const here = S.clips.filter(o => LN.of(o) === i && beat >= o.start - 4 / U.pxb && beat <= clipEnd(o) + tailVis(o) + 4 / U.pxb);
   const c = here.find(o => o.id === U.sel) || here.at(-1);
   if (!c) return { x, y, beat };
-  const x0 = (c.start - U.scrollX) * U.pxb, x1 = (clipEnd(c) - U.scrollX) * U.pxb, cy = i * ROW + 5;
-  if (x < x0 - 4 || x > x1 + 4 || y < cy || y > cy + ROW - 10) return { x, y, beat };
-  const zone = x - x0 < 7 ? 'left' : x1 - x < 7 ? 'right' : y - cy < TITLE ? 'title' : 'body';
+  const x0 = (c.start - U.scrollX) * U.pxb, x1 = (clipEnd(c) - U.scrollX) * U.pxb, xt = x1 + tailVis(c) * U.pxb, cy = i * ROW + 5;
+  if (x < x0 - 4 || x > xt + 4 || y < cy || y > cy + ROW - 10) return { x, y, beat };
+  const zone = x > x1 + 6 ? 'tail' : x - x0 < 7 ? 'left' : Math.abs(x1 - x) < 7 ? 'right' : y - cy < TITLE ? 'title' : 'body';
   return { x, y, beat, c, i, zone, by:cy + TITLE, bh:ROW - 10 - TITLE };
 }
 const snapB = (b, e, s = U.snap) => e.shiftKey || !s ? b : Math.round(b / s) * s;
@@ -1542,14 +1635,15 @@ rowsC.addEventListener('mousedown', e => {
   if (U.sel !== h.c.id) { U.sel = h.c.id; renderInsp(); renderLib(); }
   const c = h.c, o = { start:c.start, in:c.in, len:c.len };
   if (e.button === 2) return;   // clic droit : géré par contextmenu (supprimer un point)
-  if (pointAt(h) >= 0) h.zone = 'body';   // un point posé au bord du morceau reste attrapable
+  if (pointAt(h) >= 0) h.zone = h.zone === 'tail' ? 'tail' : 'body';   // un point posé au bord du morceau reste attrapable
+  if (h.zone === 'tail' && !PARAMS[U.param]) return;   // prolongation : seulement des points
   let move;
   // bords : on rogne temps par temps (Maj ou aimant « libre » : au choix) ; le début du fichier est arrondi au temps entier
   // suivant, sinon tout le morceau glisse d'une fraction de temps et ses kicks tombent entre les traits
   const edge = (b, m) => snapB(b, m, U.snap ? 1 : 0);
   if (h.zone === 'left') move = m => { const s = clamp(edge(o.start + m.beat - h.beat, m), o.start - (o.in - Math.ceil(trackBeats(S.tracks[c.trackId], ct(c))[0] - 1e-6)), o.start + o.len - 1); c.in = o.in + s - o.start; c.len = o.len - (s - o.start); c.start = s; };
   else if (h.zone === 'right') move = m => { c.len = clamp(edge(o.start + o.len + m.beat - h.beat, m) - c.start, 1, trackBeats(S.tracks[c.trackId], ct(c))[1] - c.in); };
-  else if (h.zone === 'title' || !PARAMS[U.param] || (pointAt(h) < 0 && !onLine(h))) {   // hors de la ligne rouge : on déplace le morceau ; les suivants bougent avec lui (Alt : lui seul)
+  else if (h.zone !== 'tail' && (h.zone === 'title' || !PARAMS[U.param] || (pointAt(h) < 0 && !onLine(h)))) {   // hors de la ligne rouge : on déplace le morceau ; les suivants bougent avec lui (Alt : lui seul)
     const next = following(c);
     move = m => { c.start = Math.max(0, snapB(o.start + m.beat - h.beat, m)); shiftAll(next, m.altKey ? 0 : c.start - o.start); };
   }
@@ -1806,16 +1900,20 @@ function id3Cover(b) {   // image APIC (ID3 v2.3 / 2.4) ou PIC (v2.2) ; ponytail
   return null;
 }
 function overview(el, b, d, W, H) {   // vue d'ensemble d'un morceau, dessinée une fois (grise et en couleur) puis recopiée
-  const r = devicePixelRatio || 1, key = [b.buffer, W, H, r].join();
+  const r = devicePixelRatio || 1, key = [b.buffer, W, H, r, !!b.bands].join();
   if (el.ov?.key === key) return el.ov;
-  const mk = col => {
+  const mk = cols => {   // graves bleu, médiums orange, aigus blanc (comme en haut) ; partie jouée en couleurs sombres
     const cv = document.createElement('canvas'); cv.width = W * r; cv.height = H * r;
-    const g = cv.getContext('2d'); g.setTransform(r, 0, 0, r, 0, 0); g.fillStyle = col;
-    const per = b.peaks.length / W, p = new Path2D();
-    for (let x = 0; x < W; x++) { let m = 0; for (let k = Math.floor(x * per); k < Math.floor((x + 1) * per); k++) if (b.peaks[k] > m) m = b.peaks[k]; const hh = Math.max(0.25, Math.min(1, m) * (H / 2 - 1)); p.rect(x, H / 2 - hh, 1, hh * 2); }
-    g.fill(p); return cv;
+    const g = cv.getContext('2d'); g.setTransform(r, 0, 0, r, 0, 0);
+    const B = b.bands || { lo:b.peaks, mi:b.peaks, hi:b.peaks }, n = B.lo.length, per = n / W, P = [new Path2D(), new Path2D(), new Path2D()];
+    for (let x = 0; x < W; x++) {
+      let l = 0, m = 0, h = 0;
+      for (let k = Math.floor(x * per); k < Math.max(Math.floor(x * per) + 1, Math.floor((x + 1) * per)); k++) { if (B.lo[k] > l) l = B.lo[k]; if (B.mi[k] > m) m = B.mi[k]; if (B.hi[k] > h) h = B.hi[k]; }
+      [l, m, h].forEach((v, i) => { const hh = Math.max(0.25, Math.min(1, v * 1.2) * (H / 2 - 1)); P[i].rect(x, H / 2 - hh, 1, hh * 2); });
+    }
+    cols.forEach((c, i) => { g.fillStyle = c; g.fill(P[i]); }); return cv;
   };
-  return el.ov = { key, grey:mk('#5a5a70'), col:mk(DECKCOL[d]) };
+  return el.ov = { key, col:mk(['#2a6cff', '#ffae3d', '#f4f4f4']), grey:mk(['#1b3f80', '#7a5523', '#777']) };
 }
 function deckInfo(d, pb, LN) {   // morceau en lecture sur la voie, sinon le prochain qui y arrive
   const el = $('deck' + d), P = LV.d[d];
@@ -1843,8 +1941,8 @@ function deckInfo(d, pb, LN) {   // morceau en lecture sur la voie, sinon le pro
   if (!b?.peaks || !dur) return;
   if (!LV.on) { const u0 = fileT(c, c.in) / dur * W, u1 = fileT(c, c.in + c.len) / dur * W; g.fillStyle = '#ffffff10'; g.fillRect(u0, 0, u1 - u0, H); }   // partie utilisée dans le mix
   const ov = overview(el, b, d, W, H), px = pos / dur * W;
-  g.drawImage(ov.grey, 0, 0, W, H);
-  g.save(); g.beginPath(); g.rect(0, 0, px, H); g.clip(); g.drawImage(ov.col, 0, 0, W, H); g.restore();   // partie jouée en couleur
+  g.drawImage(ov.col, 0, 0, W, H);
+  g.save(); g.beginPath(); g.rect(0, 0, px, H); g.clip(); g.drawImage(ov.grey, 0, 0, W, H); g.restore();   // partie jouée en sombre, comme en haut
   if (LV.on) { g.fillStyle = '#ffb547'; g.fillRect(P.cue / dur * W, 0, 1.5, H); }
   g.fillStyle = '#fff'; g.fillRect(px, 0, 2, H);
 }
@@ -1887,7 +1985,7 @@ $('mixer').innerHTML = `<div class="chan" style="--dc:${DECKCOL[0]}">${chanHTML(
 function mixUI() {
   document.querySelectorAll('#mixer .knob').forEach(el => {
     const d = +el.dataset.d, k = el.dataset.k, v = MIX.d[d][k];
-    el.style.setProperty('--a', knobU(k, v, d) * 135); el.classList.toggle('mod', Math.abs(v - neutral()[k]) > 1e-3);
+    el.querySelector('i').style.transform = `rotate(${knobU(k, v, d) * 135}deg)`;   // directement : le moteur de Safari (app Mac) ne suivait pas la variable CSS el.classList.toggle('mod', Math.abs(v - neutral()[k]) > 1e-3);
     el.title = `${PARAMS[KNOB[k][1]].label} ${'AB'[d]} : ${PARAMS[KNOB[k][1]].fmt(v)} (tourner : glisser haut / bas ou gauche / droite · simple clic : zéro)`;
   });
   document.querySelectorAll('#mixer .fader').forEach(el => el.value = MIX.d[+el.dataset.d].fader);
@@ -2066,7 +2164,7 @@ addEventListener('keydown', e => {
   else if ((e.metaKey || e.ctrlKey) && e.key === 'z') { e.preventDefault(); undo(); }
   else if ((e.key === 'Delete' || e.key === 'Backspace') && selClip() && trSel(selClip()) >= 0) { pushUndo(); removeTr(selClip(), trSel(selClip())); U.tr = null; changed(); }   // Suppr : la transition sélectionnée
   else if ((e.key === 'Delete' || e.key === 'Backspace') && selClip()) { pushUndo(); S.clips = S.clips.filter(c => c.id !== U.sel); U.sel = null; changed(); }
-  else if (e.key >= '0' && e.key <= '7') { U.param = ['none', ...PKEYS][+e.key]; paramsUI(); draw(); }
+  else if (e.key >= '0' && e.key <= '8') { U.param = ['none', ...PKEYS][+e.key]; paramsUI(); draw(); }
   else if (e.key === 'Home') $('toStart').click();
   else if ((e.key === 'q' || e.key === 'Q') && LV.on) lvHome(LV.last ?? 0);   // Mix Live : Q = la dernière platine touchée revient au début
   else if (e.key === 'f' || e.key === 'F') zoomFit();
@@ -2143,7 +2241,10 @@ function renderInsp() {
         <button class="fxcard" data-fx="fade" style="--k:${TRK.fade[1]}" title="volume croisé + échange des basses"><b>Fondu</b><span>volume croisé + échange des basses</span></button>
         <button class="fxcard" data-fx="filter" style="--k:${TRK.filter[1]}" title="l'un se ferme, l'autre s'ouvre"><b>Filtre</b><span>l'un se ferme, l'autre s'ouvre</span></button>
         <button class="fxcard" data-fx="echo" style="--k:${TRK.echo[1]}" title="le dernier temps répète"><b>Écho</b><span>le dernier temps répète</span></button>
-        <button class="fxcard" data-fx="reverb" style="--k:${TRK.reverb[1]}" title="la dernière mesure s'envole"><b>Réverbe</b><span>la dernière mesure s'envole</span></button>
+        <button class="fxcard" data-fx="dly" style="--k:${TRK.dly[1]}" title="les 2 dernières mesures partent dans un long écho qui continue après la fin"><b>Délai</b><span>long écho qui continue</span></button>
+        <button class="fxcard" data-fx="noise" style="--k:${TRK.noise[1]}" title="bruit blanc qui monte sur 8 mesures (riser) et coupe net sur la fin"><b>Noise</b><span>riser de bruit blanc</span></button>
+        <button class="fxcard" data-fx="sweep" style="--k:${TRK.sweep[1]}" title="le filtre passe-haut monte sur 8 mesures, les basses s'en vont"><b>Sweep</b><span>filtre qui monte</span></button>
+        <button class="fxcard" data-fx="reverb" style="--k:${TRK.reverb[1]}" title="la dernière mesure s'envole dans la réverbe, qui continue 4 mesures après la fin"><b>Réverbe</b><span>la dernière mesure s'envole</span></button>
         ${n ? '<button class="fxcard" data-fx="cut" style="--k:#ff5c7a" title="coupe nette pile à l\'entrée"><b>Coupe</b><span>coupe nette pile à l\'entrée</span></button>' : ''}
         <button class="fxcard" data-fx="clear" title="enlève les effets de ce morceau"><b>Effacer</b><span>enlève les effets de ce morceau</span></button>
       </div>
@@ -2179,10 +2280,10 @@ function renderInsp() {
 }
 function trCard(c) {   // transitions du morceau (puces) et carte de celle qui est sélectionnée
   const list = c.tr || []; if (!list.length) return '';
-  const i = trSel(c), chips = `<div class="trchips">${list.map(r => `<button class="trchip ${i >= 0 && list[i] === r ? 'on' : ''}" data-trsel="${r.kind}" style="--k:${TRK[r.kind][1]}">${TRK[r.kind][0]}</button>`).join('')}</div>`;
-  if (i < 0) return `<h2>Transitions posées</h2>${chips}<div class="note">Clique une transition (ici ou sur la piste) pour la gérer.</div>`;
+  const i = trSel(c), chips = `<div class="trchips">${list.map(r => `<button class="trchip ${i >= 0 && list[i] === r ? 'on' : ''}" data-trsel="${r.kind}" style="--k:${TRK[r.kind][1]}">${TRK[r.kind][0]}<span class="trx" data-trx="${r.kind}" title="Supprimer cette automation">✕</span></button>`).join('')}</div>`;
+  if (i < 0) return `<h2>Automations posées</h2>${chips}`;
   const r = list[i], [m0, m1] = trZone(c, r), b = S.clips.find(o => o.id === r.partner), d = m1 - m0;
-  return `<h2>Transitions posées</h2>${chips}
+  return `<h2>Automations posées</h2>${chips}
     <div class="trcard" style="--k:${TRK[r.kind][1]}">
       <div class="trhead"><span class="trtag">${TRK[r.kind][0]}</span><span class="sub">mesure ${Math.floor(m0 / 4) + 1} → ${Math.floor(m1 / 4) + 1} · ${d < 2 ? 'dernier temps' : d % 4 ? `${Math.round(d)} temps` : `${d / 4} mesure${d > 4 ? 's' : ''}`}</span></div>
       <div class="note">${esc(S.tracks[c.trackId].name)}${b ? ` → ${esc(S.tracks[b.trackId].name)}` : ' → fin du mix'}</div>
@@ -2192,6 +2293,8 @@ function trCard(c) {   // transitions du morceau (puces) et carte de celle qui e
 }
 $('insp').addEventListener('click', e => {
   const btn = e.target.closest('button'), c = selClip(); if (!c || !btn) return;
+  const x = e.target.closest('[data-trx]');   // ✕ d'une automation posée
+  if (x) { pushUndo(); removeTr(c, c.tr.findIndex(r => r.kind === x.dataset.trx)); U.tr = null; changed(); return; }
   const d = btn.dataset, t = S.tracks[c.trackId];
   if (d.bpm) { pushUndo(); t.bpm = Math.round(t.bpm * +d.bpm * 1000) / 1000; t.nudge = t.man = 0; }
   else if (d.nudge || d.in) {   // décale ce morceau et les suivants (Alt : ce morceau seul), pour qu'ils restent calés entre eux
@@ -2264,14 +2367,14 @@ $('inProj').onchange = async e => {
 function changed() { loadAll(); renderInsp(); renderLib(); draw(); restartIfPlaying(); save(); }
 async function listProjects() {
   const list = await (await fetch('/api/projects')).json();
-  $('projOpen').innerHTML = '<option value="">Ouvrir…</option><option value="__file">📂 Depuis un fichier…</option>' + list.map(n => `<option>${esc(n)}</option>`).join('');
+  $('projOpen').innerHTML = '<option value="">Ouvrir…</option><option value="__file">📂 Depuis un fichier…</option>' + list.map(n => `<option>${esc(n)}</option>`).join('') + (list.length ? '<option value="__del">🗑 Supprimer des projets…</option>' : '');
 }
-$('projOpen').onchange = async e => { if (!e.target.value) return; if (e.target.value === '__file') { e.target.value = ''; return $('inProj').click(); } await openProject(e.target.value); e.target.value = ''; };
+$('projOpen').onchange = async e => { if (!e.target.value) return; if (e.target.value === '__file') { e.target.value = ''; return $('inProj').click(); } if (e.target.value === '__del') { e.target.value = ''; return delProjects(); } await openProject(e.target.value); e.target.value = ''; };
 async function openProject(name) {
   stop(); const p = await (await fetch(`/api/project?name=${encodeURIComponent(name)}`)).json();
   nextId = p.nextId || 1; delete p.nextId; S = { ...newProject(), ...p };
   let end = 0;   // un morceau sans position valide est replacé à la suite du précédent
-  for (const c of S.clips) { if (!Number.isFinite(c.start)) c.start = Math.max(0, end - 32); if (!Number.isFinite(c.len)) c.len = 64; end = Math.max(end, clipEnd(c)); }
+  for (const c of S.clips) { fillAuto(c); if (!Number.isFinite(c.start)) c.start = Math.max(0, end - 32); if (!Number.isFinite(c.len)) c.len = 64; end = Math.max(end, clipEnd(c)); }
   U.sel = null; U.undo = []; U.pos = 0; U.scrollX = -2;
   $('projName').value = S.name;
   for (const t of Object.values(S.tracks)) {   // la bibliothèque a été ré-analysée : on reprend BPM et premier temps
@@ -2305,13 +2408,30 @@ $('newProj').onclick = () => {
 };
 
 // ============ Export ============
-async function exportMix() {
+const FMTS = { mp3:['MP3', 'audio/mpeg'], wav:['WAV', 'audio/wav'], aiff:['AIFF', 'audio/aiff'], flac:['FLAC', 'audio/flac'], m4a:['M4A', 'audio/mp4'] };
+function exportMix() {   // 1. format  2. emplacement  3. calcul + encodage
   if (!S.clips.length) return alert('Le mix est vide.');
-  commitRate();
   if (S.clips.some(c => !BUF[c.id]?.buffer || BUF[c.id].loading)) return alert('Attends que tous les morceaux soient prêts (« Calage au tempo du mix… »).');
-  stop();
+  const fm = Object.keys(FMTS).filter(f => !window.WEB || !['flac', 'm4a'].includes(f));   // FLAC / M4A : encodés par ffmpeg, dans l'app Mac
+  modal('Exporter le mix', `Choisis le format, puis où l'enregistrer.<div class="fmtnote">MP3 ${PREF.mp3} kbit/s : léger, pour partager · WAV / AIFF : qualité CD sans perte${window.WEB ? '' : ' · FLAC : sans perte et compressé · M4A : AAC 256 kbit/s (Apple)'}${window.WEB ? '<br>FLAC et M4A : dans l\'app Mac.' : ''}</div>`,
+    [...fm.map(f => [FMTS[f][0], () => pickDest(f)]), ['Annuler', closeModal]]);
+  $('mBar').parentElement.hidden = true; $('mBtns').classList.add('fmts');
+}
+async function pickDest(fmt) {
+  const name = `${S.name} - ${new Date().toLocaleString('fr-FR').replace(/[/:]/g, '-').replace(/,/g, '')}`;
+  let dest = '', handle = null;
+  if (window.WEB) {
+    if (window.showSaveFilePicker) try { handle = await showSaveFilePicker({ suggestedName:`${name}.${fmt}`, types:[{ description:FMTS[fmt][0], accept:{ [FMTS[fmt][1]]:[`.${fmt}`] } }] }); } catch (e) { if (e.name === 'AbortError') return; }
+  } else {
+    const r = await (await fetch(`/api/pickpath?name=${encodeURIComponent(`${name}.${fmt}`)}`)).json();
+    if (r.cancel) return; dest = r.path || '';
+  }
+  renderMix(fmt, name, dest, handle);
+}
+async function renderMix(fmt, name, dest, handle) {
+  commitRate(); stop();
   const start = secAt(Math.min(...S.clips.map(c => c.start)));
-  const total = secAt(Math.max(...S.clips.map(clipEnd))) + 6;
+  const total = secAt(Math.max(...S.clips.map(c => clipEnd(c) + tailOf(c)))) + 6;   // les prolongations d'effets comprises
   const CH = 60, PRE = 12, SR = 44100, id = Math.random().toString(36).slice(2);
   modal('Export du mix', 'Calcul de l\'audio avec tous les effets…');
   try {
@@ -2329,12 +2449,17 @@ async function exportMix() {
       const r = await fetch(`/api/export/chunk?id=${id}&i=${i}`, { method:'POST', body:pcm.buffer });
       if (!r.ok) throw new Error('envoi');
     }
-    modalProgress(1, 'Encodage MP3…');
+    modalProgress(1, `Encodage ${FMTS[fmt][0]}…`);
     const list = sorted().map(c => `${fmtTime(secAt(c.start) - start)}  ${S.tracks[c.trackId].name}  (${S.tracks[c.trackId].key} / ${S.tracks[c.trackId].camelot})`).join('\n');
-    const name = `${S.name} - ${new Date().toLocaleString('fr-FR').replace(/[/:]/g, '-')}`;
-    const r = await fetch(`/api/export/finish?id=${id}&name=${encodeURIComponent(name)}&kbps=${PREF.mp3}`, { method:'POST', body:`${S.name} · ${+S.tempo.toFixed(2)} BPM · ${fmtTime(total - start)}\n\n${list}\n` });
-    const { mp3, error } = await r.json(); if (error) throw new Error(error);
-    modal('Mix exporté ✔', `${esc(mp3)} — ${window.WEB ? 'téléchargé (dossier Téléchargements).' : 'rangé dans le dossier « mixes » de l\'app.'}`, [[window.WEB ? 'Télécharger encore' : 'Montrer le fichier', () => fetch('/api/reveal?name=' + encodeURIComponent(mp3))], ['Fermer', closeModal]]);
+    const tl = `${S.name} · ${+S.tempo.toFixed(2)} BPM · ${fmtTime(total - start)}\n\n${list}\n`;
+    window.webSaveHandle = handle;   // web : le fichier choisi (sinon téléchargement)
+    const r = await fetch(`/api/export/finish?id=${id}&name=${encodeURIComponent(name)}&kbps=${PREF.mp3}&fmt=${fmt}&dest=${encodeURIComponent(dest)}`, { method:'POST', body:tl });
+    const { path, mp3, error } = await r.json(); if (error) throw new Error(error);
+    const file = path || mp3, where = window.WEB ? (handle ? 'enregistré.' : 'téléchargé (dossier Téléchargements).') : `enregistré dans ${esc(path.replace(/\/[^/]*$/, ''))}`;
+    modal('Mix exporté ✔', `<b>${esc(file.split('/').pop())}</b><br>${where}<div class="fmtnote">SoundCloud : la page d'envoi s'ouvre, la tracklist est copiée (à coller dans la description), il ne reste qu'à glisser le fichier.</div>`, [
+      ['☁ Envoyer sur SoundCloud', () => { navigator.clipboard?.writeText(tl).catch(() => {}); window.WEB ? open('https://soundcloud.com/upload', '_blank') : fetch('/api/open?url=' + encodeURIComponent('https://soundcloud.com/upload')); if (!window.WEB) fetch('/api/reveal?path=' + encodeURIComponent(path)); }],
+      [window.WEB ? 'Télécharger encore' : 'Montrer le fichier', () => fetch(`/api/reveal?name=${encodeURIComponent(mp3 || '')}&path=${encodeURIComponent(path || '')}`)],
+      ['Fermer', closeModal]]);
     modalProgress(1);
   } catch (e) { modal('Export impossible', esc(e.message), [['Fermer', closeModal]]); }
 }
@@ -2342,6 +2467,7 @@ $('export').onclick = exportMix;
 
 function modal(title, text, btns = []) {
   window.modalCancel = false; $('modal').hidden = false; $('mTitle').textContent = title; $('mText').innerHTML = text;
+  $('mBar').parentElement.hidden = false; $('mBtns').classList.remove('start', 'fmts');   // réglages par défaut (l'accueil les change)
   $('mBtns').innerHTML = ''; btns.forEach(([l, f]) => { const b = document.createElement('button'); b.textContent = l; b.onclick = f; $('mBtns').append(b); });
   modalProgress(0);
 }
@@ -2355,20 +2481,34 @@ paramsUI(); renderInsp(); draw();
 (async () => {
   await Promise.all([refreshLib(), listProjects()]);
   let last = null; try { last = localStorage.getItem('mixauto-saved'); } catch {}   // seulement un mix sauvegardé avec 💾
-  const names = [...$('projOpen').options].map(o => o.value).filter(v => v && v !== '__file');   // du plus récent au plus ancien
+  const names = [...$('projOpen').options].map(o => o.value).filter(v => v && !v.startsWith('__'));   // du plus récent au plus ancien
   if (window.WEB) { try { if (!localStorage.getItem('mixauto-demo')) return; } catch {} }   // première visite web : la démo se prépare
   startChoice(names, last);
 })();
+async function delProjects() {   // liste des projets à cocher, confirmation, puis à la corbeille (Mac) / effacés du navigateur (web)
+  const names = await (await fetch('/api/projects')).json();
+  modal('Supprimer des projets', names.length ? `<div class="dellist">${names.map(n => `<label><input type="checkbox" value="${esc(n)}"> ${esc(n)}</label>`).join('')}</div>` : 'Aucun projet.', [
+    ['Supprimer la sélection', async () => {
+      const sel = [...document.querySelectorAll('.dellist input:checked')].map(i => i.value); if (!sel.length) return;
+      if (!confirm(`Supprimer ${sel.length} projet${sel.length > 1 ? 's' : ''} ?\n${sel.join('\n')}\n\n${window.WEB ? 'Ils seront effacés de ce navigateur (définitif).' : 'Ils iront dans la Corbeille du Mac.'}`)) return;
+      for (const n of sel) await fetch(`/api/project/delete?name=${encodeURIComponent(n)}`, { method:'POST' });
+      if (sel.includes($('projName').value)) try { localStorage.removeItem('mixauto-saved'); } catch {}
+      await listProjects(); delProjects();
+    }],
+    ['Fermer', closeModal],
+  ]);
+  $('mBar').parentElement.hidden = true;
+}
 function startChoice(names, last) {   // à l'ouverture : nouvelle session ou un projet
   const list = [...new Set([last, ...names].filter(n => n && names.includes(n)))].slice(0, 6);
   modal('Mix Auto', list.length ? 'Nouvelle session, ou ouvrir un projet ?' : 'Commence une nouvelle session, ou ouvre un projet depuis un fichier.', [
     ['＋ Nouvelle session', () => { closeModal(); $('newProj').click(); }],
     ...list.map(n => [`📂 ${n}`, () => { closeModal(); openProject(n); }]),
     ['Depuis un fichier…', () => { closeModal(); $('inProj').click(); }],
+    ...(names.length ? [['🗑 Supprimer des projets…', delProjects]] : []),
+    ['Mentions légales', () => { closeModal(); $('legal').showModal(); }],
   ]);
   $('mBar').parentElement.hidden = true; $('mBtns').classList.add('start');
-  const reset = () => { $('mBar').parentElement.hidden = false; $('mBtns').classList.remove('start'); };
-  $('mBtns').addEventListener('click', reset, { once:true }); $('mClose').addEventListener('click', reset, { once:true });
 }
 </script>
 </body>
