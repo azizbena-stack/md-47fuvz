@@ -128,8 +128,6 @@
   #libSide:empty { display:none; }
   #wheel { display:block; margin:0 auto; width:auto; height:min(230px, calc(var(--libH) - 80px)); }   /* la roue tient dans la bibliothèque */
   .tablewrap { overflow:auto; min-height:0; position:relative; }
-  #dropHint { position:absolute; inset:10px; border:2px dashed var(--line); border-radius:12px; display:flex; flex-direction:column; align-items:center; justify-content:center; color:var(--dim); gap:6px; text-align:center; }
-  body.dragover #dropHint { border-color:var(--acc); }
   body.dragover .tablewrap { outline:2px solid var(--acc); outline-offset:-2px; }
   table { width:100%; border-collapse:collapse; }
   th { position:sticky; top:0; background:#181822; text-align:left; font-weight:500; color:var(--dim); font-size:11px; text-transform:uppercase; letter-spacing:.6px; padding:6px 8px; cursor:pointer; z-index:1; white-space:nowrap; }
@@ -330,7 +328,6 @@
           <th data-sort="name" class="tth"><svg class="tlogo" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10.5" fill="#0c0c11" stroke="#ff3b3b" stroke-width="1.5"/><circle cx="12" cy="12" r="7.5" fill="none" stroke="#ffffff22"/><circle cx="12" cy="12" r="5" fill="none" stroke="#ffffff22"/><circle cx="12" cy="12" r="3.2" fill="#ff3b3b"/><circle cx="12" cy="12" r=".9" fill="#0c0c11"/><path d="M17.5 3.5l3 3-6.2 6.2" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/></svg>Tracks à mixer</th><th data-sort="bpm" class="num">BPM</th><th data-sort="camelot">Tonalité</th>
           <th data-sort="energy">Énergie</th><th data-sort="duration" class="num">Durée</th><th data-sort="folder">Dossier</th><th></th>
         </tr></thead><tbody id="libT"></tbody></table>
-        <div id="dropHint" hidden><b style="color:var(--txt);font-size:15px">Glisse tes morceaux ou un dossier ici</b>MP3, WAV, AIFF, FLAC, M4A · tout reste sur ton Mac</div>
       </div>
       <div id="impPane">
         <label id="impDrop">
@@ -954,7 +951,7 @@ function libRows() {
 }
 function renderLib() {
   const used = new Set(S.clips.map(c => c.trackId)), ref = refTrack(), rows = libRows();
-  $('dropHint').hidden = LIB.length > 0;
+  if (!LIB.length) { $('impPane').hidden = false; $('impTab').classList.add('on'); }
   $('libCount').textContent = LIB.length ? `${rows.length} / ${LIB.length} morceaux` : '';
   document.querySelectorAll('th[data-sort]').forEach(th => { th.classList.toggle('s', th.dataset.sort === U.sort && U.libTab !== 'suggest'); th.classList.toggle('up', !U.up); });
   $('libT').innerHTML = rows.map(t => {
