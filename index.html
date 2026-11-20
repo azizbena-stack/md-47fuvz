@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Mix Auto</title>
 <style>
-  :root { --bg:#0c0c11; --panel:#14141c; --card:#1a1a24; --line:#272735; --txt:#ececf3; --dim:#8b8ba1; --acc:#7c5cff; --acc2:#22d3a6; --warn:#ffb547; --err:#ff5c7a; --libH:min(300px, 32vh); }
+  :root { --bg:#0c0c11; --panel:#14141c; --card:#1a1a24; --line:#272735; --txt:#ececf3; --dim:#8b8ba1; --acc:#ff3b3b; --acc2:#22d3a6; --warn:#ffb547; --err:#ff5c7a; --libH:min(300px, 32vh); }
   * { box-sizing:border-box; }
   html, body { height:100%; margin:0; }
   body { background:var(--bg); color:var(--txt); font:13px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; display:grid; grid-template-rows:auto 1fr; overflow-x:hidden; overflow-y:auto; user-select:none; }
@@ -15,11 +15,11 @@
   button, select, input { font:inherit; color:var(--txt); }
   button { background:linear-gradient(180deg, #2a2a3a, #1e1e2a); border:1px solid #34344c; border-radius:9px; padding:5px 11px; cursor:pointer; white-space:nowrap;
            box-shadow:inset 0 1px 0 #ffffff12, 0 2px 6px #0005; transition:border-color .12s, transform .12s, background .12s, box-shadow .12s; }
-  button:hover:not(:disabled) { border-color:var(--acc); box-shadow:inset 0 1px 0 #ffffff18, 0 0 0 3px #7c5cff22, 0 2px 8px #0006; }
+  button:hover:not(:disabled) { border-color:var(--acc); box-shadow:inset 0 1px 0 #ffffff18, 0 0 0 3px #ff3b3b22, 0 2px 8px #0006; }
   button:active:not(:disabled) { transform:translateY(1px); }
   button:disabled { opacity:.35; cursor:default; }
-  button.on { background:linear-gradient(180deg, #8e72ff, #6a48f0); border-color:#9d85ff; }
-  button.big { background:linear-gradient(135deg, #8e72ff, #5b3be8); border-color:#9d85ff; font-weight:700; box-shadow:0 4px 14px #7c5cff55, inset 0 1px 0 #ffffff30; }
+  button.on { background:linear-gradient(180deg, #ffffff, #e4e4ea); border-color:#fff; color:#e0191f; font-weight:700; }
+  button.big { background:linear-gradient(180deg, #ffffff, #e4e4ea); border-color:#fff; color:#e0191f; font-weight:800; box-shadow:0 4px 14px #0008, inset 0 -1px 0 #0002; }
   button.acc { background:linear-gradient(135deg, #2ee6b4, #14b38a); border-color:#4af0c4; color:#032a1f; font-weight:700; }
   button.danger { background:#ff3b5c1a; border-color:#ff3b5c88; color:#ff6b84; font-weight:600; }
   button.danger:hover:not(:disabled) { background:#ff3b5c; color:#fff; border-color:#ff3b5c; box-shadow:0 0 0 3px #ff3b5c33; }
@@ -29,11 +29,12 @@
   /* ---------- En-tête ---------- */
   header { display:flex; align-items:center; gap:10px; padding:8px 14px; background:linear-gradient(180deg, #1a1a26, #111119); border-bottom:1px solid #2c2c40; box-shadow:0 4px 18px #0007; flex-wrap:wrap; position:relative; z-index:2; }
   header h1 { font-size:19px; margin:0 4px 0 0; letter-spacing:-.5px; font-weight:800; display:flex; align-items:center; gap:7px; }
-  header h1::before { content:''; width:22px; height:22px; border-radius:50%; background:conic-gradient(from 200deg, #3aa0ff, #7c5cff, #ff9a2e, #3aa0ff); box-shadow:0 0 12px #7c5cff88; mask:radial-gradient(circle, transparent 3px, #000 4px); }
-  header h1 span { background:linear-gradient(90deg, #9d85ff, #3aa0ff); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  header h1::before { content:''; width:22px; height:22px; border-radius:50%; background:conic-gradient(from 200deg, #3aa0ff, #ffffff, #ff9a2e, #ff3b3b, #3aa0ff); box-shadow:0 0 12px #ff3b3b66; mask:radial-gradient(circle, transparent 3px, #000 4px); }
+  header h1 span { background:linear-gradient(90deg, #ff5c5c, #ff2a2a); -webkit-background-clip:text; background-clip:text; color:transparent; }
   #play, #toStart { border-radius:50%; width:38px; height:38px; padding:0; font-size:14px; }
-  #play { width:44px; height:44px; font-size:17px; background:linear-gradient(135deg, #2ee6b4, #14b38a); border-color:#4af0c4; color:#032a1f; box-shadow:0 4px 16px #22d3a655, inset 0 1px 0 #ffffff50; }
-  #play.on { background:linear-gradient(135deg, #ff9a2e, #ff5c7a); border-color:#ffb36b; color:#2a0710; box-shadow:0 4px 16px #ff5c7a55; }
+  #play { width:44px; height:44px; font-size:17px; background:radial-gradient(circle at 40% 30%, #fff, #dedee4); border-color:#fff; color:#e0191f; box-shadow:0 4px 16px #0009, inset 0 -2px 0 #0002; }
+  #play.on, #sync.on { animation:blink var(--beat, .48s) steps(1) infinite; }
+  @keyframes blink { 50% { background:#ffd9d9; color:#ff0000; box-shadow:0 0 18px #ff3b3bcc, 0 0 0 2px #ff3b3b; } }
   .sep { width:1px; height:26px; background:var(--line); }
   .grow { flex:1; }
   #clock { font:700 16px ui-monospace, Menlo, monospace; min-width:150px; text-align:center; background:#07070b; border:1px solid #2c2c40; border-radius:10px; padding:6px 10px; color:#2ee6b4; text-shadow:0 0 10px #22d3a666; box-shadow:inset 0 2px 6px #000a; }
@@ -42,12 +43,12 @@
   #tempo { width:78px; border:0; background:transparent; font:700 17px ui-monospace, Menlo, monospace; text-align:right; padding:2px; }
   .tempo button { padding:3px 8px; }
   .tfader { display:flex; align-items:center; gap:6px; background:#0f0f15; border:1px solid var(--line); border-radius:9px; padding:3px 6px; }
-  .tfader input { width:130px; accent-color:#ff9a2e; }
+  .tfader input { width:140px; } .tfader .tf { display:flex; flex-direction:column; }
   #tfv { font:700 12px ui-monospace, Menlo, monospace; min-width:58px; text-align:right; color:#ffb547; }
   #tfv.zero { color:var(--dim); }
   #mt { font:800 8.5px/1.05 ui-monospace, Menlo, monospace; letter-spacing:.4px; padding:3px 6px; color:var(--dim); }
   #mt.on { color:#fff; background:linear-gradient(180deg, #ff4d4d, #c81e1e); border-color:#ff7a7a; box-shadow:0 0 10px #ff3b3b77; }
-  #sync { background:var(--acc2); border-color:var(--acc2); color:#05301f; font-weight:700; }
+  #sync { background:linear-gradient(180deg, #fff, #dedee4); border-color:#fff; color:#e0191f; font-weight:800; }
   label.inl { display:flex; align-items:center; gap:6px; color:var(--dim); }
 
   /* ---------- Zones ---------- */
@@ -72,10 +73,25 @@
   .knob i { display:block; width:26px; height:26px; margin:0 auto 1px; border-radius:50%; background:radial-gradient(circle at 40% 35%, #4a4a5e, #18181f); border:1px solid #4a4a62; position:relative; transform:rotate(calc(var(--a, 0) * 1deg)); }
   .knob i::after { content:''; position:absolute; left:50%; top:2px; width:2px; height:9px; margin-left:-1px; background:#fff; border-radius:1px; }
   .knob.mod i { box-shadow:0 0 0 2px var(--dc); }
-  .mixer input.fader { writing-mode:vertical-lr; direction:rtl; width:22px; height:84px; accent-color:var(--dc); }
+  input.cfad { -webkit-appearance:none; appearance:none; background:transparent; height:30px; margin:0; cursor:grab; accent-color:auto; }
+  input.cfad:active { cursor:grabbing; }
+  input.cfad::-webkit-slider-runnable-track { height:5px; background:#020203; border:1px solid #3c3c4c; border-radius:1px; box-shadow:inset 0 1px 2px #000; }
+  input.cfad::-moz-range-track { height:5px; background:#020203; border:1px solid #3c3c4c; border-radius:1px; }
+  input.cfad::-webkit-slider-thumb { -webkit-appearance:none; width:15px; height:28px; margin-top:-12.5px; border-radius:2px; border:0;
+    background:linear-gradient(90deg, #a9a9b3, #f4f4f7 22%, #fff 40%, #111 40%, #111 60%, #fff 60%, #ececf0 80%, #9c9ca6); box-shadow:0 3px 5px #000d, 0 0 0 1px #0008; }
+  input.cfad::-moz-range-thumb { width:15px; height:28px; border-radius:2px; border:0;
+    background:linear-gradient(90deg, #a9a9b3, #f4f4f7 22%, #fff 40%, #111 40%, #111 60%, #fff 60%, #ececf0 80%, #9c9ca6); box-shadow:0 3px 5px #000d; }
+  .fwrap { position:relative; width:46px; height:112px; flex:none; }
+  .fwrap input.fader { position:absolute; width:112px; left:50%; top:50%; transform:translate(-50%, -50%) rotate(-90deg); }
+  .fwrap .tick { position:absolute; left:0; right:0; transform:translateY(50%); font:700 7.5px/1 ui-monospace, Menlo, monospace; color:#8d8da2; pointer-events:none; }
+  .fwrap .tick::after { content:''; position:absolute; left:11px; right:4px; top:50%; border-top:1px solid #4c4c60; }
+  .fwrap .tick.z { color:#fff; } .fwrap .tick.z::after { border-color:#fff8; }
+  .chan.rev .fwrap .tick { text-align:right; } .chan.rev .fwrap .tick::after { left:4px; right:11px; }
+  .hticks { position:relative; height:7px; margin-top:-4px; background:repeating-linear-gradient(90deg, #5a5a70 0 1px, transparent 1px 10%); background-size:calc(100% - 15px) 100%; background-position:7.5px 0; background-repeat:no-repeat; }
+  .hticks.c::after { content:''; position:absolute; left:50%; top:-2px; width:2px; height:9px; margin-left:-1px; background:#fff; }
   .mixmid { display:flex; flex-direction:column; align-items:center; gap:5px; }
-  #xf { width:140px; accent-color:#fff; }
-  .xfl { display:flex; justify-content:space-between; width:140px; font:700 10px ui-monospace, monospace; color:var(--dim); }
+  #xf { width:150px; }
+  .xfl { display:flex; justify-content:space-between; width:150px; font:700 10px ui-monospace, monospace; color:var(--dim); }
   #rec { font-weight:700; } #rec.on { background:#e5243b; border-color:#e5243b; animation:blink 1s steps(2) infinite; }
   @keyframes blink { 50% { opacity:.6; } }
   #split { background:var(--line); cursor:row-resize; }
@@ -108,18 +124,19 @@
   td.title { max-width:340px; overflow:hidden; text-overflow:ellipsis; }
   td.title b { font-weight:600; } td.title span { color:var(--dim); }
   .num { font-variant-numeric:tabular-nums; text-align:right; }
-  .key { display:inline-block; min-width:40px; text-align:center; border-radius:999px; padding:2px 8px; font:800 11.5px ui-monospace, Menlo, monospace; color:#0c0c11; letter-spacing:.3px;
-         box-shadow:inset 0 1px 0 #ffffff70, inset 0 -1px 0 #0003, 0 0 10px color-mix(in srgb, currentColor 0%, transparent); }
-  .key.match { box-shadow:0 0 0 2px #0c0c11, 0 0 0 4px #fff, 0 0 14px #ffffff66; }
-  .energy { display:inline-flex; gap:2px; vertical-align:middle; align-items:flex-end; height:15px; }
-  .energy i { width:5px; background:#2a2a3a; border-radius:2px; }
-  .energy i.f { background:hsl(var(--h), 80%, 52%); box-shadow:0 0 5px hsl(var(--h), 80%, 52%, .5); }
+  .key { display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:50%; padding:0; background:transparent; border:1.5px solid #ffffff4d; font:800 11.5px ui-monospace, Menlo, monospace; letter-spacing:-.3px; vertical-align:middle; flex:none; }
+  .key:empty { visibility:hidden; }
+  .key.match { border-color:#fff; box-shadow:0 0 12px #ffffff77; }
+  .deck .key { width:28px; height:28px; font-size:10.5px; }
+  .energy { display:inline-flex; gap:2px; vertical-align:middle; align-items:flex-end; height:18px; }
+  .energy i { width:4px; background:#2c2c3a; border-radius:0; }
+  .energy i.f { background:hsl(var(--h), 95%, 50%); }
   button.pre { width:28px; height:28px; padding:0; border-radius:50%; font-size:10px; margin-right:6px; vertical-align:middle; background:linear-gradient(135deg, #3a3a52, #24243a); }
   button.pre:hover:not(:disabled) { background:linear-gradient(135deg, #2ee6b4, #14b38a); color:#032a1f; border-color:#4af0c4; }
   button.pre.on { background:linear-gradient(135deg, #2ee6b4, #14b38a); color:#032a1f; border-color:#4af0c4; animation:pulse 1.2s infinite; }
   @keyframes pulse { 50% { box-shadow:0 0 0 5px #22d3a633; } }
   td.act { text-align:right; } td.act button { padding:3px 10px; margin-left:4px; }
-  td.act button.add { border-color:#7c5cff88; color:#c9bdff; }
+  td.act button.add { border-color:#ffffff55; color:#fff; }
   td.act button.del { width:26px; height:26px; padding:0; border-radius:50%; background:#ff3b5c1f; border-color:#ff3b5c99; color:#ff4d6d; font-weight:800; font-size:14px; line-height:1; }
   td.act button.del:hover { background:#ff3b5c; border-color:#ff3b5c; color:#fff; box-shadow:0 0 0 3px #ff3b5c33; }
   /* transitions */
@@ -148,7 +165,7 @@
   #hscroll div { height:1px; }
   #hscroll::-webkit-scrollbar { height:12px; }   /* toujours visible (macOS cache les barres par défaut) */
   #hscroll::-webkit-scrollbar-thumb { background:#4a4a62; border-radius:6px; border:2px solid var(--panel); }
-  #hscroll::-webkit-scrollbar-thumb:hover { background:#7c5cff; }
+  #hscroll::-webkit-scrollbar-thumb:hover { background:#ff3b3b; }
   #rulerC { display:block; width:100%; height:30px; background:var(--panel); border-bottom:1px solid var(--line); cursor:pointer; }
   #scroller { overflow-y:auto; overflow-x:hidden; min-height:0; position:relative; }
   #scroller.drop { outline:2px solid var(--acc); outline-offset:-2px; }
@@ -205,7 +222,7 @@
   </div>
   <div class="tfader" title="Fader de tempo, comme sur une CDJ : tout le mix accélère ou ralentit en direct. Double-clic : retour à 0 %">
     <button id="mt" class="on" title="MASTER TEMPO allumé : le tempo change sans changer la tonalité (les voix et les basses restent naturelles). Éteint : comme un vinyle, ça monte ou descend avec la vitesse">MASTER<br>TEMPO</button>
-    <input type="range" id="tf" min="-10" max="10" step="0.02" value="0">
+    <div class="tf"><input type="range" id="tf" class="cfad" min="-10" max="10" step="0.02" value="0"><div class="hticks c"></div></div>
     <span id="tfv">0.00 %</span>
     <select id="tfr" title="Plage du fader (TEMPO RANGE)"><option value="6">±6</option><option value="10" selected>±10</option><option value="16">±16</option></select>
   </div>
@@ -601,6 +618,8 @@ function play(from = U.pos, seamless = false) {
     }
   }
   U.playing = true; $('play').textContent = '❚❚'; $('play').classList.add('on');
+  document.body.style.setProperty('--beat', `${60 / (S.tempo * U.rate)}s`);   // Play et SYNC clignotent au tempo
+  $('sync').classList.toggle('on', new Set(S.clips.map(c => ct(c).toFixed(2))).size === 1);
   const id = tick.n = (tick.n || 0) + 1; requestAnimationFrame(() => tick(id));
 }
 function stop(keepPos = true) {
@@ -611,7 +630,7 @@ function stop(keepPos = true) {
     const m = live.bus.master; setTimeout(() => m.disconnect(), 50);
     live = null;
   }
-  U.playing = false; $('play').textContent = '▶'; $('play').classList.remove('on');
+  U.playing = false; $('play').textContent = '▶'; $('play').classList.remove('on'); $('sync').classList.remove('on');
   recEnd(); draw();
 }
 const livePos = () => live ? (live.seam ? x => x : x => Math.max(live.from, x))(live.from + (ctx.currentTime - live.base) * live.k) : U.pos;   // relance sans trou : l'ancien son joue encore, la tête ne se fige pas
@@ -785,7 +804,7 @@ function renderLib() {
     return `<tr class="trk ${used.has(t.id) ? 'used' : ''}" draggable="true" data-id="${t.id}">
       <td class="title" title="${esc(t.name)}"><button class="pre ${preview.id === t.id ? 'on' : ''}" data-pre="${t.id}" title="Pré-écoute">${preview.id === t.id ? '❚❚' : '▶'}</button> <b>${esc(t.title)}</b> <span>${esc(t.artist)}</span></td>
       <td class="num">${fold(t.bpm).toFixed(2)}${far ? '<span class="warnTxt" title="Tempo éloigné du mix : il sera fortement étiré">⚠</span>' : ''}</td>
-      <td><span class="key ${match ? 'match' : ''}" style="background:${keyColor(t.camelot)}" title="${t.key}${match ? ' · compatible avec ' + esc(ref.name) : ''}">${t.camelot}</span></td>
+      <td><span class="key ${match ? 'match' : ''}" style="color:${keyColor(t.camelot)}" title="${t.key}${match ? ' · compatible avec ' + esc(ref.name) : ''}">${t.camelot}</span></td>
       <td><span class="energy" title="Énergie ${t.energy}/10">${Array.from({ length:10 }, (_, i) => `<i class="${i < t.energy ? 'f' : ''}" style="height:${5 + i}px;--h:${140 - i * 14}"></i>`).join('')}</span></td>
       <td class="num">${fmtTime(t.duration)}</td>
       <td style="color:var(--dim)">${esc(t.folder || '')}</td>
@@ -808,7 +827,7 @@ function renderSide() {
       Object.entries(folders).sort().map(([f, n]) => `<div class="frow"><button class="folder ${U.folder === f ? 'on' : ''}" data-folder="${esc(f)}">📁 ${esc(f)} <small>${n}</small></button><button class="delf" data-delfolder="${esc(f)}" title="Supprimer ce dossier et ses morceaux">×</button></div>`).join('') +
       `<div class="note">Le dossier d'où vient chaque morceau. Pour en ajouter un : « + Dossier » ou glisse-le dans la bibliothèque.</div>`;
   } else if (U.libTab === 'suggest') {
-    side.innerHTML = `<div class="side-title">Suggestions</div><div class="note">${ref ? `Ce qui s'enchaîne bien après<br><b style="color:var(--txt)">${esc(ref.name)}</b><br><span class="key" style="background:${keyColor(ref.camelot)}">${ref.camelot}</span> ${ref.detected.toFixed(2)} BPM<br><br>Tonalité compatible, tempo à ±6 %, énergie proche. Les meilleurs en premier.` : 'Ajoute ou sélectionne un morceau du mix.'}</div>`;
+    side.innerHTML = `<div class="side-title">Suggestions</div><div class="note">${ref ? `Ce qui s'enchaîne bien après<br><b style="color:var(--txt)">${esc(ref.name)}</b><br><span class="key" style="color:${keyColor(ref.camelot)}">${ref.camelot}</span> ${ref.detected.toFixed(2)} BPM<br><br>Tonalité compatible, tempo à ±6 %, énergie proche. Les meilleurs en premier.` : 'Ajoute ou sélectionne un morceau du mix.'}</div>`;
   } else side.innerHTML = '';
 }
 function wheelSVG(count, ref) {
@@ -1029,7 +1048,7 @@ function bassSwap(a, b, o0, o1) {   // un seul morceau dans les basses à la foi
 }
 // Transitions posées par les cartes : gardées sur le morceau qui sort (a.tr), affichées et nommées sur sa piste,
 // sélectionnables (clic sur l'étiquette) pour les écouter, les remplacer ou les supprimer.
-const TRK = { fade:['Fondu', '#7c5cff'], filter:['Filtre', '#22d3a6'], echo:['Écho', '#ffb547'], reverb:['Réverbe', '#3aa0ff'], cut:['Coupe', '#ff5c7a'] };
+const TRK = { fade:['Fondu', '#f2f2f7'], filter:['Filtre', '#22d3a6'], echo:['Écho', '#ffb547'], reverb:['Réverbe', '#3aa0ff'], cut:['Coupe', '#ff5c7a'] };
 const TRP = { fade:['vol', 'high', 'low'], filter:['filter', 'low'], echo:['delay', 'vol'], reverb:['reverb', 'filter'], cut:[] };   // réglages écrits par chaque carte
 const trZone = (a, r) => [a.start + r.t0 - a.in, a.start + r.t1 - a.in];   // en temps du mix
 function removeTr(a, i) {   // efface les points que la carte a écrits dans sa zone (sur les deux morceaux), remet la longueur après une coupe
@@ -1107,7 +1126,7 @@ function drawNow() {
     r.fillStyle = b % labelEvery ? '#33334a' : '#8b8ba1';
     r.fillRect(x, b % labelEvery ? 22 : 12, 1, 30);
     if (b % labelEvery === 0) { r.fillStyle = '#c9c9da'; r.fillText(`${b / 4 + 1}`, x + 3, 12); r.fillStyle = '#6c6c84'; r.fillText(fmtTime(secAt(b)), x + 3, 26); }
-    if (b % PHRASE === 0 && labelEvery <= PHRASE) { r.fillStyle = '#7c5cff'; r.fillRect(x, 0, 2, 6); }
+    if (b % PHRASE === 0 && labelEvery <= PHRASE) { r.fillStyle = '#ff3b3b'; r.fillRect(x, 0, 2, 6); }
     if (U.pxb >= 10) for (let k = 1; k < 4; k++) {   // temps 2, 3, 4 de la mesure quand on zoome
       r.fillStyle = '#4a4a62'; r.fillRect(x + k * U.pxb, 25, 1, 5);
       if (U.pxb >= 22) { r.fillStyle = '#55556d'; r.fillText(k + 1, x + k * U.pxb + 2, 26); }
@@ -1142,7 +1161,7 @@ function drawNow() {
   }
   for (const c of R) {   // zones de transition (là où deux morceaux se chevauchent) sur la règle
     const n = nextOf(c);
-    if (n && n.start < clipEnd(c)) { r.fillStyle = '#7c5cff66'; r.fillRect((n.start - U.scrollX) * U.pxb, 0, (clipEnd(c) - n.start) * U.pxb, 5); }
+    if (n && n.start < clipEnd(c)) { r.fillStyle = '#ff3b3b55'; r.fillRect((n.start - U.scrollX) * U.pxb, 0, (clipEnd(c) - n.start) * U.pxb, 5); }
   }
   const px = (beatAt(U.pos) - U.scrollX) * U.pxb;
   for (const [cx, hh] of [[r, 30], [g, H]]) { cx.fillStyle = '#22d3a6'; cx.fillRect(px, 0, 1.5, hh); }
@@ -1179,13 +1198,13 @@ function drawClip(g, c, i, W) {
   g.save(); g.beginPath(); g.rect(x0, y, x1 - x0, TITLE); g.clip();
   let tx = Math.max(x0, 0) + 5;
   const cam = camOf(t);
-  g.fillStyle = keyColor(cam); g.fillRect(tx, y + 3, 26, 12);
-  g.fillStyle = '#0c0c11'; g.font = '700 10px -apple-system, sans-serif'; g.fillText(cam, tx + 3, y + 13); tx += 32;
+  g.strokeStyle = '#ffffff66'; g.lineWidth = 1.2; g.beginPath(); g.arc(tx + 9, y + 9, 8, 0, Math.PI * 2); g.stroke();   // tonalité : rond, lettres en couleur
+  g.fillStyle = keyColor(cam); g.font = '800 8.5px ui-monospace, Menlo, monospace'; g.textAlign = 'center'; g.fillText(cam, tx + 9, y + 12); g.textAlign = 'left'; tx += 24;
   g.fillStyle = '#fff'; g.font = '600 11px -apple-system, sans-serif'; g.fillText(t.name, tx, y + 13);
   tx += g.measureText(t.name).width + 8;
   const T = ct(c), pct = (T / t.bpm - 1) * 100;
   g.font = '11px -apple-system, sans-serif'; g.fillStyle = Math.abs(pct) > 6 ? '#ffb547' : '#ffffffaa';
-  g.fillText(`${t.bpm.toFixed(2)} BPM${Math.abs(pct) < 0.05 ? '' : ` → ${T} (${pct > 0 ? '+' : ''}${pct.toFixed(1)} %)`}`, tx, y + 13);
+  g.fillText(`${t.bpm.toFixed(2)} BPM${Math.abs(pct) < 0.05 ? '' : ` → ${+T.toFixed(2)} (${pct > 0 ? '+' : ''}${pct.toFixed(1)} %)`}`, tx, y + 13);
   g.restore();
   for (const r of c.tr || []) {   // transitions : zone teintée + étiquette nommée en bas du morceau (clic = la gérer)
     const [m0, m1] = trZone(c, r), [name, col] = TRK[r.kind], on = U.tr?.id === c.id && U.tr.kind === r.kind;
@@ -1388,7 +1407,7 @@ function deckInfo(d, pb, LN) {   // morceau en lecture sur la voie, sinon le pro
     el.cid = c?.id ?? null; el.ct = c && ct(c);
     const t = c && S.tracks[c.trackId];
     el.querySelector('.dt').textContent = t ? t.name : '—';
-    const k = el.querySelector('.key'); k.textContent = t ? camOf(t) : ''; k.style.background = t ? keyColor(camOf(t)) : 'none';
+    const k = el.querySelector('.key'); k.textContent = t ? camOf(t) : ''; k.style.color = t ? keyColor(camOf(t)) : '';
     el.querySelector('.dbpm').textContent = c ? (ct(c) * U.rate).toFixed(1) : '—';
   }
   el.querySelector('.dtime').textContent = on ? `${fmtTime(U.pos - secAt(on.start))} / -${fmtTime(secAt(clipEnd(on)) - U.pos)}` : '';
@@ -1417,11 +1436,12 @@ const knobR = k => { const P = PARAMS[KNOB[k][1]]; return [P.min, P.max, P.def];
 function knobU(k, v) { const [lo, hi, df] = knobR(k); return df === lo ? (v - lo) / (hi - lo) * 2 - 1 : v < df ? -(df - v) / (df - lo) : (v - df) / (hi - df); }   // -1..1, zéro au centre
 function knobV(k, u) { const [lo, hi, df] = knobR(k); return df === lo ? lo + (u + 1) / 2 * (hi - lo) : u < 0 ? df + u * (df - lo) : df + u * (hi - df); }
 const chanHTML = d => `<div class="knobs">${Object.keys(KNOB).map(k => `<div class="knob" data-d="${d}" data-k="${k}"><i></i>${KNOB[k][0]}</div>`).join('')}</div>
-  <input type="range" class="fader" data-d="${d}" min="0" max="1" step="0.01" value="1" title="Volume de la voie ${'AB'[d]}">`;
+  <div class="fwrap">${[0, 6, 12, 20, 30, 40].map(db => `<span class="tick ${db ? '' : 'z'}" style="bottom:${7.5 + 10 ** (-db / 40) * 97}px">${db}</span>`).join('')}<span class="tick" style="bottom:7.5px">∞</span>
+  <input type="range" class="fader cfad" data-d="${d}" min="0" max="1" step="0.01" value="1" title="Volume de la voie ${'AB'[d]} (repères en dB)"></div>`;   // gain = fader², donc -dB = 40·log10
 $('mixer').innerHTML = `<div class="chan" style="--dc:${DECKCOL[0]}">${chanHTML(0)}</div>
   <div class="mixmid">
     <button id="rec" title="Pendant la lecture, tes gestes sur la table s'écrivent en lignes rouges sur les morceaux (comme l'automation d'Ableton)">● REC</button>
-    <input type="range" id="xf" min="-1" max="1" step="0.01" value="0" title="Crossfader (double-clic : centre)">
+    <div><input type="range" id="xf" class="cfad" min="-1" max="1" step="0.01" value="0" title="Crossfader (double-clic : centre)"><div class="hticks c"></div></div>
     <div class="xfl"><span>A</span><span>CROSSFADER</span><span>B</span></div>
     <button id="mixReset" title="Tous les boutons à zéro">Remettre à zéro</button>
   </div>
@@ -1556,9 +1576,9 @@ function renderInsp() {
     const ov = n ? clipEnd(c) - n.start : 0;
     el.innerHTML = `
       <div class="pair">
-        <div><span class="key" style="background:${keyColor(camOf(t))}">${camOf(t)}</span><b title="${esc(t.name)}">${esc(t.name)}</b></div>
+        <div><span class="key" style="color:${keyColor(camOf(t))}">${camOf(t)}</span><b title="${esc(t.name)}">${esc(t.name)}</b></div>
         <span style="font-size:18px">→</span>
-        <div>${nt ? `<span class="key" style="background:${keyColor(camOf(nt))}">${camOf(nt)}</span><b title="${esc(nt.name)}">${esc(nt.name)}</b>` : '<b style="color:var(--dim)">fin du mix</b>'}</div>
+        <div>${nt ? `<span class="key" style="color:${keyColor(camOf(nt))}">${camOf(nt)}</span><b title="${esc(nt.name)}">${esc(nt.name)}</b>` : '<b style="color:var(--dim)">fin du mix</b>'}</div>
       </div>
       ${nt ? `<div class="note ${compatible(camOf(t), camOf(nt)) ? 'ok' : 'warn'}">${compatible(camOf(t), camOf(nt)) ? '✓ Tonalités compatibles' : '⚠ Tonalités éloignées : transpose un des deux (onglet Morceau) ou préfère une coupe / un écho'}</div>
       <div class="note">${ov > 0 ? `Les deux jouent ensemble pendant ${ov % 4 ? `${ov} temps` : `${ov / 4} mesure(s)`}.` : ov === 0 ? 'Le suivant démarre pile à la fin.' : `Silence de ${-ov} temps entre les deux.`}</div>` : ''}
@@ -1582,7 +1602,7 @@ function renderInsp() {
   } else {
     el.innerHTML = `
       <div class="insp-title">${esc(t.name)}</div>
-      <div class="sub">${t.key} · ${t.camelot} · ${t.detected.toFixed(2)} BPM d'origine · entre à ${fmtTime(secAt(c.start))} · joué à ${ct(c)} BPM</div>
+      <div class="sub">${t.key} · ${t.camelot} · ${t.detected.toFixed(2)} BPM d'origine · entre à ${fmtTime(secAt(c.start))} · joué à ${+ct(c).toFixed(2)} BPM</div>
       <h2>Tempo et calage</h2>
       <div class="row"><input type="number" id="tBpm" step="0.01" value="${t.bpm.toFixed(2)}" style="width:86px"> BPM <button data-bpm="0.5">÷2</button><button data-bpm="2">×2</button></div>
       <div class="note">Les kicks ne tombent pas sur les traits ? Active <b>Clic</b> et décale (les suivants suivent, Alt : ce morceau seul) :</div>
@@ -1593,7 +1613,7 @@ function renderInsp() {
       <div class="note">Décalage : ${t.nudge.toFixed(0)} ms</div>
       <h2>Tonalité</h2>
       <div class="row"><button data-semi="-1">− ½ ton</button>
-        <span class="key" style="background:${keyColor(camOf(t))}">${camOf(t)}</span> <span>${keyName(t)}</span>
+        <span class="key" style="color:${keyColor(camOf(t))}">${camOf(t)}</span> <span>${keyName(t)}</span>
         <button data-semi="1">+ ½ ton</button></div>
       <div class="note">Transpose sans changer le tempo, pour rendre deux morceaux compatibles.</div>
       <h2>Commencer le morceau à</h2>
@@ -1741,7 +1761,7 @@ async function exportMix() {
     modalProgress(1, 'Encodage MP3…');
     const list = sorted().map(c => `${fmtTime(secAt(c.start) - start)}  ${S.tracks[c.trackId].name}  (${S.tracks[c.trackId].key} / ${S.tracks[c.trackId].camelot})`).join('\n');
     const name = `${S.name} - ${new Date().toLocaleString('fr-FR').replace(/[/:]/g, '-')}`;
-    const r = await fetch(`/api/export/finish?id=${id}&name=${encodeURIComponent(name)}`, { method:'POST', body:`${S.name} · ${S.tempo} BPM · ${fmtTime(total - start)}\n\n${list}\n` });
+    const r = await fetch(`/api/export/finish?id=${id}&name=${encodeURIComponent(name)}`, { method:'POST', body:`${S.name} · ${+S.tempo.toFixed(2)} BPM · ${fmtTime(total - start)}\n\n${list}\n` });
     const { mp3, error } = await r.json(); if (error) throw new Error(error);
     modal('Mix exporté ✔', `${esc(mp3)} — ${window.WEB ? 'téléchargé (dossier Téléchargements).' : 'rangé dans le dossier « mixes » de l\'app.'}`, [[window.WEB ? 'Télécharger encore' : 'Montrer le fichier', () => fetch('/api/reveal?name=' + encodeURIComponent(mp3))], ['Fermer', closeModal]]);
     modalProgress(1);
