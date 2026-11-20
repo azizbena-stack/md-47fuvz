@@ -52,7 +52,7 @@
   label.inl { display:flex; align-items:center; gap:6px; color:var(--dim); }
 
   /* ---------- Zones ---------- */
-  .app { display:grid; grid-template-rows:auto max(var(--libH), 190px) 6px var(--tlH, max(440px, calc(100vh - var(--libH) - 330px))) 6px; }
+  .app { display:grid; align-content:start; grid-template-rows:auto max(var(--libH), 190px) 6px var(--tlH, max(440px, calc(100vh - var(--libH) - 330px))) 6px; }
   .vsplit { background:#ffffff45; cursor:row-resize; height:6px; position:relative; }
   .vsplit:hover, .vsplit.on { background:#ffffff; box-shadow:0 0 8px #ffffff99; }
   .vsplit::after { content:''; position:absolute; left:50%; top:2px; width:34px; height:2px; margin-left:-17px; border-radius:1px; background:#ffffff99; }
