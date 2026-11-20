@@ -306,7 +306,7 @@
     <select id="tfr" title="Plage du fader (TEMPO RANGE)"><option value="6">±6</option><option value="10" selected>±10</option><option value="16">±16</option></select>
   </div>
   <div class="sep"></div>
-  <label class="inl">Aimant <select id="snap"><option value="4" selected>Mesure</option><option value="32">Phrase (8 mesures)</option><option value="1">Temps</option><option value="0">Libre</option></select></label>
+  <label class="inl">Aimant <select id="snap"><option value="1" selected>Temps</option><option value="4">Mesure</option><option value="32">Phrase (8 mesures)</option><option value="0">Libre</option></select></label>
   <button id="click" title="Métronome pour vérifier le calage">Clic</button>
   <button id="zoomOut" title="Dézoomer (⌘ + molette)">−</button><button id="zoomIn" title="Zoomer">+</button><button id="zoomFit" title="Voir tout le mix (touche F)">↔</button>
   <button id="undo" title="Annuler (⌘Z)">↶</button>
@@ -448,7 +448,7 @@ let LIB = [];                       // morceaux analysés (serveur)
 const BUF = {};                     // id morceau -> { key, buffer, peaks } ou { key, loading }
 const PHRASE = 32;   // 8 mesures de 4 temps : les morceaux entrent et sortent sur ces repères
 const MIXIN = 64;    // le suivant entre 16 mesures avant la fin du précédent
-const U = { rate:1, pxb:8, scrollX:-2, userScroll:0, sel:null, param:'vol', snap:4, pos:0, playing:false, click:false, undo:[],
+const U = { rate:1, pxb:8, scrollX:-2, userScroll:0, sel:null, param:'vol', snap:1, pos:0, playing:false, click:false, undo:[],
             libTab:'all', keys:new Set(), compat:true, folder:null, sort:'name', up:true, inspTab:'trans' };
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -1199,17 +1199,31 @@ async function kickAlign1(c, fixBpm) {   // true si le BPM du morceau a été co
     }
   }
   const s = sorted(), a = s[s.indexOf(c) - 1], ae = a ? Math.min(clipEnd(a), s0 + 256) : 0, withPrev = a && a.start <= s0 && ae - s0 >= 16;
-  const [p0, pa, pb] = (await Promise.all([kickProf(c, s0, Math.min(s1, s0 + 256)),
-    withPrev ? kickProf(a, s0, ae) : null, withPrev ? kickProf(c, s0, ae) : null])).map(p => p?.[0]);
-  if (!p0) { c.kickMs = null; return; }
-  const n = p0.length, cell = bs / n, wrap = v => ((v / bs + 1.5) % 1 - 0.5) * bs;
-  const pg = pb || p0, pk = pg.indexOf(Math.max(...pg));   // le kick : l'attaque grave la plus forte du temps (là où on l'entend avec le précédent)
-  let ms = wrap(pk * cell - (KICK_PEAK - man));
-  if (pa && pb) {
-    const sh = Math.round(ms / cell), pb2 = pb.map((_, i) => pb[((i + sh) % n + n) % n]);   // c déjà posé sur la grille
-    ms += xcorr(pa, pb2) * cell + man - (S.tracks[a.trackId].man || 0);
+  const [m0, m1] = withPrev ? [s0, ae] : [s0, Math.min(s1, s0 + 256)];   // mesuré là où on l'entend avec le précédent
+  const pg = (await kickProf(c, m0, m1))?.[0];
+  if (!pg) { c.kickMs = null; return; }
+  const n = pg.length, cell = bs / n, wrap = v => ((v / bs + 1.5) % 1 - 0.5) * bs;
+  let ms = wrap(pg.indexOf(Math.max(...pg)) * cell - KICK_PEAK);   // repère grossier : l'attaque grave la plus forte du temps
+  // puis le début VISIBLE du kick (la montée de la forme d'onde, comme sur les pistes) posé pile sur le trait :
+  // l'attaque grave seule arrive 20 à 50 ms après le début du kick selon le morceau (kicks longs : le kick tombait avant le trait)
+  const h = visProf(c, m0, m1);
+  if (h) {
+    let best = -1, k0 = 0;
+    for (let k = 0; k < h.length; k++) if (Math.abs(wrap(k * bs / h.length - ms)) < bs * 0.12 && h[k] > best) { best = h[k]; k0 = k; }
+    if (best > 0) ms += wrap(k0 * bs / h.length - ms) - VIS_LEAD;
   }
+  ms = wrap(ms + man);   // + le décalage choisi à la main
   t.nudge += ms; c.kickMs = Math.round(ms);
+}
+const VIS_LEAD = 3;   // ms : la montée repérée tombe dans la case de 5,8 ms qui suit le début du kick
+function visProf(c, m0, m1, nb = 160) {   // montées de la forme d'onde affichée (pics de 256 échantillons) repliées sur les temps du mix
+  const b = BUF[c.id]; if (!b?.peaks || (b.k || 1) !== 1) return null;
+  const P = b.peaks, sr = b.buffer.sampleRate, h = new Float64Array(nb);
+  for (let m = m0; m < m1; m++) for (let k = 0; k < nb; k++) {
+    const i = Math.floor(fileT(c, tlToTb(c, m + k / nb)) * sr / PEAK);
+    if (i > 0 && i < P.length) h[k] += Math.max(0, P[i] - P[i - 1]);
+  }
+  return h;
 }
 async function kickProf(c, m0, m1, seg = 0) {   // attaques du kick sur [m0, m1] du mix, repliées sur ses temps (par groupes de seg temps)
   const beats = [];
@@ -1367,8 +1381,8 @@ function drawNow() {
     g.fillStyle = '#4b4b6b'; g.fillRect(Math.round(x), 0, 1, H);
   }
   TRR.length = 0; R.forEach(c => drawClip(g, c, LN.of(c), W));
-  for (let b = Math.floor(U.scrollX / 4) * 4, st = Math.max(4, step); b <= b1; b += st) {   // marqueur rouge à chaque mesure (4 temps), sur toutes les pistes
-    g.fillStyle = b % PHRASE ? '#ff3b3b66' : '#ff3b3bcc'; g.fillRect(Math.round((b - U.scrollX) * U.pxb), 0, b % PHRASE ? 1 : 1.5, H);
+  for (let b = Math.floor(U.scrollX / 4) * 4, st = U.pxb >= 10 ? 1 : Math.max(4, step); b <= b1; b += st) {   // traits rouges sur toutes les pistes : chaque temps (zoomé), plus marqué à chaque mesure
+    g.fillStyle = b % 4 ? '#ff3b3b40' : b % PHRASE ? '#ff3b3b8c' : '#ff3b3bdd'; g.fillRect(Math.round((b - U.scrollX) * U.pxb), 0, b % 4 ? 1 : 1.5, H);
   }
   // repères d'entrée (vert) et de fin (rouge) de chaque morceau, sur toute la hauteur et sur la règle
   for (const c of R) for (const [b, col] of [[c.start, '#22d3a6'], [clipEnd(c), '#ff5c7a']]) {
