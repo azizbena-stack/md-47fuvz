@@ -339,22 +339,25 @@ function wavFile(buf, name) {
   const p = new Int16Array(a, 44); for (let i = 0; i < n; i++) { p[2 * i] = Math.max(-1, Math.min(1, L[i])) * 32767; p[2 * i + 1] = Math.max(-1, Math.min(1, R[i])) * 32767; }
   return new File([a], name, { type: 'audio/wav' });
 }
-async function demo() {
-  try { if (localStorage.getItem('mixauto-demo')) return; } catch {}
-  if ((await all('lib')).length || S.clips.length) return;
+async function demo(force) {   // force : bouton « Morceaux de démo » (refait les 3 morceaux même si déjà vus)
+  if (!force) { try { if (localStorage.getItem('mixauto-demo')) return; } catch {}
+  if ((await all('lib')).length || S.clips.length) return; }
   modal('Bienvenue dans Mix Auto', 'Préparation d\'un mix de démo : 3 morceaux fabriqués ici, libres de droits…');
   const items = [];
   try { localStorage.setItem('mixauto-demo', '1'); } catch {}   // une seule fois, même si on annule (✕)
-  for (const d of DEMOS) { if (window.modalCancel) return; items.push({ f: wavFile(await synth(d), `${d.name}.wav`), folder: 'Démo' }); }
+  const names = DEMOS.map(d => d.name);
+  for (const d of DEMOS) { if (window.modalCancel) return; if (LIB.some(t => t.name === d.name)) continue; items.push({ f: wavFile(await synth(d), `${d.name}.wav`), folder: 'Démo' }); }
   if (window.modalCancel) return;
-  await importFiles(items);
+  if (items.length) await importFiles(items);
+  if (S.clips.length) { closeModal(); return; }   // un mix est déjà en cours : les morceaux de démo vont juste dans la bibliothèque
   S.name = 'Mix démo'; $('projName').value = S.name;
-  for (const t of [...LIB].sort((a, b) => a.name.localeCompare(b.name))) addToMix(t);
+  for (const t of LIB.filter(t => names.includes(t.name)).sort((a, b) => a.name.localeCompare(b.name))) addToMix(t);
   for (const c of sorted().slice(0, -1)) applyFx(c, 'fade');   // la démo s'écoute tout de suite avec de vrais enchaînements
   U.sel = null; changed(); zoomFit();
   try { localStorage.setItem('mixauto-demo', '1'); } catch {}
   modal('Mix de démo prêt ✔', 'Appuie sur ▶ (ou Espace). Tourne les boutons de la table, essaie <b>● REC</b>, tire les lignes rouges, puis glisse tes propres morceaux dans la bibliothèque.', [['C\'est parti', closeModal]]);
 }
+window.demo = demo;   // bouton « Morceaux de démo » de la zone d'import
 addEventListener('load', () => setTimeout(() => demo().catch(e => { console.error(e); closeModal(); }), 1200));
 window.webFileURL = async id => URL.createObjectURL(await get('files', id));   // pré-écoute
 // le navigateur peut vider ce stockage s'il manque de place : on lui demande de le garder

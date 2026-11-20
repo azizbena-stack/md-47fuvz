@@ -257,11 +257,13 @@
     #webBadge, .sep, #projName { display:none; }
     #clock { min-width:0; font-size:14px; }
     .tfader input { width:96px; }
-    .app { grid-template-rows:auto min(max(var(--libH), 400px), 75vh) 6px var(--tlH, 78vh); }
+    .app { grid-template-rows:auto auto 6px var(--tlH, 78vh); }   /* la bibliothèque prend sa hauteur (zone d'import + liste) */
     .deckrow { grid-template-columns:1fr 1fr; } #decks .deckrow { height:auto; }
-    .deckrow .mixer { grid-column:1 / -1; grid-row:2; justify-content:center; flex-wrap:wrap; row-gap:8px; }
+    .deckrow .mixer { grid-column:1 / -1; grid-row:2; justify-content:center; flex-wrap:nowrap; justify-self:center; }   /* même table que sur ordi, réduite à la largeur (scaleMixer) */
     .libbar { gap:4px; padding:6px; } #search { width:100%; order:9; } #libTabs { flex-wrap:wrap; max-width:100%; }
-    .libbody { grid-template-columns:minmax(0,1fr); } .libbody > * { grid-column:auto !important; } #libSide { width:auto; } #impPane, #impPane[hidden] { display:none !important; }
+    .libbody { grid-template-columns:minmax(0,1fr); } .libbody > * { grid-column:auto !important; } #libSide { width:auto; }
+    .libbody { grid-template-rows:none; grid-auto-rows:auto; } #impPane { order:-1; width:auto; border-left:0; border-bottom:1px solid var(--line); } #impDrop { flex:none; width:100%; box-sizing:border-box; overflow:visible; padding:12px 8px; }
+    .tablewrap { min-height:180px; max-height:min(max(var(--libH), 300px), 60vh); }
     td.title { max-width:160px; }
     .lower { grid-template-columns:minmax(0,1fr); grid-template-rows:minmax(0,1fr) 40%; }
     .lower aside { border-left:0; border-top:1px solid var(--line); }
@@ -349,8 +351,9 @@
         <label id="impDrop">
           <svg class="ico" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="27" r="17" fill="none" stroke="#ff3b3b" stroke-width="2" style="filter:drop-shadow(0 0 4px #ff3b3b)"/><circle cx="24" cy="27" r="12" fill="none" stroke="#ffffff22"/><circle cx="24" cy="27" r="8" fill="none" stroke="#ffffff22"/><circle cx="24" cy="27" r="3.5" fill="#ff3b3b"/><path d="M24 2v15m-6-6 6 6 6-6" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
           <b>Glisse tes morceaux ou un dossier ici</b>
-          <span class="note">Ils s'ajoutent à la liste à gauche, analysés (BPM, tonalité, énergie).</span>
+          <span class="note">Ils s'ajoutent à ta liste « Tracks à mixer », analysés (BPM, tonalité, énergie).</span>
           <span class="row"><button type="button" data-imp="files">Choisir des morceaux</button><button type="button" data-imp="dir">Choisir un dossier</button></span>
+          <span class="row"><button type="button" id="demoBtn" hidden>▶ Morceaux de démo</button></span>
           <span class="note">MP3 · WAV · AIFF · FLAC · M4A</span>
         </label>
       </div>
@@ -412,7 +415,7 @@
 </dialog>
 <div id="modal" hidden><div class="box"><button id="mClose" title="Annuler / fermer">✕</button><b id="mTitle"></b><div class="bar"><div id="mBar"></div></div><div id="mText" class="note"></div><div class="row" id="mBtns"></div></div></div>
 
-<script src="web.js?v=81e9d4b9"></script>
+<script src="web.js?v=d5e7773c"></script>
 <script>
 // ============ Modèle ============
 // Tout est en TEMPS (beats) : début sur la timeline, position dans le morceau, automations.
@@ -1091,7 +1094,8 @@ async function fixOutliers() {
 $('impFiles').onclick = () => $('inFiles').click();
 $('impDir').onclick = () => $('inDir').click();
 // onglet Importer : zone à droite de la liste (glisser ou choisir) ; les morceaux arrivent dans la liste à gauche
-$('impDrop').onclick = e => { const b = e.target.closest('[data-imp]'); e.preventDefault(); $(b?.dataset.imp === 'dir' ? 'inDir' : 'inFiles').click(); };
+if (typeof window.demo === 'function') { $('demoBtn').hidden = false; $('demoBtn').onclick = e => { e.preventDefault(); e.stopPropagation(); demo(true).catch(err => { console.error(err); closeModal(); }); }; }
+$('impDrop').onclick = e => { if (e.target.id === 'demoBtn') return; const b = e.target.closest('[data-imp]'); e.preventDefault(); $(b?.dataset.imp === 'dir' ? 'inDir' : 'inFiles').click(); };
 const impShow = on => { $('impPane').hidden = !on; $('impTab').classList.toggle('on', on); try { localStorage.setItem('mixauto-imp', on ? '1' : '0'); } catch {} };
 $('impTab').onclick = () => impShow($('impPane').hidden);
 impShow((() => { try { return localStorage.getItem('mixauto-imp') !== '0'; } catch { return true; } })());
@@ -1553,7 +1557,12 @@ try { Object.assign(LAY, JSON.parse(localStorage.getItem('mixauto-layout') || '{
 LAY.tlH = null;   // plus de poignée sous la timeline : sa hauteur ne bouge plus par le bas
 function scaleMixer() {   // rack agrandi : la table grossit avec (zoom), sans dépasser la moitié de la largeur
   const m = $('mixer'); if (!m) return;
-  m.style.zoom = ''; if (!LAY.rackH || innerWidth <= 760) return;
+  m.style.zoom = '';
+  if (innerWidth <= 760) {   // téléphone : la table complète, réduite pour tenir dans la largeur
+    m.style.width = 'max-content'; const w = m.offsetWidth; m.style.width = '';
+    const z = Math.min(1, ($('rack').clientWidth - 16) / w); if (z < 1) m.style.zoom = z.toFixed(3); return;
+  }
+  if (!LAY.rackH) return;
   m.style.alignSelf = 'start'; const h = m.offsetHeight, w = m.offsetWidth; m.style.alignSelf = '';
   const R = $('rack'), z = Math.max(1, Math.min((R.clientHeight - 12) / h, R.clientWidth * 0.5 / w));
   m.style.zoom = z.toFixed(3);
