@@ -81,9 +81,13 @@
   .deck canvas { width:100%; height:28px; display:block; align-self:end; border-radius:4px; }
   .mixer { display:flex; gap:10px; align-items:center; background:var(--card); border:1px solid var(--line); border-radius:10px; padding:6px 10px; }
   .chan { display:flex; gap:6px; align-items:center; } .chan.rev { flex-direction:row-reverse; }
-  .knobs { display:grid; grid-template-columns:repeat(3, 36px); gap:2px 4px; }
+  .knobs { display:grid; grid-template-columns:repeat(3, 42px); gap:0 4px; }
   .knob { text-align:center; cursor:ns-resize; font-size:9px; color:var(--dim); letter-spacing:.4px; }
-  .knob i { display:block; width:26px; height:26px; margin:0 auto 1px; border-radius:50%; background:radial-gradient(circle at 40% 35%, #4a4a5e, #18181f); border:1px solid #4a4a62; position:relative; transform:rotate(calc(var(--a, 0) * 1deg)); }
+  .knob .kw { position:relative; width:40px; height:40px; margin:0 auto -2px; }   /* graduations tout autour, zéro en haut */
+  .knob .kt { position:absolute; left:50%; top:50%; width:1.5px; height:4px; margin:-2px 0 0 -.75px; background:#6a6a82; border-radius:1px; transform:rotate(var(--r)) translateY(-17px); }
+  .knob .kt.z { height:6px; margin-top:-3px; width:2px; margin-left:-1px; background:#fff; }
+  .knob .kt.e { background:#9a9ab0; }
+  .knob i { position:absolute; left:7px; top:7px; width:26px; height:26px; margin:0; border-radius:50%; background:radial-gradient(circle at 40% 35%, #4a4a5e, #18181f); border:1px solid #4a4a62; position:relative; transform:rotate(calc(var(--a, 0) * 1deg)); }
   .knob i::after { content:''; position:absolute; left:50%; top:2px; width:2px; height:9px; margin-left:-1px; background:#fff; border-radius:1px; }
   .knob.mod i { box-shadow:0 0 0 2px var(--dc); }
   input.cfad { -webkit-appearance:none; appearance:none; background:transparent; height:30px; margin:0; cursor:grab; accent-color:auto; }
@@ -111,6 +115,8 @@
   .mixmid { display:flex; flex-direction:column; align-items:center; gap:5px; }
   #xf { width:150px; }
   .xfl { display:flex; justify-content:space-between; width:150px; font:700 10px ui-monospace, monospace; color:var(--dim); }
+  #liveBtn { font-weight:800; letter-spacing:.6px; } #liveBtn.on { color:var(--acc); border-color:var(--acc); box-shadow:0 0 10px #ff3b3b55; }
+  .deck.drop { outline:2px dashed var(--acc); outline-offset:-3px; }
   #rec { font-weight:700; } #rec.on { background:#e5243b; border-color:#e5243b; animation:blink 1s steps(2) infinite; }
   @keyframes blink { 50% { opacity:.6; } }
   #split { cursor:row-resize; }
@@ -525,10 +531,28 @@ function clipTempo(c) {   // tempo du morceau dans ses propres temps : { T } con
   return { T:ct(c), pts:r, ramp:r.map(p => p.join(':')).join(',') };
 }
 const audioQ = (c, ft = clipTempo(c), t = S.tracks[c.trackId]) =>
-  `id=${t.id}&tempo=${ft.T}&bpm=${t.bpm}&semi=${t.semi || 0}${ft.ramp ? `&fb=${t.first_beat}&ramp=${ft.ramp}` : ''}${S.mt === false ? '&mt=0' : ''}`;
+  `id=${t.id}&tempo=${ft.T}&bpm=${t.bpm}&semi=${t.semi || 0}${ft.ramp ? `&fb=${fb0(t)}&ramp=${ft.ramp}` : ''}${S.mt === false ? '&mt=0' : ''}`;
+// Premier temps du morceau = son premier kick (k0 temps après le premier temps analysé) : la mesure 1 tombe sur le kick, pas sur le blanc d'avant
+const fb0 = t => t.first_beat + (t.k0 || 0) * 60 / t.bpm;
+function downbeat(t) {   // { k0 : décalage (0-3 temps) qui met le premier kick sur la mesure, kick : temps du premier kick (si moins de 8 mesures de blanc) }
+  const L = LIB.find(x => x.id === t.id)?.bass; if (!L?.length) return { k0:0, kick:0 };
+  const mx = Math.max(...L.slice(0, 600)), i = L.findIndex(v => v > mx - 18);
+  if (i < 0) return { k0:0, kick:0 };
+  return { k0:i % 4, kick:i <= 32 ? i - i % 4 : 0 };
+}
+function fixDownbeat(t) {   // une fois par morceau : ses clips gardent leur place, ils commencent sur un temps fort (et plus dans le blanc)
+  if (t.k0 != null) return;
+  const { k0, kick } = downbeat(t); t.k0 = k0;
+  for (const c of S.clips) if (c.trackId === t.id) {
+    const i1 = Math.max(kick, Math.ceil((c.in - k0) / 4 - 1e-6) * 4), sh = i1 - c.in;   // nouveau début (temps du morceau, nouvelle grille)
+    for (const p in c.auto) c.auto[p].forEach(q => q.b += sh);
+    (c.tr || []).forEach(r => { r.t0 += sh; r.t1 += sh; });
+    c.in = i1; c.len = Math.max(4, Math.min(c.len, Math.floor(trackBeats(t, ct(c))[1] - i1)));
+  }
+}
 function makeMap(t, ft) {   // temps du morceau -> secondes dans son fichier calé (sans le décalage manuel)
-  if (!ft.ramp) return tb => (t.first_beat * t.bpm + tb * 60) / ft.T;
-  const sb = 60 / t.bpm, fb = t.first_beat, j0 = -Math.ceil(fb / sb), n = Math.ceil((t.duration - fb) / sb) + 2 - j0;
+  if (!ft.ramp) return tb => (fb0(t) * t.bpm + tb * 60) / ft.T;
+  const sb = 60 / t.bpm, fb = fb0(t), j0 = -Math.ceil(fb / sb), n = Math.ceil((t.duration - fb) / sb) + 2 - j0;
   const T = j => tempoOfBeat(ft.pts, j + 0.5), O = new Float64Array(n + 1);
   O[0] = (fb + j0 * sb) * t.bpm / T(j0);
   for (let i = 0; i < n; i++) O[i + 1] = O[i] + 60 / T(j0 + i);
@@ -536,7 +560,7 @@ function makeMap(t, ft) {   // temps du morceau -> secondes dans son fichier cal
 }
 function fileT(c, tb) { const t = S.tracks[c.trackId]; return (BUF[c.id]?.map || makeMap(t, clipTempo(c)))(tb) + t.nudge / 1000; }
 function trackBeats(t, T = S.tempo) {   // [premier, dernier] temps disponibles dans le morceau
-  const off = t.first_beat * t.bpm / T + t.nudge / 1000;
+  const off = fb0(t) * t.bpm / T + t.nudge / 1000;
   return [-off * T / 60, (t.duration * t.bpm / T - off) * T / 60];
 }
 function autoValue(c, p, tb) {
@@ -650,7 +674,7 @@ function buildBus(ac, liveMix = true) {
   });
   return { master, reverb:rIn, delay:dIn, decks };
 }
-const applyLive = () => live?.bus.decks.forEach((n, d) => deckParams(n, d, MIX, ctx.currentTime));
+const applyLive = () => [live?.bus, LV?.bus].forEach(b => b?.decks.forEach((n, d) => deckParams(n, d, MIX, ctx.currentTime)));
 
 const RATE = 100;  // points d'automation par seconde envoyés au moteur audio
 const toParam = {
@@ -726,6 +750,7 @@ let live = null;
 const chan = new BroadcastChannel('mixauto');
 chan.onmessage = () => { if (U.playing) stop(); hushPreview(); };
 function play(from = U.pos, seamless = false) {
+  if (LV?.on) liveOff();   // la timeline reprend la main
   const old = seamless && live;
   if (old) live = null; else stop(false);
   if (!S.tempo || !S.clips.length) return;
@@ -749,7 +774,7 @@ function play(from = U.pos, seamless = false) {
       o.connect(g).connect(ctx.destination); o.start(at); o.stop(at + 0.05); nodes.push(o);
     }
   }
-  U.playing = true; for (const b of [$('play'), ...document.querySelectorAll('.rnd.pp')]) { b.textContent = '❚❚'; b.classList.add('on'); }
+  U.playing = true; $('play').textContent = '❚❚'; $('play').classList.add('on'); lvUI();
   const id = tick.n = (tick.n || 0) + 1; requestAnimationFrame(() => tick(id));
 }
 function stop(keepPos = true) {
@@ -760,7 +785,7 @@ function stop(keepPos = true) {
     const m = live.bus.master; setTimeout(() => m.disconnect(), 50);
     live = null;
   }
-  U.playing = false; for (const b of [$('play'), ...document.querySelectorAll('.rnd.pp')]) { b.textContent = '▶'; b.classList.remove('on'); }
+  U.playing = false; $('play').textContent = '▶'; $('play').classList.remove('on'); if (LV) lvUI();
   recEnd(); draw();
 }
 const livePos = () => live ? (live.seam ? x => x : x => Math.max(live.from, x))(live.from + (ctx.currentTime - live.base) * live.k) : U.pos;   // relance sans trou : l'ancien son joue encore, la tête ne se fige pas
@@ -773,7 +798,7 @@ function tick(id) {   // une seule boucle à la fois : deux boucles s'annulaient
   if ((x > W * 0.85 || x < 0) && performance.now() - U.userScroll > 4000) U.scrollX = beatAt(U.pos) - W * 0.15 / U.pxb;   // on laisse regarder ailleurs 4 s après un défilement à la main
   const end = secAt(Math.max(0, ...S.clips.map(clipEnd))) + 8;
   if (U.pos > end) return stop();
-  draw(); requestAnimationFrame(() => tick(id));
+  draw(true); requestAnimationFrame(() => tick(id));
 }
 
 // ============ Chargement des morceaux ============
@@ -858,6 +883,7 @@ function bendTo(target, now = false) {
   if (!S.tempo0) S.tempo0 = S.tempo * U.rate;
   U.rate = target / S.tempo; showTempo();
   if (U.playing) play(livePos(), true);
+  if (LV?.on) lvRespeed();
   clearTimeout(commitT); commitT = setTimeout(commitRate, now || !U.playing ? 0 : 1000);
 }
 function commitRate() {
@@ -1122,10 +1148,10 @@ function addToMix(info, { at = null } = {}) {
   if (!S.tempo) { S.tempo = Math.round(info.bpm * 100) / 100; $('tempo').value = S.tempo; }
   if (!S.tracks[info.id]) S.tracks[info.id] = { id:info.id, name:info.name, bpm:fold(info.bpm), detected:info.bpm, first_beat:info.first_beat,
     duration:info.duration, key:info.key, camelot:info.camelot, rms_db:info.rms_db, punch:info.punch, nudge:0, phrase:info.phrase || 0 };
-  const t = S.tracks[info.id];
+  const t = S.tracks[info.id]; fixDownbeat(t);
   const prev = [...S.clips].sort((a, b) => clipEnd(a) - clipEnd(b)).at(-1);   // celui qui finit en dernier
   const T = prev ? ct(prev) : S.tempo, [, last] = trackBeats(t, T);   // il prend le tempo du précédent
-  const ph = t.phrase || 0;   // le morceau commence sur un début de phrase (ses changements tombent sur ceux du précédent)
+  const db = downbeat(t), ph = Math.max(db.kick, Math.ceil(((t.phrase || 0) - t.k0) / 4 - 1e-6) * 4);   // début de phrase, jamais dans le blanc avant le premier kick
   const len = Math.max(PHRASE, Math.floor((last - ph) / PHRASE) * PHRASE);
   const auto = prev ? Math.max(0, Math.round((clipEnd(prev) - MIXIN) / PHRASE) * PHRASE) : 0;
   const c = { id:nextId++, trackId:t.id, in:ph, len, start:Number.isFinite(at) ? at : auto, tempo:T, auto:blankAuto(), base:blankBase() };
@@ -1206,7 +1232,8 @@ function setPts(c, p, list) {   // list = [[temps du mix, valeur]] ; remplace le
 function bassy(c) {   // temps du mix -> le morceau a ses basses (kick + basse, < 150 Hz, analyse) à ce temps ?
   const L = LIB.find(x => x.id === c.trackId)?.bass; if (!L) return null;
   const med = [...L].sort((x, y) => x - y)[L.length >> 1];
-  return m => (L[Math.floor(tlToTb(c, m))] ?? -99) > med - 8;
+  const k0 = S.tracks[c.trackId]?.k0 || 0;
+  return m => (L[Math.floor(tlToTb(c, m)) + k0] ?? -99) > med - 8;
 }
 function swapBeat(a, b, o0, o1) {   // [temps, net] : quand les basses de l'entrant arrivent, sinon quand celles du sortant s'arrêtent, sinon au milieu
   const ia = bassy(a), ib = bassy(b), mid = Math.round((o0 + o1) / 8) * 4;
@@ -1291,9 +1318,19 @@ function setupCanvas(cv, h) {
   const g = cv.getContext('2d'); g.setTransform(r, 0, 0, r, 0, 0); return [g, w];
 }
 function gridStep() { let s = 1; while (s * U.pxb < 7) s *= 2; return s; }
-function draw() { draw.raf ||= requestAnimationFrame(() => { draw.raf = 0; drawNow(); }); }   // un dessin par image, jamais annulé
+function draw(light) { if (!light) draw.full = true; draw.raf ||= requestAnimationFrame(() => { draw.raf = 0; drawNow(); }); }   // un dessin par image, jamais annulé ; light : seule la tête de lecture a bougé
+const CACHE = { r:document.createElement('canvas'), g:document.createElement('canvas'), key:'' };
+const blit = (cv, from) => { const g = cv.getContext('2d'); g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, cv.width, cv.height); g.drawImage(from, 0, 0); g.setTransform(devicePixelRatio || 1, 0, 0, devicePixelRatio || 1, 0, 0); return g; };
+const keep = (to, cv) => { if (to.width !== cv.width || to.height !== cv.height) { to.width = cv.width; to.height = cv.height; } const g = to.getContext('2d'); g.clearRect(0, 0, to.width, to.height); g.drawImage(cv, 0, 0); };
 function drawNow() {
   const R = S.clips, LN = lanes();
+  const key = [U.scrollX, U.pxb, $('rowsC').clientWidth, $('scroller').clientHeight, devicePixelRatio].join();
+  if (!draw.full && CACHE.key === key) {   // lecture : la timeline déjà dessinée est recopiée, seule la tête de lecture bouge (bien plus fluide)
+    const r = blit($('rulerC'), CACHE.r), g = blit($('rowsC'), CACHE.g), px = (beatAt(U.pos) - U.scrollX) * U.pxb;
+    for (const [cx, hh] of [[r, 30], [g, CACHE.H]]) { cx.fillStyle = '#22d3a6'; cx.fillRect(px, 0, 1.5, hh); }
+    drawDecks(LN); clockUI(); return;
+  }
+  draw.full = false; CACHE.key = key;
   $('empty').hidden = S.clips.length > 0;
   const [r, W] = setupCanvas($('rulerC'), 30);
   r.clearRect(0, 0, W, 30); r.font = '11px -apple-system, sans-serif';
@@ -1341,6 +1378,7 @@ function drawNow() {
     const n = nextOf(c);
     if (n && n.start < clipEnd(c)) { r.fillStyle = '#ff3b3b55'; r.fillRect((n.start - U.scrollX) * U.pxb, 0, (clipEnd(c) - n.start) * U.pxb, 5); }
   }
+  keep(CACHE.r, $('rulerC')); keep(CACHE.g, $('rowsC')); CACHE.H = H;
   const px = (beatAt(U.pos) - U.scrollX) * U.pxb;
   for (const [cx, hh] of [[r, 30], [g, H]]) { cx.fillStyle = '#22d3a6'; cx.fillRect(px, 0, 1.5, hh); }
   // barre de défilement : tout le mix + une fenêtre de marge
@@ -1348,7 +1386,9 @@ function drawNow() {
   hs.firstChild.style.width = total + 'px';
   hs.expect = Math.round((U.scrollX + 2) * U.pxb);
   if (Math.abs(hs.scrollLeft - hs.expect) > 1) hs.scrollLeft = hs.expect;
-  drawDecks(LN);
+  drawDecks(LN); clockUI();
+}
+function clockUI() {
   const pb = beatAt(U.pos);
   $('clock').textContent = `${fmtTime(U.pos)}.${Math.floor(U.pos * 10 % 10)} · ${Math.floor(pb / 4) + 1}.${Math.floor(pb % 4) + 1}`;
 }
@@ -1640,6 +1680,19 @@ applyLay();
 
 // ============ Platines : formes d'onde qui défilent, infos des morceaux, table de mixage ============
 const DECKCOL = ['#3aa0ff', '#ff9a2e'];
+// formes d'onde 3 couleurs : un tracé par couleur (6 au lieu de milliers de petits rectangles par image)
+function waveBands(g, B, sr, xa, xb, W, fx, mid, s) {
+  const P = Array.from({ length:6 }, () => new Path2D()), n = B.lo.length;
+  for (let x = Math.max(0, Math.floor(xa)); x < Math.min(W, xb); x++) {
+    const a0 = Math.floor(fx(x) * sr / PEAK), a1 = Math.max(a0 + 1, Math.ceil(fx(x + 1) * sr / PEAK));
+    if (a1 <= 0 || a0 >= n) continue;
+    let l = 0, m = 0, h = 0;
+    for (let k = Math.max(0, a0); k < Math.min(n, a1); k++) { if (B.lo[k] > l) l = B.lo[k]; if (B.mi[k] > m) m = B.mi[k]; if (B.hi[k] > h) h = B.hi[k]; }
+    const o = x < W / 2 ? 3 : 0;
+    [l, m, h].forEach((v, i) => { const hh = Math.max(0.25, Math.min(1, v * 1.2) * s); P[o + i].rect(x, mid - hh, 1, hh * 2); });
+  }
+  ['#2a6cff', '#ffae3d', '#f4f4f4', '#1b3f80', '#7a5523', '#777'].forEach((col, i) => { g.fillStyle = col; g.fill(P[i]); });
+}
 function drawDecks(LN) {
   const DECKH = $('decks').classList.contains('maxed')   // grand écran : les formes d'onde prennent toute la place
     ? Math.max(120, innerHeight - document.querySelector('header').offsetHeight - $('decks').querySelector('.deckrow').offsetHeight - 14) : LAY.deckH;
@@ -1648,28 +1701,26 @@ function drawDecks(LN) {
   g.fillStyle = '#07070a'; g.fillRect(0, 0, W, DECKH);
   for (let d = 0; d < 2; d++) {
     const y0 = d * rh, mid = y0 + rh / 2, s = rh * 0.46;
-    for (const c of S.clips) {
+    let tb0 = pb;   // temps au centre (grille)
+    if (LV.on) {   // Mix Live : chaque voie défile à sa propre position
+      const P = LV.d[d], B = P.buf && BUF[P.c.id]?.bands;
+      if (P.buf) {
+        const f = lvPos(P), spb = 60 / P.T; tb0 = lvTb(P, f);
+        if (B) waveBands(g, B, P.buf.sampleRate, 0, W, W, x => f + (x - W / 2) / ppb * spb, mid, s);
+        const cx = W / 2 + (lvTb(P, P.cue) - tb0) * ppb;   // point CUE
+        g.fillStyle = '#ffb547'; g.beginPath(); g.moveTo(cx - 5, y0); g.lineTo(cx + 5, y0); g.lineTo(cx, y0 + 7); g.fill();
+      }
+    } else for (const c of S.clips) {
       if (deckOf(c, LN) !== d) continue;
       const b = BUF[c.id], xa = W / 2 + (c.start - pb) * ppb, xb = W / 2 + (clipEnd(c) - pb) * ppb;
       if (xb < 0 || xa > W) continue;
       g.fillStyle = '#ffffff07'; g.fillRect(xa, y0 + 2, xb - xa, rh - 4);
-      if (!b?.bands) continue;
-      const B = b.bands, sr = b.buffer.sampleRate;
-      for (let x = Math.max(0, Math.floor(xa)); x < Math.min(W, xb); x++) {
-        const tl = pb + (x - W / 2) / ppb;
-        const a0 = Math.floor(fileT(c, tlToTb(c, tl)) * sr / PEAK), a1 = Math.max(a0 + 1, Math.ceil(fileT(c, tlToTb(c, tl + 1 / ppb)) * sr / PEAK));
-        let l = 0, m = 0, h = 0;
-        for (let k = Math.max(0, a0); k < Math.min(B.lo.length, a1); k++) { if (B.lo[k] > l) l = B.lo[k]; if (B.mi[k] > m) m = B.mi[k]; if (B.hi[k] > h) h = B.hi[k]; }
-        const past = x < W / 2;
-        for (const [v, col] of [[l, past ? '#1b3f80' : '#2a6cff'], [m, past ? '#7a5523' : '#ffae3d'], [h, past ? '#777' : '#f4f4f4']]) {
-          const hh = Math.min(1, v * 1.2) * s; g.fillStyle = col; g.fillRect(x, mid - hh, 1, hh * 2 || 0.5);
-        }
-      }
+      if (b?.bands) waveBands(g, b.bands, b.buffer.sampleRate, xa, xb, W, x => fileT(c, tlToTb(c, pb + (x - W / 2) / ppb)), mid, s);
     }
-    for (let k = Math.ceil(pb - 16); k <= pb + 16; k++) {   // grille : un trait par temps, rouge sur chaque mesure
-      const x = Math.round(W / 2 + (k - pb) * ppb);
-      g.fillStyle = k % 4 ? '#ffffff30' : '#ff4b4baa'; g.fillRect(x, y0, 1, k % 4 ? 7 : rh);
-      if (k % 4 === 0) g.fillRect(x, y0 + rh - 7, 1, 7);
+    for (let k = Math.ceil(tb0 - 16); k <= tb0 + 16; k++) {   // grille : un trait par temps, rouge sur chaque mesure
+      const x = Math.round(W / 2 + (k - tb0) * ppb), bar = ((k % 4) + 4) % 4 === 0;
+      g.fillStyle = bar ? '#ff4b4baa' : '#ffffff30'; g.fillRect(x, y0, 1, bar ? rh : 7);
+      if (bar) g.fillRect(x, y0 + rh - 7, 1, 7);
     }
     g.fillStyle = DECKCOL[d]; g.font = '800 13px ui-monospace, Menlo, monospace'; g.fillText('AB'[d], 6, y0 + 16);
     g.fillStyle = '#22222e'; g.fillRect(0, y0 + rh - 1, W, 1);
@@ -1677,47 +1728,69 @@ function drawDecks(LN) {
   g.fillStyle = '#fff'; g.fillRect(W / 2 - 1, 0, 2, DECKH);
   for (let d = 0; d < 2; d++) deckInfo(d, pb, LN);
 }
+function overview(el, b, d, W, H) {   // vue d'ensemble d'un morceau, dessinée une fois (grise et en couleur) puis recopiée
+  const r = devicePixelRatio || 1, key = [b.buffer, W, H, r].join();
+  if (el.ov?.key === key) return el.ov;
+  const mk = col => {
+    const cv = document.createElement('canvas'); cv.width = W * r; cv.height = H * r;
+    const g = cv.getContext('2d'); g.setTransform(r, 0, 0, r, 0, 0); g.fillStyle = col;
+    const per = b.peaks.length / W, p = new Path2D();
+    for (let x = 0; x < W; x++) { let m = 0; for (let k = Math.floor(x * per); k < Math.floor((x + 1) * per); k++) if (b.peaks[k] > m) m = b.peaks[k]; const hh = Math.max(0.25, Math.min(1, m) * (H / 2 - 1)); p.rect(x, H / 2 - hh, 1, hh * 2); }
+    g.fill(p); return cv;
+  };
+  return el.ov = { key, grey:mk('#5a5a70'), col:mk(DECKCOL[d]) };
+}
 function deckInfo(d, pb, LN) {   // morceau en lecture sur la voie, sinon le prochain qui y arrive
-  const el = $('deck' + d), on = deckClip(d, pb, LN);
-  const c = on || S.clips.filter(o => deckOf(o, LN) === d && o.start > pb).sort((a, b) => a.start - b.start)[0];
-  if (el.cid !== (c?.id ?? null) || el.ct !== (c && ct(c))) {
-    el.cid = c?.id ?? null; el.ct = c && ct(c);
+  const el = $('deck' + d), P = LV.d[d];
+  const on = LV.on ? (P.playing ? P.c : null) : deckClip(d, pb, LN);
+  const c = LV.on ? P.c : on || S.clips.filter(o => deckOf(o, LN) === d && o.start > pb).sort((a, b) => a.start - b.start)[0];
+  const bpm = c ? (LV.on ? P.T * lvSpeed(P) : ct(c) * U.rate).toFixed(1) : '—';
+  if (el.cid !== (c?.id ?? null) || el.bpm !== bpm) {
+    el.cid = c?.id ?? null; el.bpm = bpm;
     const t = c && S.tracks[c.trackId];
-    el.querySelector('.dt').textContent = t ? t.name : '—';
+    el.querySelector('.dt').textContent = t ? t.name : LV.on ? 'Glisse un morceau ici' : '—';
     const k = el.querySelector('.key'); k.textContent = t ? KL(camOf(t)) : ''; k.style.color = t ? keyColor(camOf(t)) : '';
-    el.querySelector('.dbpm').textContent = c ? (ct(c) * U.rate).toFixed(1) : '—';
+    el.querySelector('.dbpm').textContent = bpm;
   }
-  el.querySelector('.dtime').textContent = on ? `${fmtTime(U.pos - secAt(on.start))} / -${fmtTime(secAt(clipEnd(on)) - U.pos)}` : '';
+  const b = c && (LV.on ? BUF[c.id] || (P.buf && { buffer:P.buf }) : BUF[c.id]);
+  const dur = b?.buffer?.duration || 0, pos = !c ? 0 : LV.on ? lvPos(P) : on ? fileT(c, tlToTb(c, pb)) : fileT(c, c.in);
+  el.querySelector('.dtime').textContent = LV.on ? (c ? `${fmtTime(pos)} / -${fmtTime(Math.max(0, dur - pos))}` : '') : on ? `${fmtTime(U.pos - secAt(on.start))} / -${fmtTime(secAt(clipEnd(on)) - U.pos)}` : '';
   const st = el.querySelector('.dst');
-  st.className = 'dst ' + (on ? 'air' : 'nxt'); st.textContent = on ? '● en lecture' : c ? `entre dans ${fmtTime(secAt(c.start) - U.pos)}` : '';
-  const cv = el.querySelector('canvas'), b = c && BUF[c.id];   // vue d'ensemble du morceau, partie jouée en couleur
+  if (LV.on) { st.className = 'dst ' + (P.playing ? 'air' : 'nxt'); st.textContent = P.playing ? '● en lecture' : c ? '❚❚ prête' : ''; }
+  else { st.className = 'dst ' + (on ? 'air' : 'nxt'); st.textContent = on ? '● en lecture' : c ? `entre dans ${fmtTime(secAt(c.start) - U.pos)}` : ''; }
+  const cv = el.querySelector('canvas');
   const H = LAY.rackH && innerWidth > 760 ? Math.max(28, el.clientHeight - el.querySelector('.dh').offsetHeight - el.querySelector('.dn').offsetHeight - 22) : 28;   // rack agrandi : la forme d'onde grandit
-  const [g, W] = setupCanvas(cv, H); g.clearRect(0, 0, W, H); g.fillStyle = '#0f0f15'; g.fillRect(0, 0, W, H);
-  if (!b?.peaks) return;
-  const dur = b.buffer.duration, pos = on ? fileT(c, tlToTb(c, pb)) : fileT(c, c.in), per = b.peaks.length / W;
-  const u0 = fileT(c, c.in) / dur * W, u1 = fileT(c, c.in + c.len) / dur * W;
-  g.fillStyle = '#ffffff10'; g.fillRect(u0, 0, u1 - u0, H);   // partie utilisée dans le mix
-  for (let x = 0; x < W; x++) {
-    let m = 0; for (let k = Math.floor(x * per); k < Math.floor((x + 1) * per); k++) if (b.peaks[k] > m) m = b.peaks[k];
-    g.fillStyle = x < pos / dur * W ? DECKCOL[d] : '#5a5a70'; const hh = Math.min(1, m) * (H / 2 - 1); g.fillRect(x, H / 2 - hh, 1, hh * 2 || 0.5);
-  }
-  g.fillStyle = '#fff'; g.fillRect(pos / dur * W, 0, 2, H);
+  const [g, W] = setupCanvas(cv, H); g.fillStyle = '#0f0f15'; g.fillRect(0, 0, W, H);
+  if (!b?.peaks || !dur) return;
+  if (!LV.on) { const u0 = fileT(c, c.in) / dur * W, u1 = fileT(c, c.in + c.len) / dur * W; g.fillStyle = '#ffffff10'; g.fillRect(u0, 0, u1 - u0, H); }   // partie utilisée dans le mix
+  const ov = overview(el, b, d, W, H), px = pos / dur * W;
+  g.drawImage(ov.grey, 0, 0, W, H);
+  g.save(); g.beginPath(); g.rect(0, 0, px, H); g.clip(); g.drawImage(ov.col, 0, 0, W, H); g.restore();   // partie jouée en couleur
+  if (LV.on) { g.fillStyle = '#ffb547'; g.fillRect(P.cue / dur * W, 0, 1.5, H); }
+  g.fillStyle = '#fff'; g.fillRect(px, 0, 2, H);
 }
 $('deckC').addEventListener('mousedown', e => {   // clic sur les formes d'onde : on avance / recule (le centre = lecture)
   const r = $('deckC').getBoundingClientRect(), d = (e.clientX - r.left - r.width / 2) / (r.width / 32);
+  if (LV.on) {   // Mix Live : la voie cliquée (haut = A, bas = B) avance / recule d'autant de temps, sans toucher à l'autre
+    const P = LV.d[e.clientY - r.top < r.height / 2 ? 0 : 1], k = LV.d.indexOf(P); if (!P.buf) return;
+    const was = P.playing; lvPause(k); P.pos = clamp(lvF(P, Math.round(lvTb(P, P.pos) + d)), 0, P.buf.duration - 0.1); if (was) lvPlay(k); draw(true); return;
+  }
   U.pos = Math.max(0, secAt(Math.round(beatAt(U.pos) + d))); if (U.playing) play(U.pos); draw();
 });
 
 // table de mixage
+const KTICKS = Array.from({ length:11 }, (_, i) => `<span class="kt${i === 5 ? ' z' : i % 5 ? '' : ' e'}" style="--r:${-135 + i * 27}deg"></span>`).join('');
+const KSIGN = {};   // ÉCHO / RÉV : zéro au milieu aussi, l'effet monte en tournant d'un côté comme de l'autre (on garde le côté pour l'aiguille)
 const knobR = k => { const P = PARAMS[KNOB[k][1]]; return [P.min, P.max, P.def]; };
-function knobU(k, v) { const [lo, hi, df] = knobR(k); return df === lo ? (v - lo) / (hi - lo) * 2 - 1 : v < df ? -(df - v) / (df - lo) : (v - df) / (hi - df); }   // -1..1, zéro au centre
-function knobV(k, u) { const [lo, hi, df] = knobR(k); return df === lo ? lo + (u + 1) / 2 * (hi - lo) : u < 0 ? df + u * (df - lo) : df + u * (hi - df); }
-const chanHTML = d => `<div class="ccol"><div class="knobs">${Object.keys(KNOB).map(k => `<div class="knob" data-d="${d}" data-k="${k}"><i></i>${KNOB[k][0]}</div>`).join('')}</div>
-  <div class="transp"><button class="rnd cue" data-d="${d}" title="CUE ${'AB'[d]} · à l'arrêt : pose le point de départ ici · en lecture : revient au point et s'arrête">CUE</button><button class="rnd pp" title="Lecture / pause (Espace)">▶</button></div></div>
+function knobU(k, v, d) { const [lo, hi, df] = knobR(k); return df === lo ? (KSIGN[d + k] || 1) * (v - lo) / (hi - lo) : v < df ? -(df - v) / (df - lo) : (v - df) / (hi - df); }   // -1..1, zéro au centre
+function knobV(k, u, d) { const [lo, hi, df] = knobR(k); if (df === lo && u) KSIGN[d + k] = Math.sign(u); return df === lo ? lo + Math.abs(u) * (hi - lo) : u < 0 ? df + u * (df - lo) : df + u * (hi - df); }
+const chanHTML = d => `<div class="ccol"><div class="knobs">${Object.keys(KNOB).map(k => `<div class="knob" data-d="${d}" data-k="${k}"><div class="kw">${KTICKS}<i></i></div>${KNOB[k][0]}</div>`).join('')}</div>
+  <div class="transp"><button class="rnd cue" data-d="${d}" title="CUE ${'AB'[d]} · à l'arrêt : pose le point de départ ici · en lecture : revient au point et s'arrête">CUE</button><button class="rnd pp" data-d="${d}" title="Lecture / pause de la voie ${'AB'[d]} seule (Mix Live)">▶</button></div></div>
   <div class="fwrap">${[0, 6, 12, 20, 30, 40].map(db => `<span class="tick ${db ? '' : 'z'}" style="bottom:${7.5 + 10 ** (-db / 40) * 97}px">${db}</span>`).join('')}<span class="tick" style="bottom:7.5px">∞</span>
   <input type="range" class="fader cfad" data-d="${d}" min="0" max="1" step="0.01" value="1" title="Volume de la voie ${'AB'[d]} (repères en dB)"></div>`;   // gain = fader², donc -dB = 40·log10
 $('mixer').innerHTML = `<div class="chan" style="--dc:${DECKCOL[0]}">${chanHTML(0)}</div>
   <div class="mixmid">
+    <button id="liveBtn" title="Mix Live : les platines A et B jouent chacune de leur côté (▶ et CUE par voie), tu mixes en direct à la table. Glisse un morceau de la bibliothèque sur une platine pour le charger.">MIX LIVE</button>
     <button id="rec" title="Pendant la lecture, tes gestes sur la table s'écrivent en lignes rouges sur les morceaux (comme l'automation d'Ableton)">● REC</button>
     <div><input type="range" id="xf" class="cfad" min="-1" max="1" step="0.01" value="0" title="Crossfader (double-clic : centre)"><div class="hticks c"></div></div>
     <div class="xfl"><span>A</span><span>CROSSFADER</span><span>B</span></div>
@@ -1727,8 +1800,8 @@ $('mixer').innerHTML = `<div class="chan" style="--dc:${DECKCOL[0]}">${chanHTML(
 function mixUI() {
   document.querySelectorAll('#mixer .knob').forEach(el => {
     const d = +el.dataset.d, k = el.dataset.k, v = MIX.d[d][k];
-    el.style.setProperty('--a', knobU(k, v) * 135); el.classList.toggle('mod', Math.abs(v - neutral()[k]) > 1e-3);
-    el.title = `${PARAMS[KNOB[k][1]].label} ${'AB'[d]} : ${PARAMS[KNOB[k][1]].fmt(v)} (glisser haut / bas · double-clic : zéro)`;
+    el.style.setProperty('--a', knobU(k, v, d) * 135); el.classList.toggle('mod', Math.abs(v - neutral()[k]) > 1e-3);
+    el.title = `${PARAMS[KNOB[k][1]].label} ${'AB'[d]} : ${PARAMS[KNOB[k][1]].fmt(v)} (tourner : glisser haut / bas ou gauche / droite · simple clic : zéro)`;
   });
   document.querySelectorAll('#mixer .fader').forEach(el => el.value = MIX.d[+el.dataset.d].fader);
   $('xf').value = MIX.xf; $('rec').classList.toggle('on', !!U.rec);
@@ -1759,14 +1832,18 @@ function recEnd() {   // fin de prise : les boutons reviennent à zéro, les lig
 }
 $('mixer').addEventListener('mousedown', e => {
   const el = e.target.closest('.knob'); if (!el) return;
-  e.preventDefault(); const d = +el.dataset.d, k = el.dataset.k, y0 = e.clientY, u0 = knobU(k, MIX.d[d][k]);
-  const mm = m => setMix(d, k, knobV(k, clamp(u0 + (y0 - m.clientY) / 110, -1, 1)));
-  const up = () => { removeEventListener('mousemove', mm); removeEventListener('mouseup', up); };
+  e.preventDefault(); const d = +el.dataset.d, k = el.dataset.k, x0 = e.clientX, y0 = e.clientY, u0 = knobU(k, MIX.d[d][k], d);
+  let moved = false;   // simple clic sans tourner : le bouton revient à zéro
+  const mm = m => {
+    const dl = (y0 - m.clientY) + (m.clientX - x0);
+    if (!moved && Math.abs(m.clientX - x0) + Math.abs(m.clientY - y0) < 4) return;
+    moved = true; setMix(d, k, knobV(k, clamp(u0 + dl / 110, -1, 1), d));
+  };
+  const up = () => { removeEventListener('mousemove', mm); removeEventListener('mouseup', up); if (!moved) { delete KSIGN[d + k]; setMix(d, k, neutral()[k]); } };
   addEventListener('mousemove', mm); addEventListener('mouseup', up);
 });
 $('mixer').addEventListener('dblclick', e => {
-  const el = e.target.closest('.knob'); if (el) setMix(+el.dataset.d, el.dataset.k, neutral()[el.dataset.k]);
-  else if (e.target.id === 'xf') setMix(null, 'xf', 0);
+  if (e.target.id === 'xf') setMix(null, 'xf', 0);
 });
 $('mixer').addEventListener('input', e => {
   if (e.target.classList.contains('fader')) setMix(+e.target.dataset.d, 'fader', +e.target.value);
@@ -1779,11 +1856,107 @@ mixUI();
 // ============ Barre d'outils ============
 $('play').onclick = () => U.playing ? stop() : play();
 U.cue = [0, 0];
-document.querySelectorAll('.rnd.pp').forEach(b => b.onclick = () => $('play').click());
-document.querySelectorAll('.rnd.cue').forEach(b => b.onclick = () => {   // façon CDJ, un point CUE par côté : à l'arrêt on le pose, en lecture on y revient et on s'arrête
-  const d = +b.dataset.d;
-  if (U.playing) { stop(); U.pos = U.cue[d]; } else U.cue[d] = U.pos;
-  b.classList.add('on'); setTimeout(() => b.classList.remove('on'), 180); draw();
+
+// ============ Mix Live : deux platines indépendantes (comme deux CDJ sur une table) ============
+// Chaque voie a son morceau, sa lecture, son CUE ; la table (EQ, filtre, faders, crossfader) mixe les deux en direct.
+// Les deux voies jouent au tempo du mix ; ▶ sur une voie pendant que l'autre joue part calé sur ses temps (quantize).
+var LV = { on:false, bus:null, d:[0, 1].map(() => ({ c:null, t:null, buf:null, T:0, src:null, g:null, t0:0, f0:0, sp:1, pos:0, cue:0, playing:false })) };
+const lvSpeed = P => U.rate * S.tempo / P.T;
+const lvPos = P => P.playing ? Math.min(P.buf.duration, P.f0 + (ctx.currentTime - P.t0) * P.sp) : P.pos;
+const lvTb = (P, f) => ((f - P.t.nudge / 1000) * P.T - fb0(P.t) * P.t.bpm) / 60;   // seconde du fichier -> temps du morceau
+const lvF = (P, tb) => (fb0(P.t) * P.t.bpm + tb * 60) / P.T + P.t.nudge / 1000;
+function lvBus() { if (!LV.bus) LV.bus = buildBus(ctx); return LV.bus; }
+function lvSet(d, c, buf, T, f) {   // pose un morceau sur une voie (arrêtée), tête et CUE à f secondes du fichier
+  const P = LV.d[d]; lvPause(d);
+  Object.assign(P, { c, t:S.tracks[c.trackId], buf, T, pos:Math.max(0, f), cue:Math.max(0, f) });
+  P.ov = null; draw();
+}
+function lvFromTimeline(d) {   // le morceau de la timeline qui joue (ou arrive) sur cette voie, à l'endroit de la tête de lecture
+  const pb = beatAt(U.pos), LN = lanes(), c = deckClip(d, pb, LN) || S.clips.filter(o => deckOf(o, LN) === d && o.start > pb).sort((a, b) => a.start - b.start)[0];
+  if (!c || !BUF[c.id]?.buffer) return;
+  lvSet(d, c, BUF[c.id].buffer, clipTempo(c).T / (BUF[c.id].k || 1), fileT(c, tlToTb(c, Math.max(c.start, pb))));
+}
+async function lvLoadTrack(d, id) {   // morceau de la bibliothèque glissé sur une voie : calé au tempo du mix
+  const info = LIB.find(x => x.id === id); if (!info || !S.tempo) return;
+  if (!S.tracks[id]) S.tracks[id] = { id, name:info.name, bpm:fold(info.bpm), detected:info.bpm, first_beat:info.first_beat, duration:info.duration, key:info.key, camelot:info.camelot, rms_db:info.rms_db, punch:info.punch, nudge:0, phrase:info.phrase || 0 };
+  const t = S.tracks[id]; fixDownbeat(t);
+  const c = { id:'live' + d, trackId:id, in:0, len:0, start:0, auto:blankAuto(), base:blankBase() };
+  const el = $('deck' + d); el.querySelector('.dt').textContent = `${t.name} · calage…`; el.cid = undefined;
+  try {
+    const r = await fetch(`/api/audio?${audioQ(c, { T:S.tempo })}`); if (!r.ok) throw new Error((await r.json()).error);
+    const buf = await ctx.decodeAudioData(await r.arrayBuffer());
+    const P = { t, T:S.tempo }; lvSet(d, c, buf, S.tempo, lvF(P, downbeat(t).kick));   // prêt sur le premier kick
+    BUF[c.id] = { buffer:buf, peaks:peaks(buf), bands:bands(buf) };
+  } catch (e) { el.querySelector('.dt').textContent = `Erreur : ${e.message}`; }
+}
+function lvPlay(d) {
+  const P = LV.d[d], o = LV.d[1 - d]; if (!P.buf || P.playing) return;
+  ctx.resume(); hushPreview(); const bus = lvBus(), when = ctx.currentTime + 0.04;
+  let f = P.pos >= P.buf.duration - 0.05 ? P.cue : P.pos;
+  P.sp = lvSpeed(P);
+  if (o.playing) {   // quantize : même place dans le temps que l'autre voie
+    const tb = lvTb(P, f), ph = lvTb(o, lvPos(o) + 0.04 * o.sp), dt = ((ph - tb) % 1 + 1.5) % 1 - 0.5;
+    f = lvF(P, tb + dt); if (f < 0) f = lvF(P, tb + dt + 1);
+  }
+  const src = ctx.createBufferSource(), g = ctx.createGain(); src.buffer = P.buf; src.playbackRate.value = P.sp;
+  const mt = MT.ok && S.mt !== false && Math.abs(P.sp - 1) > 1e-4 ? new AudioWorkletNode(ctx, 'mt-shift', { outputChannelCount:[2], parameterData:{ ratio:1 / P.sp } }) : null;
+  const ag = ctx.createGain(); ag.gain.value = autoGain(P.c);
+  (mt ? src.connect(mt) : src).connect(g).connect(ag).connect(bus.decks[d].lo);
+  g.gain.setValueAtTime(0, when); g.gain.linearRampToValueAtTime(1, when + 0.005);
+  src.start(when - (mt ? MT.lat : 0), f);
+  src.onended = () => { if (P.src === src) { P.pos = lvPos(P); P.playing = false; P.src = null; lvUI(); } };
+  Object.assign(P, { src, g, t0:when, f0:f, playing:true });
+  lvUI(); lvLoop();
+}
+function lvPause(d) {
+  const P = LV.d[d]; if (!P.playing) return;
+  P.pos = lvPos(P); P.playing = false;
+  const { src, g } = P, t = ctx.currentTime; P.src = null;
+  g.gain.setValueAtTime(g.gain.value, t); g.gain.linearRampToValueAtTime(0, t + 0.01); try { src.stop(t + 0.012); } catch {}
+  lvUI();
+}
+function lvCue(d) {   // façon CDJ : en lecture, retour au point CUE et arrêt ; à l'arrêt, pose le point CUE ici
+  const P = LV.d[d]; if (!P.buf) return;
+  if (P.playing) { lvPause(d); P.pos = P.cue; } else P.cue = P.pos;
+  lvUI(); draw();
+}
+function lvRespeed() { LV.d.forEach((P, d) => { if (P.playing) { lvPause(d); lvPlay(d); } }); }   // fader de tempo : les voies suivent
+function liveOn() {
+  if (LV.on) return;
+  stop(); LV.on = true; lvBus();
+  [0, 1].forEach(d => { if (!LV.d[d].buf) lvFromTimeline(d); });
+  lvUI(); lvLoop();
+}
+function liveOff() {
+  if (!LV.on) return;
+  [0, 1].forEach(lvPause); LV.on = false;
+  const m = LV.bus?.master; LV.bus = null; if (m) setTimeout(() => m.disconnect(), 60);
+  lvUI(); draw();
+}
+function lvUI() {
+  $('liveBtn').classList.toggle('on', LV.on); document.body.classList.toggle('live', LV.on);
+  document.querySelectorAll('.rnd.pp').forEach(b => {
+    const on = LV.on ? LV.d[+b.dataset.d].playing : U.playing; b.textContent = on ? '❚❚' : '▶'; b.classList.toggle('on', on);
+  });
+}
+function lvLoop() {   // une seule boucle : seules les platines sont redessinées (la timeline ne bouge pas)
+  if (lvLoop.on || !LV.on) return; lvLoop.on = true;
+  const f = () => { if (!LV.on || !LV.d.some(P => P.playing)) { lvLoop.on = false; draw(true); return; } draw(true); requestAnimationFrame(f); };
+  requestAnimationFrame(f);
+}
+$('liveBtn').onclick = () => LV.on ? liveOff() : liveOn();
+document.querySelectorAll('.rnd.pp').forEach(b => b.onclick = () => {   // chaque voie a sa lecture : elle passe en Mix Live si besoin
+  const d = +b.dataset.d; liveOn(); LV.d[d].playing ? lvPause(d) : lvPlay(d);
+});
+document.querySelectorAll('.rnd.cue').forEach(b => b.onclick = () => {
+  const d = +b.dataset.d; liveOn(); lvCue(d);
+  b.classList.add('on'); setTimeout(() => b.classList.remove('on'), 180);
+});
+[0, 1].forEach(d => {   // glisser un morceau de la bibliothèque sur une platine = le charger sur cette voie
+  const el = $('deck' + d);
+  el.addEventListener('dragover', e => { if (isTrackDrag(e)) { e.preventDefault(); e.stopPropagation(); el.classList.add('drop'); } });
+  el.addEventListener('dragleave', () => el.classList.remove('drop'));
+  el.addEventListener('drop', e => { if (!isTrackDrag(e)) return; e.preventDefault(); e.stopPropagation(); el.classList.remove('drop'); liveOn(); lvLoadTrack(d, e.dataTransfer.getData('text/mix-track')); });
 });
 scaleMixer();
 $('toStart').onclick = () => { U.pos = 0; U.scrollX = -2; U.playing ? play(0) : draw(); };
@@ -2014,7 +2187,7 @@ async function openProject(name) {
   for (const t of Object.values(S.tracks)) {   // la bibliothèque a été ré-analysée : on reprend BPM et premier temps
     const l = LIB.find(x => x.id === t.id);
     if (l && (l.bpm !== t.detected || l.first_beat !== t.first_beat)) {
-      Object.assign(t, { detected:l.bpm, bpm:fold(l.bpm), first_beat:l.first_beat, nudge:0, man:0 });
+      Object.assign(t, { detected:l.bpm, bpm:fold(l.bpm), first_beat:l.first_beat, nudge:0, man:0, k0:null });
     }
   }
   if ((S.grid || 0) < 3) Object.values(S.tracks).forEach(t => t.nudge = 0);   // anciens recalages automatiques : remis à 0
@@ -2024,6 +2197,7 @@ async function openProject(name) {
   }
   if ((S.grid || 0) < 5) Object.values(S.tracks).forEach(t => t.man = 0);   // recalages à la main faits contre l'ancien calage (faux) : oubliés une fois
   S.grid = 5;
+  Object.values(S.tracks).forEach(fixDownbeat);   // premier kick sur la mesure, plus de blanc au début
   for (const c of S.clips) {   // morceau rogné hors des temps (ancien bug du bord gauche) : ses temps reviennent sur ceux du mix
     const f = c.start - c.in - Math.round(c.start - c.in);
     if (Math.abs(f) > 1e-6) c.in += f;
