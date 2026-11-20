@@ -18,8 +18,8 @@
   button:hover:not(:disabled) { border-color:var(--acc); box-shadow:inset 0 1px 0 #ffffff18, 0 0 0 3px #ff3b3b22, 0 2px 8px #0006; }
   button:active:not(:disabled) { transform:translateY(1px); }
   button:disabled { opacity:.35; cursor:default; }
-  button.on { background:linear-gradient(180deg, #ffffff, #e4e4ea); border-color:#fff; color:#e0191f; font-weight:700; }
-  button.big { background:linear-gradient(180deg, #ffffff, #e4e4ea); border-color:#fff; color:#e0191f; font-weight:800; box-shadow:0 4px 14px #0008, inset 0 -1px 0 #0002; }
+  button.on { color:#ff3b3b; border-color:#ff3b3b66; }   /* fond normal, écriture rouge */
+  button.big { color:#ff3b3b; }
   button.acc { background:linear-gradient(135deg, #2ee6b4, #14b38a); border-color:#4af0c4; color:#032a1f; font-weight:700; }
   button.danger { background:#ff3b5c1a; border-color:#ff3b5c88; color:#ff6b84; font-weight:600; }
   button.danger:hover:not(:disabled) { background:#ff3b5c; color:#fff; border-color:#ff3b5c; box-shadow:0 0 0 3px #ff3b5c33; }
@@ -32,9 +32,8 @@
   header h1::before { content:''; width:22px; height:22px; border-radius:50%; background:conic-gradient(from 200deg, #3aa0ff, #ffffff, #ff9a2e, #ff3b3b, #3aa0ff); box-shadow:0 0 12px #ff3b3b66; mask:radial-gradient(circle, transparent 3px, #000 4px); }
   header h1 span { background:linear-gradient(90deg, #ff5c5c, #ff2a2a); -webkit-background-clip:text; background-clip:text; color:transparent; }
   #play, #toStart { border-radius:50%; width:38px; height:38px; padding:0; font-size:14px; }
-  #play { width:44px; height:44px; font-size:17px; background:radial-gradient(circle at 40% 30%, #fff, #dedee4); border-color:#fff; color:#e0191f; box-shadow:0 4px 16px #0009, inset 0 -2px 0 #0002; }
-  #play.on, #sync.on { animation:blink var(--beat, .48s) steps(1) infinite; }
-  @keyframes blink { 50% { background:#ffd9d9; color:#ff0000; box-shadow:0 0 18px #ff3b3bcc, 0 0 0 2px #ff3b3b; } }
+  #play { width:44px; height:44px; font-size:17px; color:#ff3b3b; }
+  #play.on, #sync.on { background:linear-gradient(180deg, #ff4d4d, #c81e1e); border-color:#ff7a7a; color:#fff; box-shadow:0 0 12px #ff3b3b88; }   /* allumé en rouge */
   .sep { width:1px; height:26px; background:var(--line); }
   .grow { flex:1; }
   #clock { font:700 16px ui-monospace, Menlo, monospace; min-width:150px; text-align:center; background:#07070b; border:1px solid #2c2c40; border-radius:10px; padding:6px 10px; color:#2ee6b4; text-shadow:0 0 10px #22d3a666; box-shadow:inset 0 2px 6px #000a; }
@@ -48,7 +47,8 @@
   #tfv.zero { color:var(--dim); }
   #mt { font:800 8.5px/1.05 ui-monospace, Menlo, monospace; letter-spacing:.4px; padding:3px 6px; color:var(--dim); }
   #mt.on { color:#fff; background:linear-gradient(180deg, #ff4d4d, #c81e1e); border-color:#ff7a7a; box-shadow:0 0 10px #ff3b3b77; }
-  #sync { background:linear-gradient(180deg, #fff, #dedee4); border-color:#fff; color:#e0191f; font-weight:800; }
+  #sync { color:#ff3b3b; }
+  #tempo::-webkit-inner-spin-button, #tempo::-webkit-outer-spin-button { -webkit-appearance:none; margin:0; } #tempo { -moz-appearance:textfield; }
   label.inl { display:flex; align-items:center; gap:6px; color:var(--dim); }
 
   /* ---------- Zones ---------- */
@@ -106,7 +106,14 @@
   .tabs button { box-shadow:none; }
   .tabs button.on { background:linear-gradient(180deg, #34344a, #28283a); color:var(--txt); box-shadow:inset 0 1px 0 #ffffff14, 0 1px 4px #0006; }
   #search { width:200px; }
-  .libbody { display:grid; grid-template-columns:auto 1fr; min-height:0; }
+  .libbody { display:grid; grid-template-columns:auto minmax(0,1fr) auto; min-height:0; }
+  #impPane { width:min(340px, 30vw); padding:8px; border-left:1px solid var(--line); background:var(--panel); min-height:0; display:flex; }
+  #impPane[hidden] { display:none; }
+  #impDrop { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; text-align:center; border:2px dashed #3a3a4e; border-radius:12px; padding:8px; overflow:hidden; color:var(--txt); cursor:pointer; transition:border-color .15s, background .15s; }
+  #impDrop:hover, body.dragover #impDrop { border-color:#ff3b3b; background:#ff3b3b10; }
+  #impDrop .ico { font-size:22px; line-height:1; color:#ff3b3b; }
+  #impDrop .row { display:flex; gap:6px; flex-wrap:wrap; justify-content:center; }
+  #impTab.on { color:#ff3b3b; }
   #libSide { overflow:auto; border-right:1px solid var(--line); padding:10px; width:250px; }
   #libSide:empty { display:none; }
   #wheel { display:block; margin:0 auto; width:auto; height:min(230px, calc(var(--libH) - 80px)); }   /* la roue tient dans la bibliothèque */
@@ -195,6 +202,14 @@
   .pair { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:9px; display:grid; grid-template-columns:1fr auto 1fr; gap:8px; align-items:center; }
   .pair div { overflow:hidden; } .pair b { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px; margin-top:3px; }
 
+  #prefs { background:var(--card); color:var(--txt); border:1px solid var(--line); border-radius:12px; padding:0; width:min(440px, 94vw); max-height:88vh; box-shadow:0 20px 60px #000c; }
+  #prefs::backdrop { background:#000a; }
+  #prefs form { padding:14px 16px; display:grid; gap:7px; }
+  #prefs .phead { display:flex; justify-content:space-between; align-items:center; font-size:16px; }
+  #prefs h4 { margin:8px 0 0; font-size:11px; letter-spacing:1px; text-transform:uppercase; color:#ff5c5c; }
+  #prefs label { display:grid; grid-template-columns:150px 1fr; align-items:center; gap:8px; color:var(--dim); }
+  #prefs label.chk { display:flex; color:var(--txt); }
+  #prefs select { width:100%; min-width:0; }
   #modal { position:fixed; inset:0; background:#000a; display:flex; align-items:center; justify-content:center; z-index:9; }
   #modal .box { width:min(440px, 92vw); padding:18px; background:var(--card); border:1px solid var(--line); border-radius:12px; }
   .bar { height:6px; background:var(--line); border-radius:3px; overflow:hidden; margin:10px 0; }
@@ -236,6 +251,7 @@
   <button id="fillHour" title="Ajoute les morceaux de la liste affichée (tempo à ±6 %) jusqu'à 1 h de mix, les range et pose les transitions">⚡ Mix 1 h</button>
   <button id="autoMix" title="Range les morceaux du mix dans le meilleur ordre et pose des transitions">Ordre auto</button>
   <button id="export" class="big">Exporter en MP3</button>
+  <button id="prefsBtn" title="Réglages : carte son, entrée micro, échantillonnage, options">⚙ Réglages</button>
 </header>
 
 <div class="app">
@@ -254,6 +270,7 @@
         <button data-tab="key">Par tonalité</button>
         <button data-tab="folder">Par dossier</button>
         <button data-tab="suggest">Suggestions</button>
+        <button id="impTab" title="Afficher / masquer la zone d'import à droite">⇣ Importer</button>
       </div>
       <input type="search" id="search" placeholder="Rechercher un titre, un artiste…">
       <div class="grow"></div>
@@ -270,6 +287,15 @@
           <th data-sort="energy">Énergie</th><th data-sort="duration" class="num">Durée</th><th data-sort="folder">Dossier</th><th></th>
         </tr></thead><tbody id="libT"></tbody></table>
         <div id="dropHint" hidden><b style="color:var(--txt);font-size:15px">Glisse tes morceaux ou un dossier ici</b>MP3, WAV, AIFF, FLAC, M4A · tout reste sur ton Mac</div>
+      </div>
+      <div id="impPane">
+        <label id="impDrop">
+          <span class="ico">⇣</span>
+          <b>Glisse tes morceaux ou un dossier ici</b>
+          <span class="note">Ils s'ajoutent à la liste à gauche, analysés (BPM, tonalité, énergie).</span>
+          <span class="row"><button type="button" data-imp="files">Choisir des morceaux</button><button type="button" data-imp="dir">Choisir un dossier</button></span>
+          <span class="note">MP3 · WAV · AIFF · FLAC · M4A</span>
+        </label>
       </div>
     </div>
     <input type="file" id="inFiles" multiple accept="audio/*,.aif,.aiff,.flac" hidden>
@@ -303,9 +329,32 @@
   </div>
 </div>
 
+<dialog id="prefs">
+  <form method="dialog">
+    <div class="phead"><b>Réglages</b><button value="close" title="Fermer">✕</button></div>
+    <h4>Carte son</h4>
+    <label>Sortie audio<select data-p="out"></select></label>
+    <label>Échantillonnage<select data-p="sr"><option value="44100">44,1 kHz (CD)</option><option value="48000">48 kHz</option><option value="96000">96 kHz</option></select></label>
+    <label>Latence<select data-p="lat"><option value="interactive">Faible (réactif)</option><option value="balanced">Normale</option><option value="playback">Sûre (aucune coupure)</option></select></label>
+    <p class="note" id="pAccess">Les noms des cartes son et micros n'apparaissent qu'après autorisation. <button type="button" id="pAllow">Autoriser l'accès</button></p>
+    <h4>Entrée (micro / ligne)</h4>
+    <label>Entrée audio<select data-p="in"></select></label>
+    <label class="chk"><input type="checkbox" data-p="mic"> Entrée ouverte (on l'entend dans la sortie)</label>
+    <label>Niveau de l'entrée<input type="range" data-p="micVol" min="0" max="1.5" step="0.01"></label>
+    <label class="chk"><input type="checkbox" data-p="talk"> Talkover : la musique baisse de 10 dB quand l'entrée est ouverte</label>
+    <h4>Table de mixage</h4>
+    <label>Courbe du crossfader<select data-p="xcurve"><option value="smooth">Douce (mix long)</option><option value="linear">Linéaire</option><option value="cut">Coupure nette (scratch)</option></select></label>
+    <label class="chk"><input type="checkbox" data-p="autogain"> Auto-gain : tous les morceaux au même volume</label>
+    <label class="chk"><input type="checkbox" data-p="limiter"> Limiteur sur la sortie master (évite la saturation)</label>
+    <h4>Affichage et export</h4>
+    <label>Notation des tonalités<select data-p="keys"><option value="camelot">Camelot (8A)</option><option value="open">Open Key (1m)</option><option value="classic">Classique (Am)</option></select></label>
+    <label>Qualité MP3<select data-p="mp3"><option value="320">320 kbit/s</option><option value="256">256 kbit/s</option><option value="192">192 kbit/s</option></select></label>
+    <p class="note" id="pNote"></p>
+  </form>
+</dialog>
 <div id="modal" hidden><div class="box"><b id="mTitle"></b><div class="bar"><div id="mBar"></div></div><div id="mText" class="note"></div><div class="row" id="mBtns"></div></div></div>
 
-<script src="web.js?v=d50cbaf6"></script>
+<script src="web.js?v=fbee436c"></script>
 <script>
 // ============ Modèle ============
 // Tout est en TEMPS (beats) : début sur la timeline, position dans le morceau, automations.
@@ -353,6 +402,12 @@ function camelotDist(a, b) {
 const compatible = (a, b) => camelotDist(a, b) <= 1;
 // Camelot après transposition : +1 demi-ton = +7 sur la roue
 const camOf = t => `${((parseInt(t.camelot) - 1 + 7 * (t.semi || 0)) % 12 + 12) % 12 + 1}${t.camelot.slice(-1)}`;
+const KEYN = ['G#m','B','Ebm','F#','Bbm','Db','Fm','Ab','Cm','Eb','Gm','Bb','Dm','F','Am','C','Em','G','Bm','D','F#m','A','Dbm','E'];
+const KL = cam => {   // tonalité affichée selon Réglages (la couleur reste celle de la roue Camelot)
+  const n = parseInt(cam), m = cam.slice(-1) === 'A';
+  if (!n || PREF.keys === 'camelot') return cam;
+  return PREF.keys === 'open' ? `${(n + 4) % 12 + 1}${m ? "m" : "d"}` : KEYN[(n - 1) * 2 + (m ? 0 : 1)];
+};
 const keyName = t => t.semi ? `${t.key} ${t.semi > 0 ? '+' : ''}${t.semi}` : t.key;
 
 // ============ Tempo par morceau ============
@@ -448,7 +503,13 @@ function undo() {
 }
 
 // ============ Audio ============
-const ctx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate:44100 });
+// Réglages (propres à cet ordinateur, pas au projet)
+const PREF = { out:'', in:'', sr:44100, lat:'interactive', mic:false, micVol:0.8, talk:false, xcurve:'smooth', autogain:false, limiter:true, keys:'camelot', mp3:320 };
+try { Object.assign(PREF, JSON.parse(localStorage.getItem('mixauto-prefs') || '{}')); } catch {}
+const savePrefs = () => { try { localStorage.setItem('mixauto-prefs', JSON.stringify(PREF)); } catch {} };
+let ctx;
+try { ctx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate:+PREF.sr, latencyHint:PREF.lat }); }
+catch { ctx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate:44100 }); }   // fréquence refusée par la carte son
 // Master Tempo en direct : deux têtes de lecture glissantes dans une petite mémoire, fondues en croix (décaleur de tonalité granulaire)
 const MT = { ok:false, lat:0.030 };
 ctx.audioWorklet?.addModule(URL.createObjectURL(new Blob([`
@@ -479,7 +540,10 @@ function rng(seed) { return () => (seed = (seed * 1664525 + 1013904223) >>> 0) /
 const KNOB = { high:['HI', 'high'], mid:['MID', 'mid'], low:['LOW', 'low'], filter:['FILTRE', 'filter'], echo:['ÉCHO', 'delay'], reverb:['RÉV', 'reverb'] };
 const neutral = () => ({ high:0, mid:0, low:0, filter:0, echo:0, reverb:0, fader:1 });
 const MIX = { d:[neutral(), neutral()], xf:0 };
-const xfGain = (d, xf) => Math.cos(Math.max(0, d ? -xf : xf) * Math.PI / 2);   // crossfader : les deux à fond au centre
+const xfGain = (d, xf) => {   // crossfader : les deux à fond au centre ; la courbe se choisit dans Réglages
+  const x = Math.max(0, d ? -xf : xf);
+  return PREF.xcurve === 'linear' ? 1 - x : PREF.xcurve === 'cut' ? clamp((1 - x) / 0.06, 0, 1) : Math.cos(x * Math.PI / 2);
+};
 const deckGain = (d, M = MIX) => M.d[d].fader ** 2 * xfGain(d, M.xf);
 const gainDb = g => g < 0.001 ? -60 : Math.max(-60, 20 * Math.log10(g));
 const deckOf = (c, LN = lanes()) => LN.of(c) % 2;
@@ -494,7 +558,8 @@ function buildBus(ac, liveMix = true) {
   const master = ac.createGain(); master.gain.value = 10 ** (S.fx.master / 20);
   const lim = ac.createDynamicsCompressor();
   lim.threshold.value = -4; lim.knee.value = 0; lim.ratio.value = 20; lim.attack.value = 0.002; lim.release.value = 0.2;
-  master.connect(lim).connect(ac.destination);
+  if (PREF.limiter) master.connect(lim).connect(ac.destination); else master.connect(ac.destination);
+  if (liveMix && PREF.mic && PREF.talk) master.gain.value *= 0.316;   // talkover : -10 dB
   // Réverbe : réponse impulsionnelle générée (graine fixe -> identique à l'écoute et à l'export)
   const conv = ac.createConvolver(), n = Math.round(S.fx.reverbSec * ac.sampleRate), key = `${n}_${ac.sampleRate}`;
   if (buildBus.irKey !== key) {   // calculée une fois par durée : la relance de la lecture reste instantanée
@@ -558,7 +623,8 @@ function scheduleClip(ac, bus, c, from, base, rate = ac === ctx ? U.rate : 1) {
   hi.type = 'highshelf'; hi.frequency.value = 4000;
   hp.type = 'highpass'; hp.Q.value = 0.9; lp.type = 'lowpass'; lp.Q.value = 0.9;
   const edge = ac.createGain();   // anti-clic aux bords du morceau
-  (mt ? src.connect(mt) : src).connect(lo).connect(mi).connect(hi).connect(hp).connect(lp).connect(edge).connect(g).connect(bus.decks[deckOf(c)].lo);
+  const ag = ac.createGain(); ag.gain.value = autoGain(c);
+  (mt ? src.connect(mt) : src).connect(lo).connect(mi).connect(hi).connect(hp).connect(lp).connect(edge).connect(ag).connect(g).connect(bus.decks[deckOf(c)].lo);
   g.connect(sr).connect(bus.reverb); g.connect(sd).connect(bus.delay);
   if (t0 - cs < 0.008) { edge.gain.setValueAtTime(0, when); edge.gain.linearRampToValueAtTime(1, when + 0.008); }
   if (ce - (t0 + dur) < 0.008) { edge.gain.setValueAtTime(1, at(t0 + dur) - 0.008); edge.gain.linearRampToValueAtTime(0, at(t0 + dur)); }
@@ -589,6 +655,12 @@ function scheduleClip(ac, bus, c, from, base, rate = ac === ctx ? U.rate : 1) {
   return [src];
 }
 
+function autoGain(c) {   // auto-gain : chaque morceau ramené au volume moyen du mix (±9 dB)
+  if (!PREF.autogain) return 1;
+  const v = Object.values(S.tracks).map(t => t.rms_db).filter(isFinite), t = S.tracks[c.trackId];
+  if (!v.length || !isFinite(t?.rms_db)) return 1;
+  return 10 ** (clamp(v.reduce((a, b) => a + b) / v.length - t.rms_db, -9, 9) / 20);
+}
 let live = null;
 // Une seule lecture à la fois, même avec plusieurs onglets ouverts (chaque double-clic sur « Mix Auto » en ouvre un)
 const chan = new BroadcastChannel('mixauto');
@@ -618,8 +690,6 @@ function play(from = U.pos, seamless = false) {
     }
   }
   U.playing = true; $('play').textContent = '❚❚'; $('play').classList.add('on');
-  document.body.style.setProperty('--beat', `${60 / (S.tempo * U.rate)}s`);   // Play et SYNC clignotent au tempo
-  $('sync').classList.toggle('on', new Set(S.clips.map(c => ct(c).toFixed(2))).size === 1);
   const id = tick.n = (tick.n || 0) + 1; requestAnimationFrame(() => tick(id));
 }
 function stop(keepPos = true) {
@@ -630,7 +700,7 @@ function stop(keepPos = true) {
     const m = live.bus.master; setTimeout(() => m.disconnect(), 50);
     live = null;
   }
-  U.playing = false; $('play').textContent = '▶'; $('play').classList.remove('on'); $('sync').classList.remove('on');
+  U.playing = false; $('play').textContent = '▶'; $('play').classList.remove('on');
   recEnd(); draw();
 }
 const livePos = () => live ? (live.seam ? x => x : x => Math.max(live.from, x))(live.from + (ctx.currentTime - live.base) * live.k) : U.pos;   // relance sans trou : l'ancien son joue encore, la tête ne se fige pas
@@ -744,6 +814,46 @@ function commitRate() {
 $('tf').oninput = e => { const p = +e.target.value; bendTo(S.tempo0 ? S.tempo0 * (1 + p / 100) : S.tempo * U.rate * (1 + p / 100)); };
 $('tf').ondblclick = () => S.tempo0 && bendTo(S.tempo0, true);
 $('tfr').onchange = e => { const v = +e.target.value; $('tf').min = -v; $('tf').max = v; showTempo(); };
+// ============ Réglages ============
+let micNode = null;
+async function applyIO() {
+  if (ctx.setSinkId) try { await ctx.setSinkId(PREF.out || ''); } catch (e) { console.warn('Sortie', e); }
+  if (preview.audio.setSinkId) preview.audio.setSinkId(PREF.out || '').catch(() => {});
+  if (micNode) { micNode.stream.getTracks().forEach(t => t.stop()); micNode.g.disconnect(); micNode = null; }
+  if (PREF.mic) try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio:{ deviceId:PREF.in ? { exact:PREF.in } : undefined, echoCancellation:false, noiseSuppression:false, autoGainControl:false } });
+    const g = ctx.createGain(); g.gain.value = PREF.micVol; ctx.createMediaStreamSource(stream).connect(g).connect(ctx.destination);
+    micNode = { stream, g }; ctx.resume();
+  } catch (e) { PREF.mic = false; savePrefs(); alert(`Entrée audio indisponible : ${e.message}`); }
+}
+async function fillDevices() {
+  const ds = await navigator.mediaDevices?.enumerateDevices?.() || [];
+  const opts = (kind, def) => `<option value="">${def}</option>` + ds.filter(d => d.kind === kind && d.deviceId && d.deviceId !== 'default')
+    .map((d, i) => `<option value="${esc(d.deviceId)}">${esc(d.label || `${kind === 'audiooutput' ? 'Sortie' : 'Entrée'} ${i + 1}`)}</option>`).join('');
+  const f = $('prefs');
+  f.querySelector('[data-p=out]').innerHTML = ctx.setSinkId ? opts('audiooutput', 'Sortie du système') : '<option value="">Sortie du système (choix non géré par ce navigateur)</option>';
+  f.querySelector('[data-p=in]').innerHTML = opts('audioinput', 'Entrée par défaut');
+  $('pAccess').hidden = ds.some(d => d.label);
+  f.querySelectorAll('[data-p]').forEach(el => { const v = PREF[el.dataset.p]; if (el.type === 'checkbox') el.checked = !!v; else el.value = v; });
+  $('pNote').textContent = `Lecture à ${ctx.sampleRate / 1000} kHz, latence ${Math.round((ctx.baseLatency + (ctx.outputLatency || 0)) * 1000)} ms. Le MP3 exporté est toujours en 44,1 kHz.`;
+}
+$('prefsBtn').onclick = () => { fillDevices(); $('prefs').showModal(); };
+$('pAllow').onclick = async () => { try { (await navigator.mediaDevices.getUserMedia({ audio:true })).getTracks().forEach(t => t.stop()); } catch {} fillDevices(); };
+$('prefs').addEventListener('input', e => {
+  const k = e.target.dataset.p; if (!k) return;
+  const old = PREF[k]; PREF[k] = e.target.type === 'checkbox' ? e.target.checked : e.target.type === 'range' || k === 'sr' || k === 'mp3' ? +e.target.value : e.target.value;
+  savePrefs();
+  if (k === 'micVol') { if (micNode) micNode.g.gain.value = PREF.micVol; return; }
+  if (k === 'sr' || k === 'lat') {   // nouvelle fréquence ou latence : il faut relancer le moteur audio
+    if (confirm('Pour changer l\'échantillonnage ou la latence, la page doit se recharger (le projet est enregistré). Recharger maintenant ?')) { save(); location.reload(); }
+    else { PREF[k] = old; savePrefs(); e.target.value = old; }
+    return;
+  }
+  if (k === 'out' || k === 'in' || k === 'mic') applyIO();
+  if (k === 'keys') { renderLib(); renderInsp(); }
+  applyLive(); restartIfPlaying(); draw();
+});
+setTimeout(applyIO);   // après le chargement du reste de la page
 $('mt').onclick = () => { S.mt = S.mt === false; showTempo(); changed(); };
 let taps = [], tapT;
 $('tap').onclick = () => {
@@ -755,9 +865,11 @@ $('tap').onclick = () => {
     clearTimeout(tapT); tapT = setTimeout(() => setTempo(+bpm.toFixed(1)), 1500);   // appliqué quand on arrête de taper
   }
 };
-$('sync').onclick = () => {
+$('sync').onclick = () => {   // s'allume en rouge quand on appuie, s'éteint au second appui
+  const on = $('sync').classList.toggle('on');
   const c = selClip(); const t = c && S.tracks[c.trackId];
-  if (!t) return alert('Tous les morceaux du mix sont déjà calés sur le même tempo.\nSélectionne un morceau dans la timeline puis SYNC : ce morceau et les suivants prendront son tempo d\'origine (le tempo glisse pendant la transition).');
+  if (!on) return;
+  if (!t) return;   // sans morceau sélectionné : le mix est déjà calé sur un seul tempo
   setTempo(t.detected);
 };
 
@@ -804,7 +916,7 @@ function renderLib() {
     return `<tr class="trk ${used.has(t.id) ? 'used' : ''}" draggable="true" data-id="${t.id}">
       <td class="title" title="${esc(t.name)}"><button class="pre ${preview.id === t.id ? 'on' : ''}" data-pre="${t.id}" title="Pré-écoute">${preview.id === t.id ? '❚❚' : '▶'}</button> <b>${esc(t.title)}</b> <span>${esc(t.artist)}</span></td>
       <td class="num">${fold(t.bpm).toFixed(2)}${far ? '<span class="warnTxt" title="Tempo éloigné du mix : il sera fortement étiré">⚠</span>' : ''}</td>
-      <td><span class="key ${match ? 'match' : ''}" style="color:${keyColor(t.camelot)}" title="${t.key}${match ? ' · compatible avec ' + esc(ref.name) : ''}">${t.camelot}</span></td>
+      <td><span class="key ${match ? 'match' : ''}" style="color:${keyColor(t.camelot)}" title="${t.key}${match ? ' · compatible avec ' + esc(ref.name) : ''}">${KL(t.camelot)}</span></td>
       <td><span class="energy" title="Énergie ${t.energy}/10">${Array.from({ length:10 }, (_, i) => `<i class="${i < t.energy ? 'f' : ''}" style="height:${5 + i}px;--h:${140 - i * 14}"></i>`).join('')}</span></td>
       <td class="num">${fmtTime(t.duration)}</td>
       <td style="color:var(--dim)">${esc(t.folder || '')}</td>
@@ -827,7 +939,7 @@ function renderSide() {
       Object.entries(folders).sort().map(([f, n]) => `<div class="frow"><button class="folder ${U.folder === f ? 'on' : ''}" data-folder="${esc(f)}">📁 ${esc(f)} <small>${n}</small></button><button class="delf" data-delfolder="${esc(f)}" title="Supprimer ce dossier et ses morceaux">×</button></div>`).join('') +
       `<div class="note">Le dossier d'où vient chaque morceau. Pour en ajouter un : « + Dossier » ou glisse-le dans la bibliothèque.</div>`;
   } else if (U.libTab === 'suggest') {
-    side.innerHTML = `<div class="side-title">Suggestions</div><div class="note">${ref ? `Ce qui s'enchaîne bien après<br><b style="color:var(--txt)">${esc(ref.name)}</b><br><span class="key" style="color:${keyColor(ref.camelot)}">${ref.camelot}</span> ${ref.detected.toFixed(2)} BPM<br><br>Tonalité compatible, tempo à ±6 %, énergie proche. Les meilleurs en premier.` : 'Ajoute ou sélectionne un morceau du mix.'}</div>`;
+    side.innerHTML = `<div class="side-title">Suggestions</div><div class="note">${ref ? `Ce qui s'enchaîne bien après<br><b style="color:var(--txt)">${esc(ref.name)}</b><br><span class="key" style="color:${keyColor(ref.camelot)}">${KL(ref.camelot)}</span> ${ref.detected.toFixed(2)} BPM<br><br>Tonalité compatible, tempo à ±6 %, énergie proche. Les meilleurs en premier.` : 'Ajoute ou sélectionne un morceau du mix.'}</div>`;
   } else side.innerHTML = '';
 }
 function wheelSVG(count, ref) {
@@ -920,6 +1032,11 @@ async function fixOutliers() {
 }
 $('impFiles').onclick = () => $('inFiles').click();
 $('impDir').onclick = () => $('inDir').click();
+// onglet Importer : zone à droite de la liste (glisser ou choisir) ; les morceaux arrivent dans la liste à gauche
+$('impDrop').onclick = e => { const b = e.target.closest('[data-imp]'); e.preventDefault(); $(b?.dataset.imp === 'dir' ? 'inDir' : 'inFiles').click(); };
+const impShow = on => { $('impPane').hidden = !on; $('impTab').classList.toggle('on', on); try { localStorage.setItem('mixauto-imp', on ? '1' : '0'); } catch {} };
+$('impTab').onclick = () => impShow($('impPane').hidden);
+impShow((() => { try { return localStorage.getItem('mixauto-imp') !== '0'; } catch { return true; } })());
 $('inFiles').onchange = e => { importFiles([...e.target.files].map(f => ({ f }))); e.target.value = ''; };
 $('inDir').onchange = e => { importFiles([...e.target.files].map(f => ({ f, folder:f.webkitRelativePath.split('/').slice(-2, -1)[0] }))); e.target.value = ''; };
 const isTrackDrag = e => [...e.dataTransfer.types].includes('text/mix-track');
@@ -1199,24 +1316,30 @@ function drawClip(g, c, i, W) {
   let tx = Math.max(x0, 0) + 5;
   const cam = camOf(t);
   g.strokeStyle = '#ffffff66'; g.lineWidth = 1.2; g.beginPath(); g.arc(tx + 9, y + 9, 8, 0, Math.PI * 2); g.stroke();   // tonalité : rond, lettres en couleur
-  g.fillStyle = keyColor(cam); g.font = '800 8.5px ui-monospace, Menlo, monospace'; g.textAlign = 'center'; g.fillText(cam, tx + 9, y + 12); g.textAlign = 'left'; tx += 24;
+  g.fillStyle = keyColor(cam); g.font = '800 8.5px ui-monospace, Menlo, monospace'; g.textAlign = 'center'; g.fillText(KL(cam), tx + 9, y + 12); g.textAlign = 'left'; tx += 24;
   g.fillStyle = '#fff'; g.font = '600 11px -apple-system, sans-serif'; g.fillText(t.name, tx, y + 13);
   tx += g.measureText(t.name).width + 8;
   const T = ct(c), pct = (T / t.bpm - 1) * 100;
   g.font = '11px -apple-system, sans-serif'; g.fillStyle = Math.abs(pct) > 6 ? '#ffb547' : '#ffffffaa';
   g.fillText(`${t.bpm.toFixed(2)} BPM${Math.abs(pct) < 0.05 ? '' : ` → ${+T.toFixed(2)} (${pct > 0 ? '+' : ''}${pct.toFixed(1)} %)`}`, tx, y + 13);
   g.restore();
-  for (const r of c.tr || []) {   // transitions : zone teintée + étiquette nommée en bas du morceau (clic = la gérer)
+  const lv = [];   // fin de la dernière étiquette sur chaque étage : deux étiquettes ne se recouvrent jamais
+  for (const r of c.tr || []) {   // transitions : zone teintée + étiquette nommée en bas du morceau (clic = la gérer, ✕ = l'enlever)
     const [m0, m1] = trZone(c, r), [name, col] = TRK[r.kind], on = U.tr?.id === c.id && U.tr.kind === r.kind;
     const zx0 = (m0 - U.scrollX) * U.pxb, zx1 = (m1 - U.scrollX) * U.pxb;
     if (zx1 < 0 || zx0 > W) continue;
     g.fillStyle = col + (on ? '33' : '1c'); g.fillRect(zx0, by, Math.max(2, zx1 - zx0), bh);
     g.font = '700 10px -apple-system, sans-serif';
-    const tw = g.measureText(name.toUpperCase()).width + 14, bw = Math.max(tw, zx1 - zx0), bx = Math.min(zx0, zx1 - tw), byy = y + h - 17;
+    const tw = g.measureText(name.toUpperCase()).width + 28, bw = Math.max(tw, zx1 - zx0), bx = Math.min(zx0, zx1 - tw);
+    let k = 0; while (lv[k] != null && bx < lv[k] + 3) k++; lv[k] = bx + bw;
+    const byy = y + h - 17 - k * 17;
     g.fillStyle = col; g.beginPath(); g.roundRect(bx, byy, bw, 14, 7); g.fill();
     if (on) { g.strokeStyle = '#fff'; g.lineWidth = 2; g.stroke(); }
     g.fillStyle = '#0c0c11'; g.fillText(name.toUpperCase(), bx + 7, byy + 10.5);
-    TRR.push({ x:bx, y:byy, w:bw, h:14, c, kind:r.kind });
+    const cx = bx + bw - 8, cy = byy + 7;   // petite croix : enlève cette automation
+    g.fillStyle = '#0c0c1199'; g.beginPath(); g.arc(cx, cy, 5.5, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = '#ff5c5c'; g.lineWidth = 1.6; g.beginPath(); g.moveTo(cx - 2.3, cy - 2.3); g.lineTo(cx + 2.3, cy + 2.3); g.moveTo(cx + 2.3, cy - 2.3); g.lineTo(cx - 2.3, cy + 2.3); g.stroke();
+    TRR.push({ x:bx, y:byy, w:bw, h:14, c, kind:r.kind, cx });
   }
   const P = PARAMS[U.param];
   if (P) {   // automation affichée
@@ -1270,6 +1393,13 @@ const yToV = (h, y) => { const P = PARAMS[U.param]; return clamp(P.min + (h.by +
 
 rowsC.addEventListener('mousedown', e => {
   const h = hit(e), tr = TRR.findLast(r => h.x >= r.x && h.x <= r.x + r.w && h.y >= r.y && h.y <= r.y + r.h);
+  if (tr && e.button === 0 && Math.hypot(h.x - tr.cx, h.y - tr.y - 7) < 8) {   // ✕ : on enlève l'automation de cette transition
+    pushUndo(); removeTr(tr.c, tr.c.tr.findIndex(r => r.kind === tr.kind)); U.tr = null; changed(); return;
+  }
+  if (e.button === 0) {   // simple clic (sans glisser) n'importe où sur les pistes : la tête de lecture y va
+    const up = m => { removeEventListener('mouseup', up); if (Math.hypot(m.clientX - e.clientX, m.clientY - e.clientY) < 4) { U.pos = Math.max(0, secAt(h.beat)); if (U.playing) play(U.pos); draw(); } };
+    addEventListener('mouseup', up);
+  }
   if (tr) { U.sel = tr.c.id; U.tr = { id:tr.c.id, kind:tr.kind }; U.inspTab = 'trans'; renderInsp(); renderLib(); draw(); return; }   // clic sur une transition
   if (U.tr) { U.tr = null; renderInsp(); }
   if (!h.c) { U.sel = null; renderInsp(); renderLib(); draw(); return; }
@@ -1318,10 +1448,13 @@ const delPoint = e => {   // double-clic ou clic droit sur un point : on l'enlè
 };
 rowsC.addEventListener('dblclick', delPoint);
 rowsC.addEventListener('contextmenu', delPoint);
+const PEN = `url("data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M3 21l1.2-4.6L16.6 4a2 2 0 0 1 2.8 0l.6.6a2 2 0 0 1 0 2.8L7.6 19.8z" fill="#fff" stroke="#000" stroke-width="1.4" stroke-linejoin="round"/><path d="M3 21l1.2-4.6 3.4 3.4z" fill="#ff3b3b" stroke="#000" stroke-width="1"/></svg>')}") 2 22, crosshair`;   // stylo pour dessiner l'automation
 rowsC.addEventListener('mousemove', e => {
   if (e.buttons) return;
+  const tr = TRR.find(r => { const h = hit(e); return Math.hypot(h.x - r.cx, h.y - r.y - 7) < 8; });
+  if (tr) { rowsC.style.cursor = 'pointer'; return; }
   const h = hit(e);
-  rowsC.style.cursor = !h.c ? 'default' : pointAt(h) >= 0 ? 'move' : h.zone === 'left' || h.zone === 'right' ? 'ew-resize' : h.zone === 'title' || !PARAMS[U.param] || !onLine(h) ? 'grab' : 'crosshair';
+  rowsC.style.cursor = !h.c ? 'default' : pointAt(h) >= 0 ? 'move' : h.zone === 'left' || h.zone === 'right' ? 'ew-resize' : h.zone === 'title' || !PARAMS[U.param] || !onLine(h) ? 'grab' : PEN;
 });
 // Glisser un morceau de la bibliothèque sur la timeline
 $('scroller').addEventListener('dragover', e => { if (isTrackDrag(e)) { e.preventDefault(); $('scroller').classList.add('drop'); } });
@@ -1407,7 +1540,7 @@ function deckInfo(d, pb, LN) {   // morceau en lecture sur la voie, sinon le pro
     el.cid = c?.id ?? null; el.ct = c && ct(c);
     const t = c && S.tracks[c.trackId];
     el.querySelector('.dt').textContent = t ? t.name : '—';
-    const k = el.querySelector('.key'); k.textContent = t ? camOf(t) : ''; k.style.color = t ? keyColor(camOf(t)) : '';
+    const k = el.querySelector('.key'); k.textContent = t ? KL(camOf(t)) : ''; k.style.color = t ? keyColor(camOf(t)) : '';
     el.querySelector('.dbpm').textContent = c ? (ct(c) * U.rate).toFixed(1) : '—';
   }
   el.querySelector('.dtime').textContent = on ? `${fmtTime(U.pos - secAt(on.start))} / -${fmtTime(secAt(clipEnd(on)) - U.pos)}` : '';
@@ -1576,9 +1709,9 @@ function renderInsp() {
     const ov = n ? clipEnd(c) - n.start : 0;
     el.innerHTML = `
       <div class="pair">
-        <div><span class="key" style="color:${keyColor(camOf(t))}">${camOf(t)}</span><b title="${esc(t.name)}">${esc(t.name)}</b></div>
+        <div><span class="key" style="color:${keyColor(camOf(t))}">${KL(camOf(t))}</span><b title="${esc(t.name)}">${esc(t.name)}</b></div>
         <span style="font-size:18px">→</span>
-        <div>${nt ? `<span class="key" style="color:${keyColor(camOf(nt))}">${camOf(nt)}</span><b title="${esc(nt.name)}">${esc(nt.name)}</b>` : '<b style="color:var(--dim)">fin du mix</b>'}</div>
+        <div>${nt ? `<span class="key" style="color:${keyColor(camOf(nt))}">${KL(camOf(nt))}</span><b title="${esc(nt.name)}">${esc(nt.name)}</b>` : '<b style="color:var(--dim)">fin du mix</b>'}</div>
       </div>
       ${nt ? `<div class="note ${compatible(camOf(t), camOf(nt)) ? 'ok' : 'warn'}">${compatible(camOf(t), camOf(nt)) ? '✓ Tonalités compatibles' : '⚠ Tonalités éloignées : transpose un des deux (onglet Morceau) ou préfère une coupe / un écho'}</div>
       <div class="note">${ov > 0 ? `Les deux jouent ensemble pendant ${ov % 4 ? `${ov} temps` : `${ov / 4} mesure(s)`}.` : ov === 0 ? 'Le suivant démarre pile à la fin.' : `Silence de ${-ov} temps entre les deux.`}</div>` : ''}
@@ -1613,7 +1746,7 @@ function renderInsp() {
       <div class="note">Décalage : ${t.nudge.toFixed(0)} ms</div>
       <h2>Tonalité</h2>
       <div class="row"><button data-semi="-1">− ½ ton</button>
-        <span class="key" style="color:${keyColor(camOf(t))}">${camOf(t)}</span> <span>${keyName(t)}</span>
+        <span class="key" style="color:${keyColor(camOf(t))}">${KL(camOf(t))}</span> <span>${keyName(t)}</span>
         <button data-semi="1">+ ½ ton</button></div>
       <div class="note">Transpose sans changer le tempo, pour rendre deux morceaux compatibles.</div>
       <h2>Commencer le morceau à</h2>
@@ -1761,7 +1894,7 @@ async function exportMix() {
     modalProgress(1, 'Encodage MP3…');
     const list = sorted().map(c => `${fmtTime(secAt(c.start) - start)}  ${S.tracks[c.trackId].name}  (${S.tracks[c.trackId].key} / ${S.tracks[c.trackId].camelot})`).join('\n');
     const name = `${S.name} - ${new Date().toLocaleString('fr-FR').replace(/[/:]/g, '-')}`;
-    const r = await fetch(`/api/export/finish?id=${id}&name=${encodeURIComponent(name)}`, { method:'POST', body:`${S.name} · ${+S.tempo.toFixed(2)} BPM · ${fmtTime(total - start)}\n\n${list}\n` });
+    const r = await fetch(`/api/export/finish?id=${id}&name=${encodeURIComponent(name)}&kbps=${PREF.mp3}`, { method:'POST', body:`${S.name} · ${+S.tempo.toFixed(2)} BPM · ${fmtTime(total - start)}\n\n${list}\n` });
     const { mp3, error } = await r.json(); if (error) throw new Error(error);
     modal('Mix exporté ✔', `${esc(mp3)} — ${window.WEB ? 'téléchargé (dossier Téléchargements).' : 'rangé dans le dossier « mixes » de l\'app.'}`, [[window.WEB ? 'Télécharger encore' : 'Montrer le fichier', () => fetch('/api/reveal?name=' + encodeURIComponent(mp3))], ['Fermer', closeModal]]);
     modalProgress(1);

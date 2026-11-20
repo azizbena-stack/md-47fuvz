@@ -231,9 +231,9 @@ const loadLame = () => window.lamejs ? Promise.resolve() : new Promise((ok, ko) 
   const s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.min.js'; s.onload = ok; s.onerror = () => ko(new Error('encodeur MP3 introuvable (connexion ?)'));
   document.head.append(s);
 });
-async function toMp3(parts) {
+async function toMp3(parts, kbps = 320) {
   await loadLame();
-  const enc = new lamejs.Mp3Encoder(2, SR, 320), out = [], B = 1152;
+  const enc = new lamejs.Mp3Encoder(2, SR, kbps), out = [], B = 1152;
   for (const p of parts) {
     const n = p.length / 2, l = new Int16Array(n), r = new Int16Array(n);
     for (let i = 0; i < n; i++) { l[i] = p[2 * i]; r[i] = p[2 * i + 1]; }
@@ -270,7 +270,7 @@ async function route(p, q, raw, body) {
       { const r = await get('proj', q.name); return r ? new Response(r.data, { headers: { 'Content-Type': 'application/json' } }) : J({ error: 'introuvable' }, 404); }
     case '/api/export/chunk': { if (q.i === '0') CHUNKS.set(q.id, []); CHUNKS.get(q.id).push(new Int16Array(body)); return J({ ok: true }); }
     case '/api/export/finish': {
-      const blob = await toMp3(CHUNKS.get(q.id)), name = `${q.name}.mp3`; CHUNKS.delete(q.id);
+      const blob = await toMp3(CHUNKS.get(q.id), +q.kbps || 320), name = `${q.name}.mp3`; CHUNKS.delete(q.id);
       MIXES.set(name, blob); download(blob, name); return J({ mp3: name });
     }
     case '/api/reveal': { const b = MIXES.get(q.name); if (b) download(b, q.name); return J({ ok: true }); }
