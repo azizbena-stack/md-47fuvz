@@ -8,24 +8,33 @@
   :root { --bg:#0c0c11; --panel:#14141c; --card:#1a1a24; --line:#272735; --txt:#ececf3; --dim:#8b8ba1; --acc:#7c5cff; --acc2:#22d3a6; --warn:#ffb547; --err:#ff5c7a; --libH:min(300px, 32vh); }
   * { box-sizing:border-box; }
   html, body { height:100%; margin:0; }
-  body { background:var(--bg); color:var(--txt); font:13px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; display:grid; grid-template-rows:auto 1fr; overflow:hidden; user-select:none; }
+  body { background:var(--bg); color:var(--txt); font:13px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; display:grid; grid-template-rows:auto 1fr; overflow-x:hidden; overflow-y:auto; user-select:none; }
+  header { position:sticky !important; top:0; }
   button, select, input { font:inherit; color:var(--txt); }
-  button { background:#22222e; border:1px solid var(--line); border-radius:7px; padding:5px 10px; cursor:pointer; white-space:nowrap; }
-  button:hover:not(:disabled) { border-color:var(--acc); }
+  button { background:linear-gradient(180deg, #2a2a3a, #1e1e2a); border:1px solid #34344c; border-radius:9px; padding:5px 11px; cursor:pointer; white-space:nowrap;
+           box-shadow:inset 0 1px 0 #ffffff12, 0 2px 6px #0005; transition:border-color .12s, transform .12s, background .12s, box-shadow .12s; }
+  button:hover:not(:disabled) { border-color:var(--acc); box-shadow:inset 0 1px 0 #ffffff18, 0 0 0 3px #7c5cff22, 0 2px 8px #0006; }
+  button:active:not(:disabled) { transform:translateY(1px); }
   button:disabled { opacity:.35; cursor:default; }
-  button.on { background:var(--acc); border-color:var(--acc); }
-  button.big { background:var(--acc); border-color:var(--acc); font-weight:600; }
+  button.on { background:linear-gradient(180deg, #8e72ff, #6a48f0); border-color:#9d85ff; }
+  button.big { background:linear-gradient(135deg, #8e72ff, #5b3be8); border-color:#9d85ff; font-weight:700; box-shadow:0 4px 14px #7c5cff55, inset 0 1px 0 #ffffff30; }
+  button.acc { background:linear-gradient(135deg, #2ee6b4, #14b38a); border-color:#4af0c4; color:#032a1f; font-weight:700; }
+  button.danger { background:#ff3b5c1a; border-color:#ff3b5c88; color:#ff6b84; font-weight:600; }
+  button.danger:hover:not(:disabled) { background:#ff3b5c; color:#fff; border-color:#ff3b5c; box-shadow:0 0 0 3px #ff3b5c33; }
   select, input[type=number], input[type=text], input[type=search] { background:#0f0f15; border:1px solid var(--line); border-radius:7px; padding:5px 7px; }
   input[type=range] { accent-color:var(--acc); width:100%; }
 
   /* ---------- En-tête ---------- */
-  header { display:flex; align-items:center; gap:10px; padding:8px 12px; background:var(--panel); border-bottom:1px solid var(--line); flex-wrap:wrap; }
-  header h1 { font-size:17px; margin:0 4px 0 0; letter-spacing:-.3px; }
-  header h1 span { color:var(--acc); }
+  header { display:flex; align-items:center; gap:10px; padding:8px 14px; background:linear-gradient(180deg, #1a1a26, #111119); border-bottom:1px solid #2c2c40; box-shadow:0 4px 18px #0007; flex-wrap:wrap; position:relative; z-index:2; }
+  header h1 { font-size:19px; margin:0 4px 0 0; letter-spacing:-.5px; font-weight:800; display:flex; align-items:center; gap:7px; }
+  header h1::before { content:''; width:22px; height:22px; border-radius:50%; background:conic-gradient(from 200deg, #3aa0ff, #7c5cff, #ff9a2e, #3aa0ff); box-shadow:0 0 12px #7c5cff88; mask:radial-gradient(circle, transparent 3px, #000 4px); }
+  header h1 span { background:linear-gradient(90deg, #9d85ff, #3aa0ff); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  #play, #toStart { border-radius:50%; width:38px; height:38px; padding:0; font-size:14px; }
+  #play { width:44px; height:44px; font-size:17px; background:linear-gradient(135deg, #2ee6b4, #14b38a); border-color:#4af0c4; color:#032a1f; box-shadow:0 4px 16px #22d3a655, inset 0 1px 0 #ffffff50; }
+  #play.on { background:linear-gradient(135deg, #ff9a2e, #ff5c7a); border-color:#ffb36b; color:#2a0710; box-shadow:0 4px 16px #ff5c7a55; }
   .sep { width:1px; height:26px; background:var(--line); }
   .grow { flex:1; }
-  #clock { font:600 15px ui-monospace, Menlo, monospace; min-width:140px; text-align:center; background:#0f0f15; border:1px solid var(--line); border-radius:7px; padding:4px 8px; }
-  #play { width:46px; font-size:15px; }
+  #clock { font:700 16px ui-monospace, Menlo, monospace; min-width:150px; text-align:center; background:#07070b; border:1px solid #2c2c40; border-radius:10px; padding:6px 10px; color:#2ee6b4; text-shadow:0 0 10px #22d3a666; box-shadow:inset 0 2px 6px #000a; }
   .tempo { display:flex; align-items:center; gap:4px; background:#0f0f15; border:1px solid var(--line); border-radius:9px; padding:3px 4px 3px 9px; }
   .tempo small { color:var(--dim); font-size:10px; letter-spacing:1px; }
   #tempo { width:78px; border:0; background:transparent; font:700 17px ui-monospace, Menlo, monospace; text-align:right; padding:2px; }
@@ -34,7 +43,7 @@
   label.inl { display:flex; align-items:center; gap:6px; color:var(--dim); }
 
   /* ---------- Zones ---------- */
-  .app { display:grid; grid-template-rows:auto var(--libH) 6px 1fr; min-height:0; }
+  .app { display:grid; grid-template-rows:auto max(var(--libH), 190px) 6px max(440px, calc(100vh - var(--libH) - 330px)); }
 
   /* ---------- Platines (façon Rekordbox / VirtualDJ) ---------- */
   #decks { background:#07070a; border-bottom:1px solid var(--line); }
@@ -63,14 +72,15 @@
   @keyframes blink { 50% { opacity:.6; } }
   #split { background:var(--line); cursor:row-resize; }
   #split:hover { background:var(--acc); }
-  .lower { display:grid; grid-template-columns:1fr 310px; min-height:0; }
+  .lower { display:grid; grid-template-columns:1fr 310px; min-height:0; overflow:hidden; }
 
   /* ---------- Bibliothèque ---------- */
   #libPane { display:grid; grid-template-rows:auto 1fr; min-height:0; background:var(--panel); }
   .libbar { display:flex; gap:6px; align-items:center; padding:8px 10px; border-bottom:1px solid var(--line); flex-wrap:wrap; }
   .tabs { display:flex; gap:2px; background:#0f0f15; border-radius:9px; padding:3px; }
   .tabs button { border:0; background:transparent; padding:5px 11px; border-radius:7px; color:var(--dim); }
-  .tabs button.on { background:#2a2a3a; color:var(--txt); }
+  .tabs button { box-shadow:none; }
+  .tabs button.on { background:linear-gradient(180deg, #34344a, #28283a); color:var(--txt); box-shadow:inset 0 1px 0 #ffffff14, 0 1px 4px #0006; }
   #search { width:200px; }
   .libbody { display:grid; grid-template-columns:auto 1fr; min-height:0; }
   #libSide { overflow:auto; border-right:1px solid var(--line); padding:10px; width:250px; }
@@ -90,13 +100,30 @@
   td.title { max-width:340px; overflow:hidden; text-overflow:ellipsis; }
   td.title b { font-weight:600; } td.title span { color:var(--dim); }
   .num { font-variant-numeric:tabular-nums; text-align:right; }
-  .key { display:inline-block; min-width:34px; text-align:center; border-radius:5px; padding:1px 5px; font-weight:700; font-size:12px; color:#0c0c11; }
-  .key.match { outline:2px solid #fff; outline-offset:1px; }
-  .energy { display:inline-flex; gap:2px; vertical-align:middle; }
-  .energy i { width:4px; height:11px; background:#30303f; border-radius:1px; }
-  .energy i.f { background:var(--acc2); }
-  button.pre { padding:1px 6px; font-size:10px; margin-right:4px; }
-  td.act { text-align:right; } td.act button { padding:2px 8px; margin-left:3px; }
+  .key { display:inline-block; min-width:40px; text-align:center; border-radius:999px; padding:2px 8px; font:800 11.5px ui-monospace, Menlo, monospace; color:#0c0c11; letter-spacing:.3px;
+         box-shadow:inset 0 1px 0 #ffffff70, inset 0 -1px 0 #0003, 0 0 10px color-mix(in srgb, currentColor 0%, transparent); }
+  .key.match { box-shadow:0 0 0 2px #0c0c11, 0 0 0 4px #fff, 0 0 14px #ffffff66; }
+  .energy { display:inline-flex; gap:2px; vertical-align:middle; align-items:flex-end; height:15px; }
+  .energy i { width:5px; background:#2a2a3a; border-radius:2px; }
+  .energy i.f { background:hsl(var(--h), 80%, 52%); box-shadow:0 0 5px hsl(var(--h), 80%, 52%, .5); }
+  button.pre { width:28px; height:28px; padding:0; border-radius:50%; font-size:10px; margin-right:6px; vertical-align:middle; background:linear-gradient(135deg, #3a3a52, #24243a); }
+  button.pre:hover:not(:disabled) { background:linear-gradient(135deg, #2ee6b4, #14b38a); color:#032a1f; border-color:#4af0c4; }
+  button.pre.on { background:linear-gradient(135deg, #2ee6b4, #14b38a); color:#032a1f; border-color:#4af0c4; animation:pulse 1.2s infinite; }
+  @keyframes pulse { 50% { box-shadow:0 0 0 5px #22d3a633; } }
+  td.act { text-align:right; } td.act button { padding:3px 10px; margin-left:4px; }
+  td.act button.add { border-color:#7c5cff88; color:#c9bdff; }
+  td.act button.del { width:26px; height:26px; padding:0; border-radius:50%; background:#ff3b5c1f; border-color:#ff3b5c99; color:#ff4d6d; font-weight:800; font-size:14px; line-height:1; }
+  td.act button.del:hover { background:#ff3b5c; border-color:#ff3b5c; color:#fff; box-shadow:0 0 0 3px #ff3b5c33; }
+  /* transitions */
+  .fxcard { border-left:3px solid var(--k, var(--line)) !important; }
+  .fxcard:hover { border-color:var(--k) !important; box-shadow:0 0 0 3px color-mix(in srgb, var(--k) 25%, transparent) !important; }
+  .trchips { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px; }
+  .trchip { border-radius:999px; padding:3px 11px; font-size:12px; font-weight:700; border-color:var(--k); color:var(--k); background:color-mix(in srgb, var(--k) 12%, #1e1e2a); }
+  .trchip.on { background:var(--k); color:#0c0c11; }
+  .trcard { background:color-mix(in srgb, var(--k) 10%, var(--card)); border:1px solid color-mix(in srgb, var(--k) 55%, transparent); border-radius:12px; padding:10px; margin-bottom:6px; }
+  .trhead { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:4px; }
+  .trhead .sub { margin:0; }
+  .trtag { background:var(--k); color:#0c0c11; font-weight:800; font-size:12px; letter-spacing:.6px; text-transform:uppercase; border-radius:999px; padding:3px 10px; }
   .warnTxt { color:var(--warn); font-size:11px; margin-left:4px; }
   .folder { display:block; width:100%; text-align:left; margin-bottom:4px; overflow:hidden; text-overflow:ellipsis; }
   .folder small { float:right; color:var(--dim); }
@@ -208,7 +235,7 @@
       <div id="libSide"></div>
       <div class="tablewrap">
         <table><thead><tr>
-          <th data-sort="name">Titre</th><th data-sort="bpm" class="num">BPM</th><th data-sort="camelot">Ton.</th>
+          <th data-sort="name">Titre</th><th data-sort="bpm" class="num">BPM</th><th data-sort="camelot">Tonalité</th>
           <th data-sort="energy">Énergie</th><th data-sort="duration" class="num">Durée</th><th data-sort="folder">Dossier</th><th></th>
         </tr></thead><tbody id="libT"></tbody></table>
         <div id="dropHint" hidden><b style="color:var(--txt);font-size:15px">Glisse tes morceaux ou un dossier ici</b>MP3, WAV, AIFF, FLAC, M4A · tout reste sur ton Mac</div>
@@ -531,7 +558,7 @@ function play(from = U.pos, seamless = false) {
       o.connect(g).connect(ctx.destination); o.start(at); o.stop(at + 0.05); nodes.push(o);
     }
   }
-  U.playing = true; $('play').textContent = '❚❚';
+  U.playing = true; $('play').textContent = '❚❚'; $('play').classList.add('on');
   const id = tick.n = (tick.n || 0) + 1; requestAnimationFrame(() => tick(id));
 }
 function stop(keepPos = true) {
@@ -542,7 +569,7 @@ function stop(keepPos = true) {
     const m = live.bus.master; setTimeout(() => m.disconnect(), 50);
     live = null;
   }
-  U.playing = false; $('play').textContent = '▶';
+  U.playing = false; $('play').textContent = '▶'; $('play').classList.remove('on');
   recEnd(); draw();
 }
 const livePos = () => live ? Math.max(live.from, live.from + ctx.currentTime - live.base) : U.pos;
@@ -683,10 +710,10 @@ function renderLib() {
       <td class="title" title="${esc(t.name)}"><button class="pre ${preview.id === t.id ? 'on' : ''}" data-pre="${t.id}" title="Pré-écoute">${preview.id === t.id ? '❚❚' : '▶'}</button> <b>${esc(t.title)}</b> <span>${esc(t.artist)}</span></td>
       <td class="num">${fold(t.bpm).toFixed(2)}${far ? '<span class="warnTxt" title="Tempo éloigné du mix : il sera fortement étiré">⚠</span>' : ''}</td>
       <td><span class="key ${match ? 'match' : ''}" style="background:${keyColor(t.camelot)}" title="${t.key}${match ? ' · compatible avec ' + esc(ref.name) : ''}">${t.camelot}</span></td>
-      <td><span class="energy" title="Énergie ${t.energy}/10">${Array.from({ length:10 }, (_, i) => `<i class="${i < t.energy ? 'f' : ''}"></i>`).join('')}</span></td>
+      <td><span class="energy" title="Énergie ${t.energy}/10">${Array.from({ length:10 }, (_, i) => `<i class="${i < t.energy ? 'f' : ''}" style="height:${5 + i}px;--h:${140 - i * 14}"></i>`).join('')}</span></td>
       <td class="num">${fmtTime(t.duration)}</td>
       <td style="color:var(--dim)">${esc(t.folder || '')}</td>
-      <td class="act"><button data-add="${t.id}" title="Ajouter à la fin du mix">+ Mix</button><button data-del="${t.id}" title="Retirer de la bibliothèque">×</button></td></tr>`;
+      <td class="act"><button class="add" data-add="${t.id}" title="Ajouter à la fin du mix">+ Mix</button><button class="del" data-del="${t.id}" title="Retirer de la bibliothèque">✕</button></td></tr>`;
   }).join('') || (LIB.length ? `<tr><td colspan="7" class="note" style="padding:14px">${U.libTab === 'suggest' ? (ref ? 'Aucun morceau compatible (tonalité voisine et tempo à ±6 %).' : 'Ajoute un morceau au mix (ou sélectionne-en un) pour voir ce qui s\'enchaîne bien.') : 'Aucun morceau ne correspond.'}</td></tr>` : '');
   renderSide();
 }
@@ -899,7 +926,7 @@ async function kickAll() {   // un seul recalage à la fois (deux en même temps
 
 // ============ Transitions ============
 function setPts(c, p, list) {   // list = [[temps du mix, valeur]] ; remplace les points existants sur cette plage
-  const tbs = list.map(([x, v]) => ({ b:tlToTb(c, x), v:clamp(v, PARAMS[p].min, PARAMS[p].max) }));
+  const tbs = list.map(([x, v]) => ({ b:tlToTb(c, x), v:clamp(v, PARAMS[p].min, PARAMS[p].max), ...(setPts.kind && { k:setPts.kind }) }));   // k : la carte qui l'a posé
   const lo = Math.min(...tbs.map(q => q.b)) - 1e-6, hi = Math.max(...tbs.map(q => q.b)) + 1e-6;
   c.auto[p] = [...c.auto[p].filter(q => q.b < lo || q.b > hi), ...tbs].sort((a, b) => a.b - b.b);
 }
@@ -924,9 +951,26 @@ function bassSwap(a, b, o0, o1) {   // un seul morceau dans les basses à la foi
   setPts(b, 'low', [[o0, -26], [m - w0, -26], [m + w1, 0]]);
   return m;
 }
+// Transitions posées par les cartes : gardées sur le morceau qui sort (a.tr), affichées et nommées sur sa piste,
+// sélectionnables (clic sur l'étiquette) pour les écouter, les remplacer ou les supprimer.
+const TRK = { fade:['Fondu', '#7c5cff'], filter:['Filtre', '#22d3a6'], echo:['Écho', '#ffb547'], reverb:['Réverbe', '#3aa0ff'], cut:['Coupe', '#ff5c7a'] };
+const TRP = { fade:['vol', 'high', 'low'], filter:['filter', 'low'], echo:['delay', 'vol'], reverb:['reverb', 'filter'], cut:[] };   // réglages écrits par chaque carte
+const trZone = (a, r) => [a.start + r.t0 - a.in, a.start + r.t1 - a.in];   // en temps du mix
+function removeTr(a, i) {   // efface les points que la carte a écrits dans sa zone (sur les deux morceaux), remet la longueur après une coupe
+  const r = a.tr[i], [m0, m1] = trZone(a, r), b = S.clips.find(o => o.id === r.partner);
+  for (const c of [a, b]) if (c) for (const p of TRP[r.kind]) { const t0 = tlToTb(c, m0) - 1e-6, t1 = tlToTb(c, m1) + 1e-6; c.auto[p] = c.auto[p].filter(q => q.b < t0 || q.b > t1 || (q.k && q.k !== r.kind)); }   // les points d'une autre carte restent
+  if (r.kind === 'cut') a.len = r.len;
+  a.tr.splice(i, 1);
+}
 function applyFx(a, kind, b = nextOf(a)) {
   const e = clipEnd(a);
   const ov = b && b.start < e ? [b.start, e] : null;     // zone où les deux morceaux jouent ensemble
+  const [z0, z1] = kind === 'echo' ? [e - 1.02, e] : kind === 'reverb' ? [e - 4, e] : kind === 'cut' ? [b ? b.start : e, e] : ov || [e - 16, e];
+  a.tr = (a.tr || []).filter(r => r.kind !== kind);   // une seule transition de chaque sorte par morceau
+  a.tr.push({ kind, t0:tlToTb(a, z0), t1:tlToTb(a, z1), partner:b?.id ?? null, len:a.len });
+  setPts.kind = kind; try { fxPoints(a, kind, b, e, ov); } finally { setPts.kind = null; }
+}
+function fxPoints(a, kind, b, e, ov) {
   if (ov && (kind === 'fade' || kind === 'filter'))   // on repart de zéro sur la zone commune (anciens fondus)
     for (const c of [a, b]) for (const p of ['vol', 'high', 'low', 'filter']) { const t0 = tlToTb(c, ov[0]) - 1e-6, t1 = tlToTb(c, ov[1]) + 1e-6; c.auto[p] = c.auto[p].filter(q => q.b < t0 || q.b > t1); }
   if (kind === 'fade') {
@@ -1010,7 +1054,7 @@ function drawNow() {
     if ((b / PHRASE) % 2) { g.fillStyle = '#ffffff04'; g.fillRect(x, 0, PHRASE * U.pxb, H); }
     g.fillStyle = '#4b4b6b'; g.fillRect(Math.round(x), 0, 1, H);
   }
-  R.forEach(c => drawClip(g, c, LN.of(c), W));
+  TRR.length = 0; R.forEach(c => drawClip(g, c, LN.of(c), W));
   // repères d'entrée (vert) et de fin (rouge) de chaque morceau, sur toute la hauteur et sur la règle
   for (const c of R) for (const [b, col] of [[c.start, '#22d3a6'], [clipEnd(c), '#ff5c7a']]) {
     const x = Math.round((b - U.scrollX) * U.pxb) + 0.5;
@@ -1035,6 +1079,8 @@ function drawNow() {
   const pb = beatAt(U.pos);
   $('clock').textContent = `${fmtTime(U.pos)}.${Math.floor(U.pos * 10 % 10)} · ${Math.floor(pb / 4) + 1}.${Math.floor(pb % 4) + 1}`;
 }
+const TRR = [];   // étiquettes de transition dessinées (pour le clic)
+const trSel = c => U.tr?.id === c.id ? (c.tr || []).findIndex(r => r.kind === U.tr.kind) : -1;
 function drawClip(g, c, i, W) {
   const t = S.tracks[c.trackId], b = BUF[c.id];
   const x0 = (c.start - U.scrollX) * U.pxb, x1 = (clipEnd(c) - U.scrollX) * U.pxb;
@@ -1065,6 +1111,18 @@ function drawClip(g, c, i, W) {
   g.font = '11px -apple-system, sans-serif'; g.fillStyle = Math.abs(pct) > 6 ? '#ffb547' : '#ffffffaa';
   g.fillText(`${t.bpm.toFixed(2)} BPM${Math.abs(pct) < 0.05 ? '' : ` → ${T} (${pct > 0 ? '+' : ''}${pct.toFixed(1)} %)`}`, tx, y + 13);
   g.restore();
+  for (const r of c.tr || []) {   // transitions : zone teintée + étiquette nommée en bas du morceau (clic = la gérer)
+    const [m0, m1] = trZone(c, r), [name, col] = TRK[r.kind], on = U.tr?.id === c.id && U.tr.kind === r.kind;
+    const zx0 = (m0 - U.scrollX) * U.pxb, zx1 = (m1 - U.scrollX) * U.pxb;
+    if (zx1 < 0 || zx0 > W) continue;
+    g.fillStyle = col + (on ? '33' : '1c'); g.fillRect(zx0, by, Math.max(2, zx1 - zx0), bh);
+    g.font = '700 10px -apple-system, sans-serif';
+    const tw = g.measureText(name.toUpperCase()).width + 14, bw = Math.max(tw, zx1 - zx0), bx = Math.min(zx0, zx1 - tw), byy = y + h - 17;
+    g.fillStyle = col; g.beginPath(); g.roundRect(bx, byy, bw, 14, 7); g.fill();
+    if (on) { g.strokeStyle = '#fff'; g.lineWidth = 2; g.stroke(); }
+    g.fillStyle = '#0c0c11'; g.fillText(name.toUpperCase(), bx + 7, byy + 10.5);
+    TRR.push({ x:bx, y:byy, w:bw, h:14, c, kind:r.kind });
+  }
   const P = PARAMS[U.param];
   if (P) {   // automation affichée
     const vy = v => by + bh - 3 - (v - P.min) / (P.max - P.min) * (bh - 6);
@@ -1116,7 +1174,9 @@ function onLine(h) {   // la souris est sur la ligne rouge (à 6 px près) : cli
 const yToV = (h, y) => { const P = PARAMS[U.param]; return clamp(P.min + (h.by + h.bh - 3 - y) / (h.bh - 6) * (P.max - P.min), P.min, P.max); };
 
 rowsC.addEventListener('mousedown', e => {
-  const h = hit(e);
+  const h = hit(e), tr = TRR.findLast(r => h.x >= r.x && h.x <= r.x + r.w && h.y >= r.y && h.y <= r.y + r.h);
+  if (tr) { U.sel = tr.c.id; U.tr = { id:tr.c.id, kind:tr.kind }; U.inspTab = 'trans'; renderInsp(); renderLib(); draw(); return; }   // clic sur une transition
+  if (U.tr) { U.tr = null; renderInsp(); }
   if (!h.c) { U.sel = null; renderInsp(); renderLib(); draw(); return; }
   if (U.sel !== h.c.id) { U.sel = h.c.id; renderInsp(); renderLib(); }
   const c = h.c, o = { start:c.start, in:c.in, len:c.len };
@@ -1189,7 +1249,7 @@ function zoom(f, cx = $('rowsC').clientWidth / 2) {
   U.pxb = clamp(U.pxb * f, 0.25, 120); U.scrollX = b - cx / U.pxb; draw();
 }
 for (const el of [rowsC, $('rulerC'), $('hscroll')]) el.addEventListener('wheel', e => {
-  const sc = $('scroller'), noVert = sc.scrollHeight <= sc.clientHeight + 1;   // pistes toutes visibles : la molette fait défiler le mix
+  const sc = $('scroller'), de = document.body, noVert = sc.scrollHeight <= sc.clientHeight + 1 && de.scrollHeight <= de.clientHeight + 1;   // rien d'autre à faire défiler : la molette fait défiler le mix
   if (e.ctrlKey || e.metaKey) { e.preventDefault(); zoom(Math.exp(-e.deltaY * 0.01), e.offsetX); }
   else if (Math.abs(e.deltaX) > Math.abs(e.deltaY) || e.shiftKey || noVert) { e.preventDefault(); U.scrollX = Math.max(-2, U.scrollX + (e.deltaX || e.deltaY) / U.pxb); U.userScroll = performance.now(); draw(); }
 }, { passive:false });
@@ -1358,6 +1418,7 @@ addEventListener('keydown', e => {
   if (e.target.matches('input, select')) return;
   if (e.code === 'Space') { e.preventDefault(); $('play').click(); }
   else if ((e.metaKey || e.ctrlKey) && e.key === 'z') { e.preventDefault(); undo(); }
+  else if ((e.key === 'Delete' || e.key === 'Backspace') && selClip() && trSel(selClip()) >= 0) { pushUndo(); removeTr(selClip(), trSel(selClip())); U.tr = null; changed(); }   // Suppr : la transition sélectionnée
   else if ((e.key === 'Delete' || e.key === 'Backspace') && selClip()) { pushUndo(); S.clips = S.clips.filter(c => c.id !== U.sel); U.sel = null; changed(); }
   else if (e.key >= '0' && e.key <= '7') { U.param = ['none', ...PKEYS][+e.key]; paramsUI(); draw(); }
   else if (e.key === 'Home') $('toStart').click();
@@ -1425,18 +1486,19 @@ function renderInsp() {
       </div>
       ${nt ? `<div class="note ${compatible(camOf(t), camOf(nt)) ? 'ok' : 'warn'}">${compatible(camOf(t), camOf(nt)) ? '✓ Tonalités compatibles' : '⚠ Tonalités éloignées : transpose un des deux (onglet Morceau) ou préfère une coupe / un écho'}</div>
       <div class="note">${ov > 0 ? `Les deux jouent ensemble pendant ${ov % 4 ? `${ov} temps` : `${ov / 4} mesure(s)`}.` : ov === 0 ? 'Le suivant démarre pile à la fin.' : `Silence de ${-ov} temps entre les deux.`}</div>` : ''}
+      ${trCard(c)}
       ${n ? `<h2>1 · Le suivant entre</h2>
       <div class="grid3">
         <button data-in-next="64">16 mesures avant</button><button data-in-next="32">8 mesures avant</button><button data-in-next="16">4 mesures avant</button>
         <button data-in-next="4">sur la dernière mesure</button><button data-in-next="1">sur le dernier temps</button><button data-in-next="0">à la fin</button>
       </div>` : ''}
-      <h2>${n ? '2 · Comment ça passe' : 'Sortie du mix'}</h2>
+      <h2>${trSel(c) >= 0 ? 'Remplacer par' : n ? '2 · Comment ça passe' : 'Sortie du mix'}</h2>
       <div class="grid2">
-        <button class="fxcard" data-fx="fade"><b>Fondu</b><span>volume croisé + échange des basses</span></button>
-        <button class="fxcard" data-fx="filter"><b>Filtre</b><span>l'un se ferme, l'autre s'ouvre</span></button>
-        <button class="fxcard" data-fx="echo"><b>Écho</b><span>le dernier temps répète</span></button>
-        <button class="fxcard" data-fx="reverb"><b>Réverbe</b><span>la dernière mesure s'envole</span></button>
-        ${n ? '<button class="fxcard" data-fx="cut"><b>Coupe</b><span>coupe nette pile à l\'entrée</span></button>' : ''}
+        <button class="fxcard" data-fx="fade" style="--k:${TRK.fade[1]}"><b>Fondu</b><span>volume croisé + échange des basses</span></button>
+        <button class="fxcard" data-fx="filter" style="--k:${TRK.filter[1]}"><b>Filtre</b><span>l'un se ferme, l'autre s'ouvre</span></button>
+        <button class="fxcard" data-fx="echo" style="--k:${TRK.echo[1]}"><b>Écho</b><span>le dernier temps répète</span></button>
+        <button class="fxcard" data-fx="reverb" style="--k:${TRK.reverb[1]}"><b>Réverbe</b><span>la dernière mesure s'envole</span></button>
+        ${n ? '<button class="fxcard" data-fx="cut" style="--k:#ff5c7a"><b>Coupe</b><span>coupe nette pile à l\'entrée</span></button>' : ''}
         <button class="fxcard" data-fx="clear"><b>Effacer</b><span>enlève les effets de ce morceau</span></button>
       </div>
       <div class="note">Tu peux combiner (écho + réverbe…) et tout retoucher avec « Dessiner » en bas.</div>
@@ -1470,6 +1532,19 @@ function renderInsp() {
       <div class="row"><button id="rm">Retirer du mix</button></div>`;
   }
 }
+function trCard(c) {   // transitions du morceau (puces) et carte de celle qui est sélectionnée
+  const list = c.tr || []; if (!list.length) return '';
+  const i = trSel(c), chips = `<div class="trchips">${list.map(r => `<button class="trchip ${i >= 0 && list[i] === r ? 'on' : ''}" data-trsel="${r.kind}" style="--k:${TRK[r.kind][1]}">${TRK[r.kind][0]}</button>`).join('')}</div>`;
+  if (i < 0) return `<h2>Transitions posées</h2>${chips}<div class="note">Clique une transition (ici ou sur la piste) pour la gérer.</div>`;
+  const r = list[i], [m0, m1] = trZone(c, r), b = S.clips.find(o => o.id === r.partner), d = m1 - m0;
+  return `<h2>Transitions posées</h2>${chips}
+    <div class="trcard" style="--k:${TRK[r.kind][1]}">
+      <div class="trhead"><span class="trtag">${TRK[r.kind][0]}</span><span class="sub">mesure ${Math.floor(m0 / 4) + 1} → ${Math.floor(m1 / 4) + 1} · ${d < 2 ? 'dernier temps' : d % 4 ? `${Math.round(d)} temps` : `${d / 4} mesure${d > 4 ? 's' : ''}`}</span></div>
+      <div class="note">${esc(S.tracks[c.trackId].name)}${b ? ` → ${esc(S.tracks[b.trackId].name)}` : ' → fin du mix'}</div>
+      <div class="row"><button data-trplay="1" class="acc">▶ Écouter</button><button data-trdel="1" class="danger">✕ Supprimer</button></div>
+      <div class="note">Une autre carte ci-dessous la remplace · Suppr la supprime · ses points restent retouchables avec la ligne rouge.</div>
+    </div>`;
+}
 $('insp').addEventListener('click', e => {
   const btn = e.target.closest('button'), c = selClip(); if (!c || !btn) return;
   const d = btn.dataset, t = S.tracks[c.trackId];
@@ -1490,8 +1565,14 @@ $('insp').addEventListener('click', e => {
   else if (d.inNext) { const n = nextOf(c), s = n.start, nx = following(n); pushUndo(); n.start = Math.max(0, clipEnd(c) - +d.inNext); shiftAll(nx, n.start - s); kickAlign(n).then(changed, () => {}); }
   else if (d.kick) { pushUndo(); kickAlign(c).then(changed, () => {}); return; }
   else if (d.realign) { pushUndo(); t.nudge = t.man = 0; }
-  else if (d.fx === 'clear') { pushUndo(); c.auto = blankAuto(); }
-  else if (d.fx) { pushUndo(); applyFx(c, d.fx); }
+  else if (d.fx === 'clear') { pushUndo(); c.auto = blankAuto(); c.tr = []; U.tr = null; }
+  else if (d.fx) {
+    pushUndo(); const i = trSel(c); if (i >= 0) removeTr(c, i);   // une transition sélectionnée : la carte la remplace
+    applyFx(c, d.fx); U.tr = i >= 0 ? { id:c.id, kind:d.fx } : null;   // sans sélection, les cartes s'ajoutent (écho + réverbe…)
+  }
+  else if (d.trsel) { U.tr = { id:c.id, kind:d.trsel }; }
+  else if (d.trdel != null) { const i = trSel(c); if (i >= 0) { pushUndo(); removeTr(c, i); U.tr = null; } }
+  else if (d.trplay != null) { const i = trSel(c); if (i >= 0) { U.pos = secAt(Math.max(0, trZone(c, c.tr[i])[0] - 8)); play(); } return; }
   else if (btn.id === 'rm') { pushUndo(); S.clips = S.clips.filter(x => x !== c); U.sel = null; }
   else return;
   changed();
