@@ -149,10 +149,45 @@ async function render(q) {
     for (let i = 0; i < n; i++) { O += 60 / T(j0 + i); rates.push([O, T(j0 + i + 1) / bpm]); }
     len = O;
   } else { rates.push([0, +q.tempo / bpm]); len = src.duration * bpm / +q.tempo; }
+  if (q.mt !== '0') return wsola(src, rates, Math.ceil(Math.min(len, src.duration * 1.2) * SR));   // Master Tempo : tonalité d'origine
   const ac = new OfflineAudioContext(2, Math.ceil(Math.min(len, src.duration * 1.2) * SR), SR), s = ac.createBufferSource();
   s.buffer = src; rates.forEach(([at, r]) => s.playbackRate.setValueAtTime(r, Math.max(0, at)));
   s.connect(ac.destination); s.start(0);
   return ac.startRendering();
+}
+// Étirement sans changer la tonalité (WSOLA) : on recolle des tranches de 46 ms du morceau, chacune posée là où
+// elle ressemble le plus à la suite naturelle de la précédente (recherche grossière au 1/4, puis fine).
+function wsola(src, rates, outLen) {
+  const N = 2048, H = N / 2, S = 320, D = 4, C = src.numberOfChannels;
+  const X = [...Array(C)].map((_, c) => src.getChannelData(c)), L = X[0].length;
+  const m = new Float32Array(Math.ceil(L / D) + 1);   // mono sous-échantillonné pour la recherche
+  for (let i = 0; i < m.length; i++) { let v = 0; for (let c = 0; c < C; c++) v += X[c][i * D] || 0; m[i] = v; }
+  const out = new AudioBuffer({ numberOfChannels:2, length:outLen, sampleRate:SR }), Y = [out.getChannelData(0), out.getChannelData(1)];
+  const w = new Float32Array(N); for (let i = 0; i < N; i++) w[i] = Math.sin(Math.PI * i / N) ** 2;
+  const corr = (a, b, n, step, arr) => { let s = 0; for (let k = 0; k < n; k += step) s += arr[a + k] * arr[b + k]; return s; };
+  const full = (a, b) => { let s = 0; for (let k = 0; k < H; k += 2) { const p = a + k, q = b + k; for (let c = 0; c < C; c++) s += (X[c][p] || 0) * (X[c][q] || 0); } return s; };
+  let ip = 0, prev = -1, ri = 0;
+  for (let op = 0; op < outLen; op += H) {
+    while (ri + 1 < rates.length && rates[ri + 1][0] * SR <= op) ri++;
+    let pos = Math.round(ip);
+    if (prev >= 0) {
+      const nat = prev + H, lo = Math.max(0, pos - S), hi = Math.min(L - N - 1, pos + S);
+      if (hi > lo) {   // la tranche qui prolonge le mieux la précédente
+        let best = pos, bv = -Infinity;
+        for (let q = Math.ceil(lo / D); q <= hi / D; q++) { const v = corr(q, Math.floor(nat / D), H / D, 2, m); if (v > bv) { bv = v; best = q * D; } }
+        const c0 = best; bv = -Infinity;
+        for (let q = Math.max(lo, c0 - D); q <= Math.min(hi, c0 + D); q++) { const v = full(q, nat); if (v > bv) { bv = v; best = q; } }
+        pos = best;
+      }
+    }
+    if (pos >= L) break;
+    for (let k = 0, e = Math.min(N, outLen - op); k < e; k++) {
+      const g = w[k], j = pos + k; if (j >= L) break;
+      Y[0][op + k] += X[0][j] * g; Y[1][op + k] += X[C > 1 ? 1 : 0][j] * g;
+    }
+    prev = pos; ip += H * rates[ri][1];
+  }
+  return out;
 }
 const AC = window.AudioContext || window.webkitAudioContext, decode = AC.prototype.decodeAudioData;
 AC.prototype.decodeAudioData = function (ab, ...rest) {

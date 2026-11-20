@@ -41,6 +41,12 @@
   .tempo small { color:var(--dim); font-size:10px; letter-spacing:1px; }
   #tempo { width:78px; border:0; background:transparent; font:700 17px ui-monospace, Menlo, monospace; text-align:right; padding:2px; }
   .tempo button { padding:3px 8px; }
+  .tfader { display:flex; align-items:center; gap:6px; background:#0f0f15; border:1px solid var(--line); border-radius:9px; padding:3px 6px; }
+  .tfader input { width:130px; accent-color:#ff9a2e; }
+  #tfv { font:700 12px ui-monospace, Menlo, monospace; min-width:58px; text-align:right; color:#ffb547; }
+  #tfv.zero { color:var(--dim); }
+  #mt { font:800 8.5px/1.05 ui-monospace, Menlo, monospace; letter-spacing:.4px; padding:3px 6px; color:var(--dim); }
+  #mt.on { color:#fff; background:linear-gradient(180deg, #ff4d4d, #c81e1e); border-color:#ff7a7a; box-shadow:0 0 10px #ff3b3b77; }
   #sync { background:var(--acc2); border-color:var(--acc2); color:#05301f; font-weight:700; }
   label.inl { display:flex; align-items:center; gap:6px; color:var(--dim); }
 
@@ -197,6 +203,12 @@
     <button id="tap" title="Tape en rythme pour donner le tempo">TAP</button>
     <button id="sync" title="Le morceau sélectionné et les suivants prennent son tempo d'origine">SYNC</button>
   </div>
+  <div class="tfader" title="Fader de tempo, comme sur une CDJ : tout le mix accélère ou ralentit en direct. Double-clic : retour à 0 %">
+    <button id="mt" class="on" title="MASTER TEMPO allumé : le tempo change sans changer la tonalité (les voix et les basses restent naturelles). Éteint : comme un vinyle, ça monte ou descend avec la vitesse">MASTER<br>TEMPO</button>
+    <input type="range" id="tf" min="-10" max="10" step="0.02" value="0">
+    <span id="tfv">0.00 %</span>
+    <select id="tfr" title="Plage du fader (TEMPO RANGE)"><option value="6">±6</option><option value="10" selected>±10</option><option value="16">±16</option></select>
+  </div>
   <div class="sep"></div>
   <label class="inl">Aimant <select id="snap"><option value="32">Phrase (8 mesures)</option><option value="4">Mesure</option><option value="1">Temps</option><option value="0">Libre</option></select></label>
   <button id="click" title="Métronome pour vérifier le calage">Clic</button>
@@ -276,7 +288,7 @@
 
 <div id="modal" hidden><div class="box"><b id="mTitle"></b><div class="bar"><div id="mBar"></div></div><div id="mText" class="note"></div><div class="row" id="mBtns"></div></div></div>
 
-<script src="web.js?v=185e8a0a"></script>
+<script src="web.js?v=d50cbaf6"></script>
 <script>
 // ============ Modèle ============
 // Tout est en TEMPS (beats) : début sur la timeline, position dans le morceau, automations.
@@ -296,13 +308,13 @@ const blankBase = () => Object.fromEntries(PKEYS.map(k => [k, PARAMS[k].def]));
 
 let S = newProject();
 function newProject() {
-  return { name:'Mon mix', tempo:null, grid:4, tracks:{}, clips:[], fx:{ delayDiv:0.75, delayFb:0.45, reverbSec:4, master:0 } };
+  return { name:'Mon mix', tempo:null, mt:true, tempo0:null, grid:4, tracks:{}, clips:[], fx:{ delayDiv:0.75, delayFb:0.45, reverbSec:4, master:0 } };
 }
 let LIB = [];                       // morceaux analysés (serveur)
 const BUF = {};                     // id morceau -> { key, buffer, peaks } ou { key, loading }
 const PHRASE = 32;   // 8 mesures de 4 temps : les morceaux entrent et sortent sur ces repères
 const MIXIN = 64;    // le suivant entre 16 mesures avant la fin du précédent
-const U = { pxb:8, scrollX:-2, userScroll:0, sel:null, param:'vol', snap:PHRASE, pos:0, playing:false, click:false, undo:[],
+const U = { rate:1, pxb:8, scrollX:-2, userScroll:0, sel:null, param:'vol', snap:PHRASE, pos:0, playing:false, click:false, undo:[],
             libTab:'all', keys:new Set(), compat:true, folder:null, sort:'name', up:true, inspTab:'trans' };
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -381,7 +393,7 @@ function clipTempo(c) {   // tempo du morceau dans ses propres temps : { T } con
   return { T:ct(c), pts:r, ramp:r.map(p => p.join(':')).join(',') };
 }
 const audioQ = (c, ft = clipTempo(c), t = S.tracks[c.trackId]) =>
-  `id=${t.id}&tempo=${ft.T}&bpm=${t.bpm}&semi=${t.semi || 0}${ft.ramp ? `&fb=${t.first_beat}&ramp=${ft.ramp}` : ''}`;
+  `id=${t.id}&tempo=${ft.T}&bpm=${t.bpm}&semi=${t.semi || 0}${ft.ramp ? `&fb=${t.first_beat}&ramp=${ft.ramp}` : ''}${S.mt === false ? '&mt=0' : ''}`;
 function makeMap(t, ft) {   // temps du morceau -> secondes dans son fichier calé (sans le décalage manuel)
   if (!ft.ramp) return tb => (t.first_beat * t.bpm + tb * 60) / ft.T;
   const sb = 60 / t.bpm, fb = t.first_beat, j0 = -Math.ceil(fb / sb), n = Math.ceil((t.duration - fb) / sb) + 2 - j0;
@@ -420,6 +432,28 @@ function undo() {
 
 // ============ Audio ============
 const ctx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate:44100 });
+// Master Tempo en direct : deux têtes de lecture glissantes dans une petite mémoire, fondues en croix (décaleur de tonalité granulaire)
+const MT = { ok:false, lat:0.030 };
+ctx.audioWorklet?.addModule(URL.createObjectURL(new Blob([`
+class S extends AudioWorkletProcessor {
+  static get parameterDescriptors() { return [{ name:'ratio', defaultValue:1, minValue:0.25, maxValue:4 }]; }
+  constructor() { super(); this.N = Math.round(sampleRate * 0.06); this.M = 8192; this.b = [new Float32Array(8192), new Float32Array(8192)]; this.w = 0; this.ph = 0; }
+  process(I, O, P) {
+    const i = I[0], o = O[0], N = this.N, M = this.M, b = this.b;
+    if (!i || !i.length) return true;
+    const rd = (c, d) => { const x = this.w - d + M * 2, j = Math.floor(x), f = x - j; return b[c][j % M] * (1 - f) + b[c][(j + 1) % M] * f; };
+    for (let n = 0; n < o[0].length; n++) {
+      const r = P.ratio.length > 1 ? P.ratio[n] : P.ratio[0];
+      b[0][this.w] = i[0][n]; b[1][this.w] = (i[1] || i[0])[n];
+      this.ph = (this.ph + (1 - r) / N + 1) % 1;
+      const p2 = (this.ph + 0.5) % 1, g1 = Math.sin(Math.PI * this.ph) ** 2, g2 = 1 - g1;
+      for (let c = 0; c < 2; c++) (o[c] || o[0])[n] = rd(c, this.ph * N + 2) * g1 + rd(c, p2 * N + 2) * g2;
+      this.w = (this.w + 1) % M;
+    }
+    return true;
+  }
+}
+registerProcessor('mt-shift', S);`], { type:'text/javascript' }))).then(() => MT.ok = true, e => console.warn('Master Tempo en direct indisponible', e));
 
 function rng(seed) { return () => (seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296; }
 // ============ Table de mixage (deux voies A / B, comme une vraie table) ============
@@ -457,7 +491,7 @@ function buildBus(ac, liveMix = true) {
   rIn.connect(conv).connect(rOut).connect(master);
   // Écho calé sur le tempo, retours filtrés
   const dIn = ac.createGain(), dl = ac.createDelay(4), fb = ac.createGain(), hp = ac.createBiquadFilter(), lp = ac.createBiquadFilter();
-  dl.delayTime.value = S.fx.delayDiv * beatSec(); fb.gain.value = S.fx.delayFb;
+  dl.delayTime.value = S.fx.delayDiv * beatSec() / (liveMix ? U.rate : 1); fb.gain.value = S.fx.delayFb;
   hp.type = 'highpass'; hp.frequency.value = 300; lp.type = 'lowpass'; lp.frequency.value = 5000;
   dIn.connect(dl).connect(hp).connect(lp).connect(fb).connect(dl);
   lp.connect(master);
@@ -483,18 +517,23 @@ const toParam = {
   hp:  v => v > 0 ? 20 * 10 ** (v * 3) : 20,
 };
 // Construit la chaîne d'un morceau dans un contexte audio (lecture ou export), à partir de `from` secondes du mix
-function scheduleClip(ac, bus, c, from, base) {
+function scheduleClip(ac, bus, c, from, base, rate = ac === ctx ? U.rate : 1) {
   const b = BUF[c.id];
   if (!b?.buffer) return [];
   const cs = secAt(c.start), ce = secAt(clipEnd(c));
   if (ce <= from) return [];
+  // rate : fader de tempo en direct ; b.k : fichier encore rendu à l'ancien tempo (en attendant le nouveau rendu)
+  const k = b.k || 1, speed = rate * k;
   let t0 = Math.max(cs, from);
   let off = fileT(c, tlToTb(c, beatAt(t0)));
-  if (off < 0) t0 -= off, off = 0;
-  const dur = Math.min(ce - t0, b.buffer.duration - off);
+  if (off < 0) t0 -= off / k, off = 0;
+  const dur = Math.min(ce - t0, (b.buffer.duration - off) / k);
   if (dur <= 0.005) return [];
-  const when = base + (t0 - from);
-  const src = ac.createBufferSource(); src.buffer = b.buffer;
+  const when = base + (t0 - from) / rate, at = s => when + (s - t0) / rate;   // secondes du mix -> horloge audio
+  const src = ac.createBufferSource(); src.buffer = b.buffer; src.playbackRate.value = speed;
+  // Master Tempo : la vitesse change, la tonalité est remise d'origine en direct (le nouveau rendu prend le relais)
+  const mt = ac === ctx && MT.ok && S.mt !== false && Math.abs(speed - 1) > 1e-4
+    ? new AudioWorkletNode(ac, 'mt-shift', { outputChannelCount:[2], parameterData:{ ratio:1 / speed } }) : null;
   const g = ac.createGain(), lo = ac.createBiquadFilter(), mi = ac.createBiquadFilter(), hi = ac.createBiquadFilter();
   const hp = ac.createBiquadFilter(), lp = ac.createBiquadFilter(), sr = ac.createGain(), sd = ac.createGain();
   lo.type = 'lowshelf'; lo.frequency.value = 150;
@@ -502,10 +541,10 @@ function scheduleClip(ac, bus, c, from, base) {
   hi.type = 'highshelf'; hi.frequency.value = 4000;
   hp.type = 'highpass'; hp.Q.value = 0.9; lp.type = 'lowpass'; lp.Q.value = 0.9;
   const edge = ac.createGain();   // anti-clic aux bords du morceau
-  src.connect(lo).connect(mi).connect(hi).connect(hp).connect(lp).connect(edge).connect(g).connect(bus.decks[deckOf(c)].lo);
+  (mt ? src.connect(mt) : src).connect(lo).connect(mi).connect(hi).connect(hp).connect(lp).connect(edge).connect(g).connect(bus.decks[deckOf(c)].lo);
   g.connect(sr).connect(bus.reverb); g.connect(sd).connect(bus.delay);
   if (t0 - cs < 0.008) { edge.gain.setValueAtTime(0, when); edge.gain.linearRampToValueAtTime(1, when + 0.008); }
-  if (ce - (t0 + dur) < 0.008) { edge.gain.setValueAtTime(1, when + dur - 0.008); edge.gain.linearRampToValueAtTime(0, when + dur); }
+  if (ce - (t0 + dur) < 0.008) { edge.gain.setValueAtTime(1, at(t0 + dur) - 0.008); edge.gain.linearRampToValueAtTime(0, at(t0 + dur)); }
   // courbes seulement là où l'automation bouge (entre deux points de valeurs différentes) : la relance reste instantanée
   const curve = (param, key, f) => {
     const pts = c.auto[key], sec = b => secAt(c.start + b - c.in);
@@ -515,10 +554,10 @@ function scheduleClip(ac, bus, c, from, base) {
       const A = pts[i - 1], B = pts[i]; if (A.v === B.v) continue;
       const a = Math.max(t0, sec(A.b)), z = Math.min(t0 + dur, sec(B.b));
       if (z - a < 1e-3) {   // saut instantané
-        if (a > t0 && a < t0 + dur) { last = Math.max(when + a - t0, last) + 1e-4; param.setValueAtTime(f(B.v), last); }
+        if (a > t0 && a < t0 + dur) { last = Math.max(at(a), last) + 1e-4; param.setValueAtTime(f(B.v), last); }
         continue;
       }
-      const st = Math.max(when + a - t0, last + 1e-4), d = when + z - t0 - st;
+      const st = Math.max(at(a), last + 1e-4), d = at(z) - st;
       if (d < 1e-3) continue;
       const m = Math.max(2, Math.ceil((z - a) * RATE) + 1), arr = new Float32Array(m);
       for (let k = 0; k < m; k++) arr[k] = f(autoValue(c, key, tlToTb(c, beatAt(a + k * (z - a) / (m - 1)))));
@@ -528,7 +567,8 @@ function scheduleClip(ac, bus, c, from, base) {
   const id = v => v;
   curve(g.gain, 'vol', toParam.vol); curve(lo.gain, 'low', id); curve(mi.gain, 'mid', id); curve(hi.gain, 'high', id);
   curve(lp.frequency, 'filter', toParam.lp); curve(hp.frequency, 'filter', toParam.hp); curve(sr.gain, 'reverb', id); curve(sd.gain, 'delay', id);
-  src.start(when, off, dur);
+  const lat = mt ? MT.lat : 0;   // le décaleur de tonalité retarde le son : on part un peu plus tôt
+  src.start(when - lat, off); src.stop(at(t0 + dur));
   return [src];
 }
 
@@ -544,18 +584,18 @@ function play(from = U.pos, seamless = false) {
   ctx.resume();
   const bus = buildBus(ctx), base = ctx.currentTime + 0.06, nodes = [];
   if (old) {   // relance sans trou : l'ancien rendu s'efface pendant que le nouveau démarre au même endroit
-    from = old.from + base - old.base;
+    from = old.from + (base - old.base) * old.k;
     const g = old.bus.master.gain; g.setValueAtTime(g.value, base); g.linearRampToValueAtTime(0, base + 0.03);
     old.nodes.forEach(n => { try { n.stop(base + 0.04); } catch {} });
     setTimeout(() => old.bus.master.disconnect(), 300);
     const v = bus.master.gain.value; bus.master.gain.setValueAtTime(0, base); bus.master.gain.linearRampToValueAtTime(v, base + 0.03);
   }
-  live = { nodes, base, from, bus };   // posé avant : si un morceau plante, ceux déjà lancés restent arrêtables
+  live = { nodes, base, from, bus, k:U.rate, seam:!!old };   // k : secondes du mix par seconde d'horloge   // posé avant : si un morceau plante, ceux déjà lancés restent arrêtables
   for (const c of S.clips) try { nodes.push(...scheduleClip(ctx, bus, c, from, base)); } catch (e) { console.error('Lecture', c.id, e); }
   if (U.click) {   // métronome : un clic par temps, plus aigu sur le premier temps de la mesure
     const first = Math.ceil(beatAt(from) - 1e-6);
     for (let k = first; k < first + 2000; k++) {
-      const o = ctx.createOscillator(), g = ctx.createGain(), at = base + secAt(k) - from;
+      const o = ctx.createOscillator(), g = ctx.createGain(), at = base + (secAt(k) - from) / U.rate;
       o.frequency.value = k % 4 ? 1000 : 1600; g.gain.setValueAtTime(0.25, at); g.gain.exponentialRampToValueAtTime(0.001, at + 0.04);
       o.connect(g).connect(ctx.destination); o.start(at); o.stop(at + 0.05); nodes.push(o);
     }
@@ -574,7 +614,7 @@ function stop(keepPos = true) {
   U.playing = false; $('play').textContent = '▶'; $('play').classList.remove('on');
   recEnd(); draw();
 }
-const livePos = () => live ? Math.max(live.from, live.from + ctx.currentTime - live.base) : U.pos;
+const livePos = () => live ? (live.seam ? x => x : x => Math.max(live.from, x))(live.from + (ctx.currentTime - live.base) * live.k) : U.pos;   // relance sans trou : l'ancien son joue encore, la tête ne se fige pas
 let restartT;
 function restartIfPlaying() { if (U.playing) { clearTimeout(restartT); restartT = setTimeout(() => play(livePos(), true), 120); } }
 function tick(id) {   // une seule boucle à la fois : deux boucles s'annulaient leurs dessins (ligne de lecture figée)
@@ -637,6 +677,7 @@ function setTempo(v) {
   const c = selClip(), cur = curTempo();
   if (!(v >= 60 && v <= 200) || v === cur) { showTempo(); return; }
   if (S.tempo) pushUndo();
+  S.tempo0 = null; U.rate = 1;   // tempo tapé à la main : le fader repart de 0 %
   const wasPlaying = U.playing; stop();
   const pb = beatAt(U.pos), s = sorted(), from = c ? s.indexOf(c) : 0, d = v - (cur || v);
   S.clips.forEach(o => o.tempo = ct(o));
@@ -648,10 +689,43 @@ function setTempo(v) {
   changed();
   loads.then(kickAll).then(() => wasPlaying && !U.playing && play());   // la lecture reprend dès que tout est recalé
 }
-const showTempo = () => { $('tempo').value = curTempo() ?? ''; };
+const showTempo = () => {
+  const v = curTempo(); $('tempo').value = v ? +(v * U.rate).toFixed(2) : '';
+  const p = S.tempo0 && S.tempo ? (S.tempo * U.rate / S.tempo0 - 1) * 100 : 0;
+  if (document.activeElement !== $('tf')) $('tf').value = p;
+  $('tfv').textContent = `${p > 0.005 ? '+' : ''}${p.toFixed(2)} %`; $('tfv').classList.toggle('zero', Math.abs(p) < 0.005);
+  $('mt').classList.toggle('on', S.mt !== false);
+};
 $('tempo').onchange = e => setTempo(+e.target.value);
-$('tDown').onclick = () => curTempo() && setTempo(curTempo() - 0.5);
-$('tUp').onclick = () => curTempo() && setTempo(curTempo() + 0.5);
+$('tDown').onclick = () => selClip() ? setTempo(curTempo() - 0.5) : S.tempo && bendTo(S.tempo * U.rate - 0.5, true);
+$('tUp').onclick = () => selClip() ? setTempo(curTempo() + 0.5) : S.tempo && bendTo(S.tempo * U.rate + 0.5, true);
+
+// ============ Fader de tempo + Master Tempo (comme une CDJ-3000) ============
+// Pendant qu'on bouge le fader, tout le mix change de vitesse en direct (la tonalité est corrigée à la volée).
+// Une seconde après, le tempo est validé : chaque morceau est recalculé proprement à son nouveau tempo, sans coupure.
+let commitT;
+function bendTo(target, now = false) {
+  if (!S.tempo || !(target >= 60 && target <= 200)) return;
+  if (!S.tempo0) S.tempo0 = S.tempo * U.rate;
+  U.rate = target / S.tempo; showTempo();
+  if (U.playing) play(livePos(), true);
+  clearTimeout(commitT); commitT = setTimeout(commitRate, now || !U.playing ? 0 : 1000);
+}
+function commitRate() {
+  clearTimeout(commitT);
+  const r = U.rate; if (Math.abs(r - 1) < 1e-9) return;
+  pushUndo();
+  S.clips.forEach(o => o.tempo = ct(o) * r); S.tempo *= r;   // tout est multiplié : la grille reste la même, à l'échelle
+  Object.values(BUF).forEach(b => b.k = (b.k || 1) * r);     // les anciens rendus continuent de jouer en attendant
+  if (live) { live.from /= r; live.k /= r; }
+  U.pos /= r; U.rate = 1;
+  Object.values(S.tracks).forEach(t => t.bpm = fold(t.detected));
+  changed(); Promise.all(S.clips.map(loadClip)).then(kickAll);
+}
+$('tf').oninput = e => { const p = +e.target.value; bendTo(S.tempo0 ? S.tempo0 * (1 + p / 100) : S.tempo * U.rate * (1 + p / 100)); };
+$('tf').ondblclick = () => S.tempo0 && bendTo(S.tempo0, true);
+$('tfr').onchange = e => { const v = +e.target.value; $('tf').min = -v; $('tf').max = v; showTempo(); };
+$('mt').onclick = () => { S.mt = S.mt === false; showTempo(); changed(); };
 let taps = [], tapT;
 $('tap').onclick = () => {
   const now = performance.now();
@@ -1315,7 +1389,7 @@ function deckInfo(d, pb, LN) {   // morceau en lecture sur la voie, sinon le pro
     const t = c && S.tracks[c.trackId];
     el.querySelector('.dt').textContent = t ? t.name : '—';
     const k = el.querySelector('.key'); k.textContent = t ? camOf(t) : ''; k.style.background = t ? keyColor(camOf(t)) : 'none';
-    el.querySelector('.dbpm').textContent = c ? ct(c).toFixed(1) : '—';
+    el.querySelector('.dbpm').textContent = c ? (ct(c) * U.rate).toFixed(1) : '—';
   }
   el.querySelector('.dtime').textContent = on ? `${fmtTime(U.pos - secAt(on.start))} / -${fmtTime(secAt(clipEnd(on)) - U.pos)}` : '';
   const st = el.querySelector('.dst');
@@ -1642,6 +1716,7 @@ $('newProj').onclick = () => {
 // ============ Export ============
 async function exportMix() {
   if (!S.clips.length) return alert('Le mix est vide.');
+  commitRate();
   if (S.clips.some(c => !BUF[c.id]?.buffer || BUF[c.id].loading)) return alert('Attends que tous les morceaux soient prêts (« Calage au tempo du mix… »).');
   stop();
   const start = secAt(Math.min(...S.clips.map(c => c.start)));
