@@ -103,12 +103,10 @@
   .hticks { position:relative; height:7px; margin-top:-4px; background:repeating-linear-gradient(90deg, #5a5a70 0 1px, transparent 1px 10%); background-size:calc(100% - 15px) 100%; background-position:7.5px 0; background-repeat:no-repeat; }
   .hticks.c::after { content:''; position:absolute; left:50%; top:-2px; width:2px; height:9px; margin-left:-1px; background:#fff; }
   .mixer { position:relative; }
-  .deck .maxb { opacity:.75; } .deck .maxb:hover { opacity:1; }
   .transp { display:flex; align-items:center; gap:8px; }
   .rnd { width:40px; height:40px; padding:0; border-radius:50%; background:transparent; border:1.5px solid #ffffff4d; font-weight:800; font-size:11px; letter-spacing:.5px; }
   #mCue { color:#ffae3d; border-color:#ffae3d88; } #mCue:active, #mCue.on { background:#ffae3d; color:#0c0c11; box-shadow:0 0 10px #ffae3d99; }
   #mPlay { color:#ff3b3b; border-color:#ff3b3b88; font-size:15px; } #mPlay.on { background:linear-gradient(180deg,#ff4d4d,#c81e1e); color:#fff; border-color:#ff7a7a; box-shadow:0 0 12px #ff3b3b88; }
-  #rack.maxed { align-items:stretch; padding:10px 14px; }
   .mixmid { display:flex; flex-direction:column; align-items:center; gap:5px; }
   #xf { width:150px; }
   .xfl { display:flex; justify-content:space-between; width:150px; font:700 10px ui-monospace, monospace; color:var(--dim); }
@@ -317,7 +315,7 @@
     <div class="deckrow" id="rack">
       <div class="deck" id="deck0" style="--dc:#3aa0ff"><div class="dh"><span class="dl">A</span><span class="dt">—</span><span class="key"></span></div><div class="dn"><span><b class="dbpm">—</b> BPM</span><span class="dtime"></span><span class="dst"></span></div><canvas></canvas></div>
       <div class="mixer" id="mixer"></div>
-      <div class="deck" id="deck1" style="--dc:#ff9a2e"><div class="dh"><span class="dl">B</span><span class="dt">—</span><span class="key"></span><button class="maxb" data-max="rack" title="Pleine page (Échap pour revenir)">⛶ Pleine page</button></div><div class="dn"><span><b class="dbpm">—</b> BPM</span><span class="dtime"></span><span class="dst"></span></div><canvas></canvas></div>
+      <div class="deck" id="deck1" style="--dc:#ff9a2e"><div class="dh"><span class="dl">B</span><span class="dt">—</span><span class="key"></span></div><div class="dn"><span><b class="dbpm">—</b> BPM</span><span class="dtime"></span><span class="dst"></span></div><canvas></canvas></div>
     </div>
     <div class="vsplit" id="splitD" title="Glisser pour agrandir les platines A / B et la table · double-clic : taille d'origine"></div>
   </section>
@@ -1572,6 +1570,15 @@ function grip(id, key, el, min, def) {   // glisser : nouvelle hauteur ; double-
 }
 grip('splitR', 'deckH', '#deckC', 50, 120);
 grip('splitD', 'rackH', '#decks .deckrow', 150, null);
+{ const g = $('splitR').onmousedown;   // platines en pleine page : la ligne du haut agrandit le rack A / table / B (vers le haut)
+  $('splitR').onmousedown = e => {
+    if (!$('decks').classList.contains('maxed')) return g(e);
+    const y0 = e.clientY, h0 = $('rack').getBoundingClientRect().height; $('splitR').classList.add('on');
+    const mm = m => { LAY.rackH = Math.round(Math.max(150, Math.min(innerHeight - 260, h0 - (m.clientY - y0)))); applyLay(); };
+    const up = () => { $('splitR').classList.remove('on'); removeEventListener('mousemove', mm); removeEventListener('mouseup', up); };
+    addEventListener('mousemove', mm); addEventListener('mouseup', up);
+  };
+}
 grip('split', 'libH', '#libPane', 120, null);
 grip('splitT', 'tlH', '.lower', 220, null);
 function setMax(id) {   // un étage en grand écran (sous l'en-tête) ; même bouton ou Échap : il revient à sa place
@@ -1661,7 +1668,7 @@ function deckInfo(d, pb, LN) {   // morceau en lecture sur la voie, sinon le pro
   const st = el.querySelector('.dst');
   st.className = 'dst ' + (on ? 'air' : 'nxt'); st.textContent = on ? '● en lecture' : c ? `entre dans ${fmtTime(secAt(c.start) - U.pos)}` : '';
   const cv = el.querySelector('canvas'), b = c && BUF[c.id];   // vue d'ensemble du morceau, partie jouée en couleur
-  const H = (LAY.rackH || $('rack').classList.contains('maxed')) && innerWidth > 760 ? Math.max(28, el.clientHeight - el.querySelector('.dh').offsetHeight - el.querySelector('.dn').offsetHeight - 22) : 28;   // rack agrandi : la forme d'onde grandit
+  const H = LAY.rackH && innerWidth > 760 ? Math.max(28, el.clientHeight - el.querySelector('.dh').offsetHeight - el.querySelector('.dn').offsetHeight - 22) : 28;   // rack agrandi : la forme d'onde grandit
   const [g, W] = setupCanvas(cv, H); g.clearRect(0, 0, W, H); g.fillStyle = '#0f0f15'; g.fillRect(0, 0, W, H);
   if (!b?.peaks) return;
   const dur = b.buffer.duration, pos = on ? fileT(c, tlToTb(c, pb)) : fileT(c, c.in), per = b.peaks.length / W;
