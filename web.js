@@ -249,6 +249,76 @@ window.fetch = async (url, opt = {}) => {
   try { return await route(u.pathname.slice(i), Object.fromEntries(u.searchParams), u.search.slice(1), opt.body); }
   catch (e) { console.error(e); return J({ error: e.message }, 500); }
 };
+// ---------- Démo : à la première visite, 3 morceaux house fabriqués ici (libres de droits) et un mix prêt à écouter ----------
+const DEMOS = [   // intro kick + charleys (16 mesures), basse, accords, break, outro sans basse : de quoi mixer
+  { name: 'Démo 1 - Sunrise', bpm: 124, root: 57 },      // la mineur (8A)
+  { name: 'Démo 2 - Night Drive', bpm: 124, root: 50 },  // ré mineur (7A)
+  { name: 'Démo 3 - Lagoon', bpm: 126, root: 55 },       // sol mineur (6A)
+];
+const PROG = [[0, 3, 7], [5, 8, 12], [0, 3, 7], [7, 10, 14]];   // i - iv - i - v (mineur franc), deux mesures par accord
+async function shot(dur, build) {   // un son rendu une fois (des milliers de sons programmés d'un coup bloquent le moteur audio)
+  const ac = new OfflineAudioContext(1, Math.ceil(dur * SR), SR), g = ac.createGain(); g.connect(ac.destination); build(ac, g);
+  return (await ac.startRendering()).getChannelData(0);
+}
+const hz = m => 440 * 2 ** ((m - 69) / 12);
+const env = (g, peak, dec, t = 0) => { g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(peak, t + 0.002); g.gain.exponentialRampToValueAtTime(1e-4, t + dec); };
+const noiseShot = (type, f, peak, dec) => shot(dec + 0.02, (ac, out) => {
+  const nb = ac.createBuffer(1, ac.length, SR), d = nb.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  const s = ac.createBufferSource(), fl = ac.createBiquadFilter(); s.buffer = nb; fl.type = type; fl.frequency.value = f; env(out, peak, dec); s.connect(fl).connect(out); s.start();
+});
+const toneShot = (ms, dur, type, cut, peak) => shot(dur + 0.02, (ac, out) => {
+  const fl = ac.createBiquadFilter(); fl.type = 'lowpass'; fl.frequency.value = cut; fl.connect(out);
+  out.gain.setValueAtTime(0, 0); out.gain.linearRampToValueAtTime(peak, 0.01); out.gain.setValueAtTime(peak, dur - 0.04); out.gain.linearRampToValueAtTime(0, dur);
+  for (const m of ms) { const o = ac.createOscillator(); o.type = type; o.frequency.value = hz(m); o.connect(fl); o.start(); }
+});
+async function synth({ bpm, root }) {
+  const bars = 72, b = 60 / bpm, n = Math.ceil((bars * 4 * b + 1) * SR), L = new Float32Array(n), R = new Float32Array(n);
+  const kick = await shot(0.45, (ac, out) => { const o = ac.createOscillator(); o.frequency.setValueAtTime(150, 0); o.frequency.exponentialRampToValueAtTime(45, 0.12); env(out, 0.9, 0.4); o.connect(out); o.start(); });
+  const hat = await noiseShot('highpass', 8000, 0.22, 0.06), tick = await noiseShot('highpass', 10000, 0.07, 0.03), clap = await noiseShot('bandpass', 1500, 0.4, 0.16);
+  const bass = await Promise.all(PROG.map(c => toneShot([root - 12 + c[0]], b * 0.4, 'sawtooth', 380, 0.3)));
+  const pad = await Promise.all(PROG.map(c => toneShot(c.map(x => root + x), 8 * b, 'triangle', 2200, 0.05)));
+  const add = (x, t, g = 1, pan = 0) => { const o = Math.round(t * SR); for (let i = 0; i < x.length && o + i < n; i++) { L[o + i] += x[i] * g * (1 - pan); R[o + i] += x[i] * g * (1 + pan); } };
+  for (let bar = 0; bar < bars; bar++) {
+    const brk = bar >= 48 && bar < 56, outro = bar >= 64, ci = Math.floor(bar / 2) % 4;
+    if (bar >= 24 && !outro && bar % 2 === 0) add(pad[ci], bar * 4 * b, brk ? 1.8 : 1);   // nappe
+    for (let k = 0; k < 4; k++) {
+      const t = (bar * 4 + k) * b;
+      if (!brk) add(kick, t);
+      if (bar >= 4 && !brk) add(hat, t + b / 2, 1, 0.2);
+      if (bar >= 8 && !brk) { add(tick, t + b / 4, 1, -0.3); add(tick, t + 3 * b / 4, 1, 0.3); }
+      if (bar >= 32 && !brk && !outro && k % 2) add(clap, t);   // clap
+      if (bar >= 16 && !brk && !outro) add(bass[ci], t + b / 2);   // basse en contretemps
+    }
+  }
+  let m = 0; for (let i = 0; i < n; i++) m = Math.max(m, Math.abs(L[i]), Math.abs(R[i]));
+  const out = new AudioBuffer({ numberOfChannels: 2, length: n, sampleRate: SR }), k = 0.9 / m;
+  for (const x of [L, R]) for (let i = 0; i < n; i++) x[i] *= k;
+  out.copyToChannel(L, 0); out.copyToChannel(R, 1);
+  return out;
+}
+function wavFile(buf, name) {
+  const n = buf.length, L = buf.getChannelData(0), R = buf.getChannelData(1), a = new ArrayBuffer(44 + n * 4), v = new DataView(a);
+  const w = (o, s) => [...s].forEach((c, i) => v.setUint8(o + i, c.charCodeAt(0)));
+  w(0, 'RIFF'); v.setUint32(4, 36 + n * 4, true); w(8, 'WAVE'); w(12, 'fmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 2, true);
+  v.setUint32(24, SR, true); v.setUint32(28, SR * 4, true); v.setUint16(32, 4, true); v.setUint16(34, 16, true); w(36, 'data'); v.setUint32(40, n * 4, true);
+  const p = new Int16Array(a, 44); for (let i = 0; i < n; i++) { p[2 * i] = Math.max(-1, Math.min(1, L[i])) * 32767; p[2 * i + 1] = Math.max(-1, Math.min(1, R[i])) * 32767; }
+  return new File([a], name, { type: 'audio/wav' });
+}
+async function demo() {
+  try { if (localStorage.getItem('mixauto-demo')) return; } catch {}
+  if ((await all('lib')).length || S.clips.length) return;
+  modal('Bienvenue dans Mix Auto', 'Préparation d\'un mix de démo : 3 morceaux fabriqués ici, libres de droits…');
+  const items = [];
+  for (const d of DEMOS) items.push({ f: wavFile(await synth(d), `${d.name}.wav`), folder: 'Démo' });
+  await importFiles(items);
+  S.name = 'Mix démo'; $('projName').value = S.name;
+  for (const t of [...LIB].sort((a, b) => a.name.localeCompare(b.name))) addToMix(t);
+  for (const c of sorted().slice(0, -1)) applyFx(c, 'fade');   // la démo s'écoute tout de suite avec de vrais enchaînements
+  U.sel = null; changed(); zoomFit();
+  try { localStorage.setItem('mixauto-demo', '1'); } catch {}
+  modal('Mix de démo prêt ✔', 'Appuie sur ▶ (ou Espace). Tourne les boutons de la table, essaie <b>● REC</b>, tire les lignes rouges, puis glisse tes propres morceaux dans la bibliothèque.', [['C\'est parti', closeModal]]);
+}
+addEventListener('load', () => setTimeout(() => demo().catch(e => { console.error(e); closeModal(); }), 1200));
 window.webFileURL = async id => URL.createObjectURL(await get('files', id));   // pré-écoute
 // le navigateur peut vider ce stockage s'il manque de place : on lui demande de le garder
 navigator.storage?.persist?.();
