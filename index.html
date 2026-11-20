@@ -224,7 +224,8 @@
   #prefs label.chk { display:flex; color:var(--txt); }
   #prefs select { width:100%; min-width:0; }
   #modal { position:fixed; inset:0; background:#000a; display:flex; align-items:center; justify-content:center; z-index:9; }
-  #modal .box { width:min(440px, 92vw); padding:18px; background:var(--card); border:1px solid var(--line); border-radius:12px; }
+  #mClose { position:absolute; top:10px; right:10px; width:28px; height:28px; padding:0; border-radius:50%; color:#ff3b3b; font-weight:800; }
+  #modal .box { position:relative; width:min(440px, 92vw); padding:18px; background:var(--card); border:1px solid var(--line); border-radius:12px; }
   .bar { height:6px; background:var(--line); border-radius:3px; overflow:hidden; margin:10px 0; }
   .bar div { height:100%; width:0; background:linear-gradient(90deg,var(--acc),var(--acc2)); }
   [hidden] { display:none !important; }
@@ -267,6 +268,8 @@
   <input type="text" id="projName" value="Mon mix" title="Nom du projet" style="width:140px">
   <select id="projOpen" title="Ouvrir un projet"><option value="">Ouvrir…</option></select>
   <button id="newProj">Nouveau</button>
+  <button id="saveBtn" title="Sauvegarder le mix (⌘S) : tu choisis où ranger le fichier. Sans sauvegarde, la console repart vide quand tu actualises.">💾 Sauvegarder</button>
+  <input type="file" id="inProj" accept=".json,.mixauto,application/json" hidden>
   <div class="sep"></div>
   <button id="toStart" title="Retour au début">⏮</button>
   <button id="play" title="Lecture / pause (espace)">▶</button>
@@ -399,9 +402,9 @@
     <p class="note" id="pNote"></p>
   </form>
 </dialog>
-<div id="modal" hidden><div class="box"><b id="mTitle"></b><div class="bar"><div id="mBar"></div></div><div id="mText" class="note"></div><div class="row" id="mBtns"></div></div></div>
+<div id="modal" hidden><div class="box"><button id="mClose" title="Annuler / fermer">✕</button><b id="mTitle"></b><div class="bar"><div id="mBar"></div></div><div id="mText" class="note"></div><div class="row" id="mBtns"></div></div></div>
 
-<script src="web.js?v=fbee436c"></script>
+<script src="web.js?v=81e9d4b9"></script>
 <script>
 // ============ Modèle ============
 // Tout est en TEMPS (beats) : début sur la timeline, position dans le morceau, automations.
@@ -1917,18 +1920,39 @@ $('insp').addEventListener('change', e => {
 });
 
 // ============ Projets ============
-let saveT;
-function save() {
-  clearTimeout(saveT);
-  try { localStorage.setItem('mixauto-last', S.name); } catch {}
-  saveT = setTimeout(() => fetch(`/api/project?name=${encodeURIComponent(S.name)}`, { method:'POST', body:JSON.stringify({ ...S, nextId }) }).then(listProjects), 800);
+function save() {}   // plus de sauvegarde automatique : seulement avec le bouton 💾
+const projJSON = () => JSON.stringify({ ...S, nextId });
+async function storeProject(json, name) {
+  await fetch(`/api/project?name=${encodeURIComponent(name)}`, { method:'POST', body:json });
+  try { localStorage.setItem('mixauto-saved', name); } catch {}
+  await listProjects();
 }
+async function saveNow() {
+  const json = projJSON(), file = `${S.name.replace(/[\\/:*?"<>|]/g, '-')}.mixauto.json`;
+  if (window.showSaveFilePicker) {   // Chrome / Edge : on choisit le dossier et le nom
+    let h; try { h = await showSaveFilePicker({ suggestedName:file, types:[{ description:'Mix Auto', accept:{ 'application/json':['.json'] } }] }); }
+    catch (e) { if (e.name === 'AbortError') return; throw e; }
+    const w = await h.createWritable(); await w.write(json); await w.close();
+  } else {   // Safari / Firefox : le navigateur demande où l'enregistrer (ou le met dans Téléchargements)
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([json], { type:'application/json' })); a.download = file; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  }
+  await storeProject(json, S.name);
+}
+$('saveBtn').onclick = () => saveNow().catch(e => alert(`Sauvegarde impossible : ${e.message}`));
+addEventListener('keydown', e => { if ((e.metaKey || e.ctrlKey) && e.key === 's') { e.preventDefault(); $('saveBtn').click(); } });
+$('inProj').onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  try { const p = JSON.parse(await f.text()); if (!Array.isArray(p.clips)) throw new Error('pas un mix Mix Auto');
+    const name = p.name || f.name.replace(/\.mixauto\.json$|\.json$/, ''); p.name = name;
+    await storeProject(JSON.stringify(p), name); await openProject(name);
+  } catch (err) { alert(`Fichier illisible : ${err.message}`); }
+};
 function changed() { loadAll(); renderInsp(); renderLib(); draw(); restartIfPlaying(); save(); }
 async function listProjects() {
   const list = await (await fetch('/api/projects')).json();
-  $('projOpen').innerHTML = '<option value="">Ouvrir…</option>' + list.map(n => `<option>${esc(n)}</option>`).join('');
+  $('projOpen').innerHTML = '<option value="">Ouvrir…</option><option value="__file">📂 Depuis un fichier…</option>' + list.map(n => `<option>${esc(n)}</option>`).join('');
 }
-$('projOpen').onchange = async e => { if (!e.target.value) return; await openProject(e.target.value); e.target.value = ''; };
+$('projOpen').onchange = async e => { if (!e.target.value) return; if (e.target.value === '__file') { e.target.value = ''; return $('inProj').click(); } await openProject(e.target.value); e.target.value = ''; };
 async function openProject(name) {
   stop(); const p = await (await fetch(`/api/project?name=${encodeURIComponent(name)}`)).json();
   nextId = p.nextId || 1; delete p.nextId; S = { ...newProject(), ...p };
@@ -2002,21 +2026,22 @@ async function exportMix() {
 $('export').onclick = exportMix;
 
 function modal(title, text, btns = []) {
-  $('modal').hidden = false; $('mTitle').textContent = title; $('mText').innerHTML = text;
+  window.modalCancel = false; $('modal').hidden = false; $('mTitle').textContent = title; $('mText').innerHTML = text;
   $('mBtns').innerHTML = ''; btns.forEach(([l, f]) => { const b = document.createElement('button'); b.textContent = l; b.onclick = f; $('mBtns').append(b); });
   modalProgress(0);
 }
 function modalProgress(p, text) { $('mBar').style.width = `${p * 100}%`; if (text) $('mText').textContent = text; }
 function closeModal() { $('modal').hidden = true; }
+$('mClose').onclick = () => { window.modalCancel = true; closeModal(); };   // la démo en préparation s'arrête aussi
 
 // ============ Démarrage ============
 if (window.WEB) $('webBadge').hidden = false;
 paramsUI(); renderInsp(); draw();
 (async () => {
   await Promise.all([refreshLib(), listProjects()]);
-  let last = null; try { last = localStorage.getItem('mixauto-last'); } catch {}
-  const names = [...$('projOpen').options].map(o => o.value).filter(Boolean);   // du plus récent au plus ancien
-  if (names.length) openProject(names.includes(last) ? last : names[0]);
+  let last = null; try { last = localStorage.getItem('mixauto-saved'); } catch {}   // seulement un mix sauvegardé avec 💾
+  const names = [...$('projOpen').options].map(o => o.value).filter(v => v && v !== '__file');   // du plus récent au plus ancien
+  if (last && names.includes(last)) openProject(last);   // sinon : console vide
 })();
 </script>
 </body>

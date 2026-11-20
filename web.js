@@ -344,7 +344,9 @@ async function demo() {
   if ((await all('lib')).length || S.clips.length) return;
   modal('Bienvenue dans Mix Auto', 'Préparation d\'un mix de démo : 3 morceaux fabriqués ici, libres de droits…');
   const items = [];
-  for (const d of DEMOS) items.push({ f: wavFile(await synth(d), `${d.name}.wav`), folder: 'Démo' });
+  try { localStorage.setItem('mixauto-demo', '1'); } catch {}   // une seule fois, même si on annule (✕)
+  for (const d of DEMOS) { if (window.modalCancel) return; items.push({ f: wavFile(await synth(d), `${d.name}.wav`), folder: 'Démo' }); }
+  if (window.modalCancel) return;
   await importFiles(items);
   S.name = 'Mix démo'; $('projName').value = S.name;
   for (const t of [...LIB].sort((a, b) => a.name.localeCompare(b.name))) addToMix(t);
