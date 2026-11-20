@@ -157,7 +157,8 @@
   tr.trk { cursor:grab; }
   tr.trk:hover td { background:#ffffff07; }
   tr.trk.used td:first-child { box-shadow:inset 3px 0 var(--acc2); }
-  td.title { max-width:340px; overflow:hidden; text-overflow:ellipsis; }
+  td.title { min-width:200px; white-space:normal; word-break:break-word; line-height:1.3; }   /* titre complet (sur 2 lignes si besoin) */
+  .tablewrap { overflow-x:hidden; }
   td.title b { font-weight:600; } td.title span { color:var(--dim); }
   .num { font-variant-numeric:tabular-nums; text-align:right; }
   .key { display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:50%; padding:0; background:transparent; border:1.5px solid #ffffff4d; font:800 11.5px ui-monospace, Menlo, monospace; letter-spacing:-.3px; vertical-align:middle; flex:none; }
@@ -223,6 +224,12 @@
   .grid3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; }
   .grid2 button, .grid3 button { white-space:normal; padding:6px 4px; font-size:12px; line-height:1.25; }
   .fxcard { text-align:left !important; padding:8px !important; }
+  /* onglet Automation : tout tient sans défiler */
+  .trtab h2 { margin:9px 0 5px; } .trtab .note { margin:5px 0 0; font-size:12px; }
+  .trtab .pair { padding:6px 8px; } .trtab .pair .key { width:24px; height:24px; font-size:9px; }
+  .grid6 { display:grid; grid-template-columns:repeat(3, 1fr); gap:4px; }
+  .grid6 button, .trtab .grid2 button { padding:5px 2px; font-size:12px; white-space:nowrap; }
+  .fxg { gap:4px; } .fxg .fxcard { padding:6px 4px !important; text-align:center !important; } .fxg .fxcard span { display:none; }
   .fxcard b { display:block; font-size:13px; } .fxcard span { color:var(--dim); font-size:11px; }
   .row { display:flex; gap:6px; align-items:center; margin-bottom:6px; flex-wrap:wrap; }
   .slider { display:grid; grid-template-columns:68px 1fr 50px; gap:6px; align-items:center; margin-bottom:5px; }
@@ -241,6 +248,7 @@
   #prefs select { width:100%; min-width:0; }
   #modal { position:fixed; inset:0; background:#000a; display:flex; align-items:center; justify-content:center; z-index:9; }
   #mClose { position:absolute; top:10px; right:10px; width:28px; height:28px; padding:0; border-radius:50%; color:#ff3b3b; font-weight:800; }
+  #mBtns.start { flex-direction:column; align-items:stretch; } #mBtns.start button { text-align:left; padding:9px 12px; }
   #modal .box { position:relative; width:min(440px, 92vw); padding:18px; background:var(--card); border:1px solid var(--line); border-radius:12px; }
   .bar { height:6px; background:var(--line); border-radius:3px; overflow:hidden; margin:10px 0; }
   .bar div { height:100%; width:0; background:linear-gradient(90deg,var(--acc),var(--acc2)); }
@@ -272,7 +280,7 @@
     .libbody { grid-template-columns:minmax(0,1fr); } .libbody > * { grid-column:auto !important; } #libSide { width:auto; }
     .libbody { grid-template-rows:none; grid-auto-rows:auto; } #impPane { order:-1; width:auto; border-left:0; border-bottom:1px solid var(--line); } #impDrop { flex:none; width:100%; box-sizing:border-box; overflow:visible; padding:12px 8px; }
     .tablewrap { min-height:180px; max-height:min(max(var(--libH), 300px), 60vh); }
-    td.title { max-width:160px; }
+    td.title { min-width:140px; }
     .lower { grid-template-columns:minmax(0,1fr); grid-template-rows:minmax(0,1fr) 40%; }
     .lower aside { border-left:0; border-top:1px solid var(--line); }
     #decks > .maxb { top:4px; right:4px; }
@@ -306,7 +314,7 @@
     <select id="tfr" title="Plage du fader (TEMPO RANGE)"><option value="6">±6</option><option value="10" selected>±10</option><option value="16">±16</option></select>
   </div>
   <div class="sep"></div>
-  <label class="inl">Aimant <select id="snap"><option value="1" selected>Temps</option><option value="4">Mesure</option><option value="32">Phrase (8 mesures)</option><option value="0">Libre</option></select></label>
+  <label class="inl">Aimant <select id="snap"><option value="0.5" selected>½ temps</option><option value="0.25">¼ temps</option><option value="1">Temps</option><option value="4">Mesure</option><option value="32">Phrase (8 mesures)</option><option value="0">Libre</option></select></label>
   <button id="click" title="Métronome pour vérifier le calage">Clic</button>
   <button id="zoomOut" title="Dézoomer (⌘ + molette)">−</button><button id="zoomIn" title="Zoomer">+</button><button id="zoomFit" title="Voir tout le mix (touche F)">↔</button>
   <button id="undo" title="Annuler (⌘Z)">↶</button>
@@ -448,7 +456,7 @@ let LIB = [];                       // morceaux analysés (serveur)
 const BUF = {};                     // id morceau -> { key, buffer, peaks } ou { key, loading }
 const PHRASE = 32;   // 8 mesures de 4 temps : les morceaux entrent et sortent sur ces repères
 const MIXIN = 64;    // le suivant entre 16 mesures avant la fin du précédent
-const U = { rate:1, pxb:8, scrollX:-2, userScroll:0, sel:null, param:'vol', snap:1, pos:0, playing:false, click:false, undo:[],
+const U = { rate:1, pxb:8, scrollX:-2, userScroll:0, sel:null, param:'vol', snap:0.5, pos:0, playing:false, click:false, undo:[],
             libTab:'all', keys:new Set(), compat:true, folder:null, sort:'name', up:true, inspTab:'trans' };
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -1203,7 +1211,11 @@ async function kickAlign1(c, fixBpm) {   // true si le BPM du morceau a été co
   const pg = (await kickProf(c, m0, m1))?.[0];
   if (!pg) { c.kickMs = null; return; }
   const n = pg.length, cell = bs / n, wrap = v => ((v / bs + 1.5) % 1 - 0.5) * bs;
-  let ms = wrap(pg.indexOf(Math.max(...pg)) * cell - KICK_PEAK);   // repère grossier : l'attaque grave la plus forte du temps
+  // repère grossier : l'attaque grave la plus forte du temps ; avec un décalage à la main, cherchée près de là où on l'a posé
+  // (sinon une basse en contretemps ramène le morceau d'un demi-temps)
+  let pk = 0, pv = -1;
+  for (let i = 0; i < n; i++) if ((!man || Math.abs(wrap(i * cell - KICK_PEAK + man)) < bs * 0.3) && pg[i] > pv) { pv = pg[i]; pk = i; }
+  let ms = wrap(pk * cell - KICK_PEAK);
   // puis le début VISIBLE du kick (la montée de la forme d'onde, comme sur les pistes) posé pile sur le trait :
   // l'attaque grave seule arrive 20 à 50 ms après le début du kick selon le morceau (kicks longs : le kick tombait avant le trait)
   const h = visProf(c, m0, m1);
@@ -1358,6 +1370,7 @@ function drawNow() {
     r.fillRect(x, b % labelEvery ? 22 : 12, 1, 30);
     if (b % labelEvery === 0) { r.fillStyle = '#c9c9da'; r.fillText(`${b / 4 + 1}`, x + 3, 12); r.fillStyle = '#6c6c84'; r.fillText(fmtTime(secAt(b)), x + 3, 26); }
     if (b % PHRASE === 0 && labelEvery <= PHRASE) { r.fillStyle = '#ff3b3b'; r.fillRect(x, 0, 2, 6); }
+    if (U.pxb >= 16) for (let k = 0.5; k < 4; k += 1) { r.fillStyle = '#ff3b3b88'; r.fillRect(x + k * U.pxb, 27, 1, 3); }   // ½ temps
     if (U.pxb >= 10) for (let k = 1; k < 4; k++) {   // temps 2, 3, 4 de la mesure quand on zoome
       r.fillStyle = '#4a4a62'; r.fillRect(x + k * U.pxb, 25, 1, 5);
       if (U.pxb >= 22) { r.fillStyle = '#55556d'; r.fillText(k + 1, x + k * U.pxb + 2, 26); }
@@ -1381,8 +1394,11 @@ function drawNow() {
     g.fillStyle = '#4b4b6b'; g.fillRect(Math.round(x), 0, 1, H);
   }
   TRR.length = 0; R.forEach(c => drawClip(g, c, LN.of(c), W));
-  for (let b = Math.floor(U.scrollX / 4) * 4, st = U.pxb >= 10 ? 1 : Math.max(4, step); b <= b1; b += st) {   // traits rouges sur toutes les pistes : chaque temps (zoomé), plus marqué à chaque mesure
-    g.fillStyle = b % 4 ? '#ff3b3b40' : b % PHRASE ? '#ff3b3b8c' : '#ff3b3bdd'; g.fillRect(Math.round((b - U.scrollX) * U.pxb), 0, b % 4 ? 1 : 1.5, H);
+  // traits rouges sur toutes les pistes : chaque mesure (fort), chaque temps, et entre les temps (½, ¼) quand on zoome
+  const rst = U.pxb >= 48 ? 0.25 : U.pxb >= 16 ? 0.5 : U.pxb >= 10 ? 1 : Math.max(4, step);
+  for (let b = Math.floor(U.scrollX / 4) * 4; b <= b1; b += rst) {
+    g.fillStyle = b % 1 ? (b % 0.5 ? '#ff3b3b1c' : '#ff3b3b30') : b % 4 ? '#ff3b3b55' : b % PHRASE ? '#ff3b3b99' : '#ff3b3bdd';
+    g.fillRect(Math.round((b - U.scrollX) * U.pxb), 0, b % 4 ? 1 : 1.5, H);
   }
   // repères d'entrée (vert) et de fin (rouge) de chaque morceau, sur toute la hauteur et sur la règle
   for (const c of R) for (const [b, col] of [[c.start, '#22d3a6'], [clipEnd(c), '#ff5c7a']]) {
@@ -1516,7 +1532,7 @@ rowsC.addEventListener('mousedown', e => {
   if (tr && e.button === 0 && Math.hypot(h.x - tr.cx, h.y - tr.y - 7) < 8) {   // ✕ : on enlève l'automation de cette transition
     pushUndo(); removeTr(tr.c, tr.c.tr.findIndex(r => r.kind === tr.kind)); U.tr = null; changed(); return;
   }
-  if (e.button === 0) {   // simple clic (sans glisser) n'importe où sur les pistes : la tête de lecture y va
+  if (e.button === 0 && !h.c && !tr) {   // simple clic dans le vide (au-dessus / en dessous des morceaux) : la tête de lecture y va ; sur un morceau : on le déplace
     const up = m => { removeEventListener('mouseup', up); if (Math.hypot(m.clientX - e.clientX, m.clientY - e.clientY) < 4) { U.pos = Math.max(0, secAt(h.beat)); if (U.playing) play(U.pos); draw(); } };
     addEventListener('mouseup', up);
   }
@@ -1548,7 +1564,15 @@ rowsC.addEventListener('mousedown', e => {
     return drag(m => { pt.b = snapB(tlToTb(c, m.beat), m, ab); pt.v = yToV(h, m.y); c.auto[U.param].sort((a, b) => a.b - b.b); show(); }, paramsUI);
   }
   pushUndo();
-  drag(move, () => kickAlign(c).then(changed, () => {}));   // après un déplacement ou un rognage : kick recalé sur les temps
+  drag(move, () => {   // posé entre deux temps (½, ¼, libre) : la fraction devient un décalage à la main (t.man), gardé par le recalage
+    const seen = new Set();
+    for (const o of [c, ...S.clips.filter(x => x !== c)]) {
+      const f = (o.start - o.in) - Math.floor(o.start - o.in + 1e-6); if (Math.abs(f) < 1e-6) continue;
+      o.start -= f; const t = S.tracks[o.trackId]; if (seen.has(t)) continue; seen.add(t);
+      const ms = f * 60000 / ct(o); t.nudge -= ms; t.man = (t.man || 0) - ms;
+    }
+    return kickAlign(c).then(changed, () => {});   // kick recalé sur les temps (+ le décalage choisi)
+  });
 });
 // morceaux qui commencent après c, avec leur position de départ ; shiftAll les décale tous du même nombre de temps
 const following = c => S.clips.filter(o => o !== c && o.start > c.start).map(o => [o, o.start]);
@@ -1826,9 +1850,17 @@ function deckInfo(d, pb, LN) {   // morceau en lecture sur la voie, sinon le pro
 }
 $('deckC').addEventListener('mousedown', e => {   // clic sur les formes d'onde : on avance / recule (le centre = lecture)
   const r = $('deckC').getBoundingClientRect(), d = (e.clientX - r.left - r.width / 2) / (r.width / 32);
-  if (LV.on) {   // Mix Live : la voie cliquée (haut = A, bas = B) avance / recule d'autant de temps, sans toucher à l'autre
-    const P = LV.d[e.clientY - r.top < r.height / 2 ? 0 : 1], k = LV.d.indexOf(P); if (!P.buf) return;
-    const was = P.playing; lvPause(k); P.pos = clamp(lvF(P, Math.round(lvTb(P, P.pos) + d)), 0, P.buf.duration - 0.1); if (was) lvPlay(k); draw(true); return;
+  if (LV.on) {   // Mix Live : la voie touchée (haut = A, bas = B) se déplace à la souris (glisser) ; simple clic = avance / recule d'autant de temps
+    const k = e.clientY - r.top < r.height / 2 ? 0 : 1, P = LV.d[k]; if (!P.buf) return;
+    e.preventDefault(); LV.last = k;
+    const was = P.playing; lvPause(k); const p0 = P.pos, x0 = e.clientX, spb = 60 / P.T, ppb = r.width / 32; let moved = false;
+    const mm = m => { if (!moved && Math.abs(m.clientX - x0) < 3) return; moved = true; P.pos = clamp(p0 - (m.clientX - x0) / ppb * spb, 0, P.buf.duration - 0.1); draw(true); };
+    const up = () => {
+      removeEventListener('mousemove', mm); removeEventListener('mouseup', up);
+      if (!moved) P.pos = clamp(lvF(P, Math.round(lvTb(P, P.pos) + d)), 0, P.buf.duration - 0.1);
+      if (was) lvPlay(k); draw(true);
+    };
+    addEventListener('mousemove', mm); addEventListener('mouseup', up); return;
   }
   U.pos = Math.max(0, secAt(Math.round(beatAt(U.pos) + d))); if (U.playing) play(U.pos); draw();
 });
@@ -1975,6 +2007,10 @@ function lvCue(d) {   // façon CDJ : en lecture, retour au point CUE et arrêt 
   if (P.playing) { lvPause(d); P.pos = P.cue; } else P.cue = P.pos;
   lvUI(); draw();
 }
+function lvHome(d) {   // Q : le morceau revient au début (son premier kick), en lecture il repart de là
+  const P = LV.d[d]; if (!P.buf) return;
+  const was = P.playing; lvPause(d); P.pos = Math.max(0, lvF(P, downbeat(P.t).kick)); if (was) lvPlay(d); lvUI(); draw(true);
+}
 function lvRespeed() { LV.d.forEach((P, d) => { if (P.playing) { lvPause(d); lvPlay(d); } }); }   // fader de tempo : les voies suivent
 function liveOn() {
   if (LV.on) return;
@@ -2001,10 +2037,10 @@ function lvLoop() {   // une seule boucle : seules les platines sont redessinée
 }
 $('liveBtn').onclick = () => LV.on ? liveOff() : liveOn();
 document.querySelectorAll('.rnd.pp').forEach(b => b.onclick = () => {   // chaque voie a sa lecture : elle passe en Mix Live si besoin
-  const d = +b.dataset.d; liveOn(); LV.d[d].playing ? lvPause(d) : lvPlay(d);
+  const d = +b.dataset.d; LV.last = d; liveOn(); LV.d[d].playing ? lvPause(d) : lvPlay(d);
 });
 document.querySelectorAll('.rnd.cue').forEach(b => b.onclick = () => {
-  const d = +b.dataset.d; liveOn(); lvCue(d);
+  const d = +b.dataset.d; LV.last = d; liveOn(); lvCue(d);
   b.classList.add('on'); setTimeout(() => b.classList.remove('on'), 180);
 });
 [0, 1].forEach(d => {   // glisser un morceau de la bibliothèque sur une platine = le charger sur cette voie
@@ -2032,6 +2068,7 @@ addEventListener('keydown', e => {
   else if ((e.key === 'Delete' || e.key === 'Backspace') && selClip()) { pushUndo(); S.clips = S.clips.filter(c => c.id !== U.sel); U.sel = null; changed(); }
   else if (e.key >= '0' && e.key <= '7') { U.param = ['none', ...PKEYS][+e.key]; paramsUI(); draw(); }
   else if (e.key === 'Home') $('toStart').click();
+  else if ((e.key === 'q' || e.key === 'Q') && LV.on) lvHome(LV.last ?? 0);   // Mix Live : Q = la dernière platine touchée revient au début
   else if (e.key === 'f' || e.key === 'F') zoomFit();
   else if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && selClip()) {   // ← → : d'une mesure (Maj : d'un temps)
     e.preventDefault(); pushUndo(); const c = selClip(), s = c.start, next = following(c);
@@ -2088,31 +2125,29 @@ function renderInsp() {
   if (U.inspTab === 'trans') {
     const n = nextOf(c), nt = n && S.tracks[n.trackId];
     const ov = n ? clipEnd(c) - n.start : 0;
-    el.innerHTML = `
+    el.innerHTML = `<div class="trtab">
       <div class="pair">
         <div><span class="key" style="color:${keyColor(camOf(t))}">${KL(camOf(t))}</span><b title="${esc(t.name)}">${esc(t.name)}</b></div>
         <span style="font-size:18px">→</span>
         <div>${nt ? `<span class="key" style="color:${keyColor(camOf(nt))}">${KL(camOf(nt))}</span><b title="${esc(nt.name)}">${esc(nt.name)}</b>` : '<b style="color:var(--dim)">fin du mix</b>'}</div>
       </div>
-      ${nt ? `<div class="note ${compatible(camOf(t), camOf(nt)) ? 'ok' : 'warn'}">${compatible(camOf(t), camOf(nt)) ? '✓ Tonalités compatibles' : '⚠ Tonalités éloignées : transpose un des deux (onglet Morceau) ou préfère une coupe / un écho'}</div>
-      <div class="note">${ov > 0 ? `Les deux jouent ensemble pendant ${ov % 4 ? `${ov} temps` : `${ov / 4} mesure(s)`}.` : ov === 0 ? 'Le suivant démarre pile à la fin.' : `Silence de ${-ov} temps entre les deux.`}</div>` : ''}
+      ${nt ? `<div class="note"><span class="${compatible(camOf(t), camOf(nt)) ? 'ok' : 'warn'}" title="${compatible(camOf(t), camOf(nt)) ? '' : 'Transpose un des deux (onglet Morceau) ou préfère une coupe / un écho'}">${compatible(camOf(t), camOf(nt)) ? '✓ Tonalités compatibles' : '⚠ Tonalités éloignées'}</span> · ${ov > 0 ? `ensemble ${ov % 4 ? `${ov} temps` : `${ov / 4} mes.`}` : ov === 0 ? 'enchaîné pile' : `silence ${-ov} temps`}</div>` : ''}
       ${trCard(c)}
       ${n ? `<h2>1 · Le suivant entre</h2>
-      <div class="grid3">
-        <button data-in-next="64">16 mesures avant</button><button data-in-next="32">8 mesures avant</button><button data-in-next="16">4 mesures avant</button>
-        <button data-in-next="4">sur la dernière mesure</button><button data-in-next="1">sur le dernier temps</button><button data-in-next="0">à la fin</button>
+      <div class="grid6">
+        <button data-in-next="64" title="16 mesures avant la fin">16 mes.</button><button data-in-next="32" title="8 mesures avant la fin">8 mes.</button><button data-in-next="16" title="4 mesures avant la fin">4 mes.</button>
+        <button data-in-next="4" title="Sur la dernière mesure">1 mes.</button><button data-in-next="1" title="Sur le dernier temps">1 temps</button><button data-in-next="0" title="À la fin">Fin</button>
       </div>` : ''}
       <h2>${trSel(c) >= 0 ? 'Remplacer par' : n ? '2 · Comment ça passe' : 'Sortie du mix'}</h2>
-      <div class="grid2">
-        <button class="fxcard" data-fx="fade" style="--k:${TRK.fade[1]}"><b>Fondu</b><span>volume croisé + échange des basses</span></button>
-        <button class="fxcard" data-fx="filter" style="--k:${TRK.filter[1]}"><b>Filtre</b><span>l'un se ferme, l'autre s'ouvre</span></button>
-        <button class="fxcard" data-fx="echo" style="--k:${TRK.echo[1]}"><b>Écho</b><span>le dernier temps répète</span></button>
-        <button class="fxcard" data-fx="reverb" style="--k:${TRK.reverb[1]}"><b>Réverbe</b><span>la dernière mesure s'envole</span></button>
-        ${n ? '<button class="fxcard" data-fx="cut" style="--k:#ff5c7a"><b>Coupe</b><span>coupe nette pile à l\'entrée</span></button>' : ''}
-        <button class="fxcard" data-fx="clear"><b>Effacer</b><span>enlève les effets de ce morceau</span></button>
+      <div class="grid3 fxg">
+        <button class="fxcard" data-fx="fade" style="--k:${TRK.fade[1]}" title="volume croisé + échange des basses"><b>Fondu</b><span>volume croisé + échange des basses</span></button>
+        <button class="fxcard" data-fx="filter" style="--k:${TRK.filter[1]}" title="l'un se ferme, l'autre s'ouvre"><b>Filtre</b><span>l'un se ferme, l'autre s'ouvre</span></button>
+        <button class="fxcard" data-fx="echo" style="--k:${TRK.echo[1]}" title="le dernier temps répète"><b>Écho</b><span>le dernier temps répète</span></button>
+        <button class="fxcard" data-fx="reverb" style="--k:${TRK.reverb[1]}" title="la dernière mesure s'envole"><b>Réverbe</b><span>la dernière mesure s'envole</span></button>
+        ${n ? '<button class="fxcard" data-fx="cut" style="--k:#ff5c7a" title="coupe nette pile à l\'entrée"><b>Coupe</b><span>coupe nette pile à l\'entrée</span></button>' : ''}
+        <button class="fxcard" data-fx="clear" title="enlève les effets de ce morceau"><b>Effacer</b><span>enlève les effets de ce morceau</span></button>
       </div>
-      <div class="note">Tu peux combiner (écho + réverbe…) et tout retoucher avec « Dessiner » en bas.</div>
-      <h2>Calage</h2><div class="row"><button data-kick="1">🥁 Caler le kick sur les temps</button><button data-realign="1">↺ Calage d'origine</button></div>${c.kickMs != null ? `<div class="note">🥁 Kick calé sur les temps (${c.kickMs > 0 ? '+' : ''}${c.kickMs} ms).</div>` : ''}`;
+      <h2>Calage${c.kickMs != null ? ` <span style="text-transform:none;letter-spacing:0">· kick ${c.kickMs > 0 ? '+' : ''}${c.kickMs} ms</span>` : ''}</h2><div class="grid2"><button data-kick="1">🥁 Kick sur les temps</button><button data-realign="1">↺ Calage d'origine</button></div></div>`;
   } else {
     el.innerHTML = `
       <div class="insp-title">${esc(t.name)}</div>
@@ -2321,8 +2356,20 @@ paramsUI(); renderInsp(); draw();
   await Promise.all([refreshLib(), listProjects()]);
   let last = null; try { last = localStorage.getItem('mixauto-saved'); } catch {}   // seulement un mix sauvegardé avec 💾
   const names = [...$('projOpen').options].map(o => o.value).filter(v => v && v !== '__file');   // du plus récent au plus ancien
-  if (last && names.includes(last)) openProject(last);   // sinon : console vide
+  if (window.WEB) { try { if (!localStorage.getItem('mixauto-demo')) return; } catch {} }   // première visite web : la démo se prépare
+  startChoice(names, last);
 })();
+function startChoice(names, last) {   // à l'ouverture : nouvelle session ou un projet
+  const list = [...new Set([last, ...names].filter(n => n && names.includes(n)))].slice(0, 6);
+  modal('Mix Auto', list.length ? 'Nouvelle session, ou ouvrir un projet ?' : 'Commence une nouvelle session, ou ouvre un projet depuis un fichier.', [
+    ['＋ Nouvelle session', () => { closeModal(); $('newProj').click(); }],
+    ...list.map(n => [`📂 ${n}`, () => { closeModal(); openProject(n); }]),
+    ['Depuis un fichier…', () => { closeModal(); $('inProj').click(); }],
+  ]);
+  $('mBar').parentElement.hidden = true; $('mBtns').classList.add('start');
+  const reset = () => { $('mBar').parentElement.hidden = false; $('mBtns').classList.remove('start'); };
+  $('mBtns').addEventListener('click', reset, { once:true }); $('mClose').addEventListener('click', reset, { once:true });
+}
 </script>
 </body>
 </html>
