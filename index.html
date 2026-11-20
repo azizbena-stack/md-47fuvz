@@ -129,7 +129,7 @@
   #libSide { grid-column:1; } .libbody > .tablewrap { grid-column:2; } #impPane { grid-column:3; }   /* zone d'import toujours calée à droite */
   #impPane { width:min(480px, 36vw); padding:8px; border-left:1px solid var(--line); background:var(--panel); min-height:0; display:flex; }
   #impPane[hidden] { display:none; }
-  #impDrop { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:safe center; gap:5px; text-align:center; border:2px dashed #3a3a4e; border-radius:12px; padding:8px; overflow:auto; color:var(--txt); cursor:pointer; transition:border-color .15s, background .15s; }
+  #impDrop { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:safe center; gap:5px; text-align:center; border:2px dashed #f2f2f7; border-radius:12px; box-shadow:0 0 8px #ffffff40, inset 0 0 8px #ffffff1a; padding:8px; overflow:auto; color:var(--txt); cursor:pointer; transition:border-color .15s, background .15s; }
   #impDrop:hover, body.dragover #impDrop { border-color:#ff3b3b; background:#ff3b3b10; }
   #impDrop .ico { width:44px; height:44px; margin-bottom:2px; }
   .blogo { width:22px; height:14px; vertical-align:-2px; margin-right:6px; }
